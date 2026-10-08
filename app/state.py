@@ -30,3 +30,20 @@ class HintVerdict(BaseModel):
     approved: bool = Field(..., description="Whether the hint satisfies the safety & level rubric")
     reason: str = Field(..., description="Reason for approval or detailed feedback on why it was rejected")
     leak_severity: Literal["none", "minor", "major"] = Field("none", description="Severity of any detected leakage")
+
+class UserMessage(BaseModel):
+    role: Literal["user", "assistant", "system"] = Field(...)
+    content: str = Field(...)
+    timestamp: float = Field(...)
+
+class CoachState(TypedDict):
+    handle: str
+    diagnosis: Diagnosis | None
+    problem: ProblemChoice | None
+    problem_statement: str
+    hint_level: int
+    draft: HintDraft | None
+    verdict: HintVerdict | None
+    revisions: int
+    history: list[dict[str, Any]]
+    user_action: str | None
