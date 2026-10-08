@@ -19,3 +19,17 @@ class CFUserNotFoundError(CFAPIError):
 class CFRateLimitError(CFAPIError):
     """Raised when Codeforces rate limit (HTTP 429) is hit."""
     pass
+
+class PoliteRateLimiter:
+    """Ensures at least min_interval_seconds elapse between consecutive API calls."""
+    def __init__(self, min_interval_seconds: float = 2.0):
+        self.min_interval = min_interval_seconds
+        self.last_call_time = 0.0
+
+    def wait(self) -> None:
+        elapsed = time.time() - self.last_call_time
+        if elapsed < self.min_interval:
+            time.sleep(self.min_interval - elapsed)
+        self.last_call_time = time.time()
+
+rate_limiter = PoliteRateLimiter(min_interval_seconds=2.0)
