@@ -11,7 +11,6 @@ from app.agents.keeper import keeper_node
 
 def get_checkpointer(persisted: bool = False) -> Any:
     """Return memory or persistent checkpointer instance."""
-    # MemorySaver is used as the robust default in Phase 1
     return MemorySaver()
 
 def route_user_action(state: CoachState) -> Literal["tutor", "check_submission", "analyst", "__end__"]:
@@ -28,18 +27,29 @@ def route_user_action(state: CoachState) -> Literal["tutor", "check_submission",
     return "tutor"
 
 def check_submission_node(state: CoachState) -> dict[str, Any]:
-    """Submission checker node."""
-    action_data = state.get("user_action", "")
-    return {
-        "history": list(state.get("history", [])) + [{
-            "role": "system",
-            "content": f"Submission evaluated: {action_data}"
-        }]
-    }
+    """Evaluate recent submission verdict and update history."""
+    verdict = state.get("last_submission_verdict", "OK")
+    history = list(state.get("history", []))
+    history.append({
+        "role": "system",
+        "type": "submission_check",
+        "verdict": verdict,
+        "content": f"Submission check completed with verdict: {verdict}"
+    })
+    
+    updates: dict[str, Any] = {"history": history}
+    if verdict == "OK":
+        updates["draft"] = None
+        updates["verdict"] = None
+        updates["revisions"] = 0
+    return updates
 
 def route_submission(state: CoachState) -> Literal["analyst", "tutor"]:
-    """Route after checking submission."""
-    return "analyst"
+    """Route after checking submission: loop to analyst on AC, route to tutor on WA/TLE."""
+    verdict = state.get("last_submission_verdict", "OK")
+    if verdict == "OK":
+        return "analyst"
+    return "tutor"
 
 def route_keeper_verdict(state: CoachState) -> Literal["tutor", "wait_for_user"]:
     """Route based on Keeper verdict and revision count."""
@@ -96,7 +106,7 @@ def create_coach_graph(checkpointer: Any = None) -> Any:
         }
     )
     
-    # Submission routing
+    # Submission routing: AC -> analyst | WA/TLE -> tutor (targeted hint)
     workflow.add_conditional_edges(
         "check_submission",
         route_submission,
