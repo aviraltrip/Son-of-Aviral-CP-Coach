@@ -1,4 +1,4 @@
-# 🏆 CP Coach: Multi-Agent Competitive Programming Coach
+# CP Coach: Multi-Agent Competitive Programming Coach
 
 [![Python 3.11+](https://img.shields.io/badge/python-3.11+-blue.svg)](https://www.python.org/downloads/)
 [![LangGraph](https://img.shields.io/badge/orchestration-LangGraph-orange.svg)](https://github.com/langchain-ai/langgraph)
@@ -9,7 +9,7 @@ A multi-agent coaching system that connects to your **Codeforces** history, calc
 
 ---
 
-## 🎯 The Core Problem & Multi-Agent Justification
+## The Core Problem & Multi-Agent Justification
 
 Standard LLMs and editorial walkthroughs spoil competitive programming problems by immediately revealing the key observation or full algorithm. Once spoiled, the active recall and problem-solving growth is lost.
 
@@ -20,7 +20,7 @@ CP Coach solves this through **Multi-Agent Information Asymmetry**:
 
 ---
 
-## 🏗️ Architecture & State Machine
+## Architecture & State Machine
 
 ```mermaid
 flowchart TD
