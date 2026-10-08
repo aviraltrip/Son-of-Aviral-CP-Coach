@@ -64,13 +64,14 @@ Phase 8: [Optional] Sandbox Code Judge Execution (1 week)
 
 ---
 
-### Phase 4: Submission Checking & Feedback Loop
+### Phase 4: Submission Checking & Feedback Loop [COMPLETE]
 - **Goal**: Automatically check user submissions and adapt coaching dynamically.
 - **Tasks**:
-  1. Implement `check_submission` node in `app/graph.py` to poll CF API for active problem verdict.
-  2. If Accepted (AC): Update stats in SQLite, log session outcome, and route back to Analyst.
-  3. If WA/TLE/MLE: Route to Tutor with targeted hint prompt highlighting potential pitfalls without revealing the answer.
-- **Definition of Done (DoD)**: Graph responds dynamically to real submissions, distinguishing AC from WA.
+  1. Implement `check_submission` node in `app/graph.py` to poll CF API for active problem verdict. [DONE]
+  2. If Accepted (AC): Update stats in SQLite, recalculate weak topics, and route back to Analyst. [DONE]
+  3. If WA/TLE/MLE: Route to Tutor with targeted hint prompt highlighting potential pitfalls without revealing the answer. [DONE]
+  4. Build comprehensive unit and integration tests (`tests/test_submission_checker.py`, `tests/test_graph_submission_flow.py`). [DONE]
+- **Definition of Done (DoD)**: Graph responds dynamically to real submissions, distinguishing AC from WA and triggering targeted coaching loops. [VERIFIED]
 
 ---
 
