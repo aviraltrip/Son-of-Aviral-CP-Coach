@@ -49,3 +49,62 @@ def route_keeper_verdict(state: CoachState) -> Literal["tutor", "wait_for_user"]
 def wait_for_user_node(state: CoachState) -> dict[str, Any]:
     """Interrupt/checkpoint node waiting for human user input."""
     return {}
+
+from langgraph.graph import StateGraph, START, END
+from langgraph.checkpoint.memory import MemorySaver
+
+def create_coach_graph(checkpointer: Any = None) -> Any:
+    """Build and compile the CP Coach LangGraph state machine."""
+    workflow = StateGraph(CoachState)
+    
+    # Add Nodes
+    workflow.add_node("analyst", analyst_node)
+    workflow.add_node("wait_for_user", wait_for_user_node)
+    workflow.add_node("tutor", tutor_node)
+    workflow.add_node("keeper", keeper_node)
+    workflow.add_node("check_submission", check_submission_node)
+    
+    # Flow Edges
+    workflow.add_edge(START, "analyst")
+    workflow.add_edge("analyst", "wait_for_user")
+    
+    # User interaction routing
+    workflow.add_conditional_edges(
+        "wait_for_user",
+        route_user_action,
+        {
+            "tutor": "tutor",
+            "check_submission": "check_submission",
+            "analyst": "analyst",
+            "__end__": END,
+        }
+    )
+    
+    # Tutor ⇄ Keeper verification loop
+    workflow.add_edge("tutor", "keeper")
+    workflow.add_conditional_edges(
+        "keeper",
+        route_keeper_verdict,
+        {
+            "tutor": "tutor",
+            "wait_for_user": "wait_for_user"
+        }
+    )
+    
+    # Submission routing
+    workflow.add_conditional_edges(
+        "check_submission",
+        route_submission,
+        {
+            "analyst": "analyst",
+            "tutor": "tutor"
+        }
+    )
+    
+    if checkpointer is None:
+        checkpointer = MemorySaver()
+        
+    return workflow.compile(
+        checkpointer=checkpointer,
+        interrupt_before=["wait_for_user"]
+    )
