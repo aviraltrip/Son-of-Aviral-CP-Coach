@@ -81,3 +81,75 @@ def generate_baseline_hint(
         "latency_seconds": round(elapsed, 4),
         "timestamp": int(time.time())
     }
+
+import json
+
+def run_baseline_batch(
+    problems: list[dict[str, Any]],
+    hint_levels: list[int] | None = None,
+    output_file: str | None = None,
+    llm: Any | None = None
+) -> list[dict[str, Any]]:
+    """Run single-agent baseline across a batch of problems for all requested hint tiers."""
+    levels = hint_levels or [1, 2, 3]
+    results: list[dict[str, Any]] = []
+
+    for idx, p in enumerate(problems, 1):
+        p_name = p.get("name", f"Problem {p.get('contest_id', '')}{p.get('index', '')}")
+        stmt = p.get("statement") or p.get("problem_statement") or p_name
+        
+        logger.info(f"[{idx}/{len(problems)}] Generating baseline hints for {p_name}...")
+        for lvl in levels:
+            hint_res = generate_baseline_hint(
+                problem_statement=stmt,
+                hint_level=lvl,
+                llm=llm,
+                problem_name=p_name
+            )
+            record = {
+                "contest_id": p.get("contest_id") or p.get("contestId"),
+                "index": p.get("index") or p.get("idx"),
+                "name": p_name,
+                "rating": p.get("rating"),
+                "tags": p.get("tags", []),
+                **hint_res
+            }
+            results.append(record)
+
+    if output_file:
+        try:
+            with open(output_file, "w", encoding="utf-8") as fp:
+                json.dump(results, fp, indent=2)
+            logger.info(f"Saved {len(results)} baseline hint records to {output_file}")
+        except Exception as e:
+            logger.error(f"Failed to write output to {output_file}: {e}")
+
+    return results
+
+def main() -> None:
+    """CLI entrypoint for running single-agent baseline hints."""
+    import argparse
+    parser = argparse.ArgumentParser(description="Run single-agent baseline hint generation.")
+    parser.add_argument("--contest", type=int, default=1900, help="Contest ID")
+    parser.add_argument("--index", type=str, default="C", help="Problem Index")
+    parser.add_argument("--level", type=int, default=1, choices=[1, 2, 3], help="Hint Level (1-3)")
+    parser.add_argument("--statement", type=str, default=None, help="Inline statement text")
+    parser.add_argument("--output", type=str, default=None, help="Path to save output JSON")
+    args = parser.parse_args()
+
+    stmt = args.statement or f"Problem {args.contest}{args.index} on Codeforces."
+    res = generate_baseline_hint(stmt, args.level, problem_name=f"{args.contest}{args.index}")
+    
+    print(f"\n{'='*60}")
+    print(f" Single-Agent Baseline Hint (Level {args.level})")
+    print(f" Model: {res['model_name']} | Latency: {res['latency_seconds']}s")
+    print(f"{'='*60}")
+    print(res["hint_text"])
+    print(f"{'='*60}\n")
+
+    if args.output:
+        with open(args.output, "w", encoding="utf-8") as fp:
+            json.dump(res, fp, indent=2)
+
+if __name__ == "__main__":
+    main()
