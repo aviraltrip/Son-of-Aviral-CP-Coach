@@ -33,3 +33,30 @@ class PoliteRateLimiter:
         self.last_call_time = time.time()
 
 rate_limiter = PoliteRateLimiter(min_interval_seconds=2.0)
+
+CACHE_DIR = os.path.join(os.path.expanduser("~"), ".cache", "cp_coach")
+os.makedirs(CACHE_DIR, exist_ok=True)
+
+def get_cached_response(cache_key: str, ttl_seconds: int = 300) -> Any | None:
+    """Retrieve response from local disk cache if still fresh."""
+    cache_path = os.path.join(CACHE_DIR, f"{cache_key}.json")
+    if not os.path.exists(cache_path):
+        return None
+    try:
+        with open(cache_path, "r", encoding="utf-8") as fp:
+            data = json.load(fp)
+            cached_at = data.get("_cached_at", 0)
+            if time.time() - cached_at < ttl_seconds:
+                return data.get("payload")
+    except Exception as e:
+        logger.warning(f"Failed to read cache {cache_key}: {e}")
+    return None
+
+def set_cached_response(cache_key: str, payload: Any) -> None:
+    """Write API response payload to local disk cache."""
+    cache_path = os.path.join(CACHE_DIR, f"{cache_key}.json")
+    try:
+        with open(cache_path, "w", encoding="utf-8") as fp:
+            json.dump({"_cached_at": time.time(), "payload": payload}, fp)
+    except Exception as e:
+        logger.warning(f"Failed to write cache {cache_key}: {e}")
