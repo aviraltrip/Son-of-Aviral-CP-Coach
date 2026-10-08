@@ -76,3 +76,13 @@ Where weight $w_i$ combines **Difficulty Weight** and **Recency Decay**:
 
 ### Problem Selection Rule:
 - Top 3 weak tags by adjusted failure score.
+- Target rating: $\text{UserRating} + 100 \le \text{ProblemRating} \le \text{UserRating} + 200$.
+- Filter: Problem has never been attempted by the user before.
+
+---
+
+## 6. Hint Rubric & Grading Standard
+
+- **Level 1 (Nudge)**: High-level observations, invariant discovery, problem reduction. May name a broad category (e.g., "Think about two pointers or binary search"), but *must not* specify the concrete algorithm.
+- **Level 2 (Approach)**: Mathematical or algorithmic approach described in English (e.g., "Sort intervals by finish time and maintain a priority queue"). *No code or variable names.*
+- **Level 3 (Pseudocode)**: Abstract pseudocode and edge-case handling. *No language-specific copy-paste solutions.*
