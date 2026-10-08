@@ -50,3 +50,71 @@ class CoachState(TypedDict):
     problem: ProblemChoice | None
     problem_statement: str
     hint_level: int
+    draft: HintDraft | None
+    verdict: HintVerdict | None
+    revisions: int
+    history: list[dict[str, Any]]
+    user_action: str | None
+```
+
+---
+
+## 2. SQLite Database DDL (`app/data/db.py`)
+
+```sql
+CREATE TABLE IF NOT EXISTS users (
+    handle TEXT PRIMARY KEY,
+    current_rating INTEGER,
+    max_rating INTEGER,
+    last_synced_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+);
+
+CREATE TABLE IF NOT EXISTS problems (
+    contest_id INTEGER NOT NULL,
+    idx TEXT NOT NULL,
+    name TEXT NOT NULL,
+    rating INTEGER,
+    tags_json TEXT NOT NULL,
+    PRIMARY KEY (contest_id, idx)
+);
+
+CREATE TABLE IF NOT EXISTS submissions (
+    id INTEGER PRIMARY KEY,
+    user_handle TEXT NOT NULL,
+    contest_id INTEGER NOT NULL,
+    idx TEXT NOT NULL,
+    verdict TEXT NOT NULL,
+    programming_language TEXT NOT NULL,
+    pass_count INTEGER DEFAULT 0,
+    time_consumed_ms INTEGER DEFAULT 0,
+    memory_consumed_bytes INTEGER DEFAULT 0,
+    creation_time_seconds INTEGER NOT NULL,
+    FOREIGN KEY (user_handle) REFERENCES users(handle),
+    FOREIGN KEY (contest_id, idx) REFERENCES problems(contest_id, idx)
+);
+
+CREATE TABLE IF NOT EXISTS topic_stats (
+    user_handle TEXT NOT NULL,
+    tag TEXT NOT NULL,
+    total_attempts INTEGER DEFAULT 0,
+    total_accepted INTEGER DEFAULT 0,
+    weighted_failure_score REAL DEFAULT 0.0,
+    avg_rating_solved REAL,
+    last_attempt_ts INTEGER,
+    PRIMARY KEY (user_handle, tag),
+    FOREIGN KEY (user_handle) REFERENCES users(handle)
+);
+
+CREATE TABLE IF NOT EXISTS sessions (
+    session_id TEXT PRIMARY KEY,
+    user_handle TEXT NOT NULL,
+    contest_id INTEGER NOT NULL,
+    idx TEXT NOT NULL,
+    hints_requested INTEGER DEFAULT 0,
+    keeper_rejections INTEGER DEFAULT 0,
+    final_outcome TEXT, -- 'SOLVED', 'SKIPPED', 'ABANDONED'
+    started_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+    ended_at TIMESTAMP,
+    FOREIGN KEY (user_handle) REFERENCES users(handle),
+    FOREIGN KEY (contest_id, idx) REFERENCES problems(contest_id, idx)
+);
