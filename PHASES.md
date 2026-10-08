@@ -56,3 +56,53 @@ Phase 8: [Optional] Sandbox Code Judge Execution (1 week)
 - **Goal**: Implement the core multi-agent information asymmetry loop with LLM prompts.
 - **Tasks**:
   1. Create private reference storage table and ingestion pipeline for reference solutions.
+  2. Implement `app/prompts/tutor_prompt.py` with strict Level 1, Level 2, Level 3 guidelines.
+  3. Implement `app/prompts/keeper_prompt.py` with adversarial safety and spoiler auditing.
+  4. Connect LLMs: Strong model for Tutor (e.g., Claude 3.5 Sonnet / GPT-4o / Gemini Pro), efficient model for Keeper (e.g., GPT-4o-mini / Gemini Flash).
+  5. Add SQLite checkpointer (`SqliteSaver`) for session persistence across interrupts.
+- **Definition of Done (DoD)**: End-to-end hint session runs; Keeper actively detects and rejects over-revealing hints; revision loop terminates safely within 3 turns.
+
+---
+
+### Phase 4: Submission Checking & Feedback Loop
+- **Goal**: Automatically check user submissions and adapt coaching dynamically.
+- **Tasks**:
+  1. Implement `check_submission` node in `app/graph.py` to poll CF API for active problem verdict.
+  2. If Accepted (AC): Update stats in SQLite, log session outcome, and route back to Analyst.
+  3. If WA/TLE/MLE: Route to Tutor with targeted hint prompt highlighting potential pitfalls without revealing the answer.
+- **Definition of Done (DoD)**: Graph responds dynamically to real submissions, distinguishing AC from WA.
+
+---
+
+### Phase 5: Single-Chain Baseline
+- **Goal**: Build a single-agent baseline without a Keeper to serve as an experimental control.
+- **Tasks**:
+  1. Implement `evals/baseline_single.py` where a single prompt generates hints directly.
+- **Definition of Done (DoD)**: Baseline produces reproducible hint outputs on test problem sets.
+
+---
+
+### Phase 6: Evals & Leakage Benchmarking
+- **Goal**: Scientifically prove that the multi-agent system prevents leakage compared to single-agent baselines.
+- **Tasks**:
+  1. Build evaluation dataset in `evals/dataset.json` (20-30 diverse Codeforces problems across DP, Graphs, Greedy, Math).
+  2. Build `evals/leakage_eval.py` utilizing an independent LLM judge with full solution access.
+  3. Calculate metrics: Leakage Rate, Keeper Rejection Rate, Revision Count, Token Cost, Latency.
+- **Definition of Done (DoD)**: Complete comparative evaluation table generated and documented in `README.md`.
+
+---
+
+### Phase 7: Streamlit UI & Visual Dashboard
+- **Goal**: Deliver a polished, interactive web interface for competitive programmers.
+- **Tasks**:
+  1. Implement `app/ui/streamlit_app.py`.
+  2. UI features: CF Handle input, Radar/Bar chart of weak topics, Problem statement viewer, 3-Tier Hint Buttons, Real-time multi-agent reasoning trace.
+- **Definition of Done (DoD)**: User can complete a full coaching session in the browser with live agent feedback.
+
+---
+
+### Phase 8 (Optional): Sandbox Code Judge
+- **Goal**: Local code execution against test cases.
+- **Tasks**:
+  1. Docker or Judge0 integration with memory and CPU cgroups.
+  2. Brute-force test generator for automated verification.
