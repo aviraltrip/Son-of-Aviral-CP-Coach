@@ -59,3 +59,55 @@ def parse_keeper_verdict(raw_content: str, level: int) -> HintVerdict:
             reason=f"Approved under Level {level} standards.",
             leak_severity="none"
         )
+
+def keeper_node(state: CoachState) -> dict[str, Any]:
+    """Audit the tutor's hint draft against private reference solution and rubric."""
+    draft = state.get("draft")
+    revisions = state.get("revisions", 0)
+    level = state.get("hint_level", 1)
+    problem = state.get("problem")
+    problem_stmt = state.get("problem_statement", "")
+    db_path = os.getenv("DATABASE_PATH", "cp_coach.db")
+    
+    if not draft:
+        return {
+            "verdict": HintVerdict(approved=False, reason="No draft provided", leak_severity="minor"),
+            "revisions": revisions + 1
+        }
+        
+    cid = problem.contest_id if problem else 1900
+    idx = problem.index if problem else "C"
+    reference_code = load_or_create_reference(cid, idx, db_path=db_path)
+    
+    llm = get_llm(model_type="keeper")
+    prompt = build_keeper_prompt(problem_stmt, reference_code, level, draft.text)
+    
+    try:
+        resp = llm.invoke([
+            {"role": "system", "content": KEEPER_SYSTEM_PROMPT},
+            {"role": "user", "content": prompt}
+        ])
+        raw_text = resp.content if hasattr(resp, "content") else str(resp)
+        verdict = parse_keeper_verdict(raw_text, level)
+    except Exception as e:
+        logger.warning(f"Keeper audit LLM call failed: {e}. Applying rule-based check.")
+        if level == 1 and "dp[" in draft.text:
+            verdict = HintVerdict(approved=False, reason="Leaked DP recurrence at Level 1.", leak_severity="major")
+        else:
+            verdict = HintVerdict(approved=True, reason="Rule-based approval.", leak_severity="none")
+
+    new_revisions = revisions if verdict.approved else revisions + 1
+    updates: dict[str, Any] = {
+        "verdict": verdict,
+        "revisions": new_revisions
+    }
+    
+    # 3-revision cap fallback
+    if not verdict.approved and new_revisions >= 3:
+        draft.text = SAFE_FALLBACK_HINT
+        verdict.approved = True
+        verdict.reason = "Approved via Safe Generic Fallback (Max 3 revisions reached)."
+        updates["draft"] = draft
+        updates["verdict"] = verdict
+        
+    return updates
