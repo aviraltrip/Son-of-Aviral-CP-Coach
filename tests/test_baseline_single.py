@@ -110,3 +110,37 @@ def test_run_baseline_batch(tmp_path):
     with open(out_file, "r", encoding="utf-8") as fp:
         saved_data = json.load(fp)
     assert len(saved_data) == 6
+
+from evals.baseline_single import generate_baseline_conversation, load_problems_from_db
+from app.data.db import init_db, upsert_problems
+
+def test_generate_baseline_conversation():
+    """Verify generate_baseline_conversation produces 3 consecutive turns."""
+    mock_llm = MockLLM()
+    turns = generate_baseline_conversation(
+        problem_statement="Find shortest cycle in directed graph.",
+        problem_name="TestGraphProblem",
+        llm=mock_llm
+    )
+
+    assert len(turns) == 3
+    assert turns[0]["hint_level"] == 1
+    assert turns[1]["hint_level"] == 2
+    assert turns[2]["hint_level"] == 3
+    for t in turns:
+        assert len(t["hint_text"]) > 0
+
+def test_load_problems_from_db(tmp_path):
+    """Verify load_problems_from_db pulls candidate problems from SQLite."""
+    db_file = str(tmp_path / "test_eval_db.db")
+    init_db(db_file)
+    sample_problems = [
+        {"contestId": 1900, "index": "A", "name": "Cover in Water", "rating": 800, "tags": ["greedy"]},
+        {"contestId": 1900, "index": "B", "name": "Laura and Operations", "rating": 1100, "tags": ["math"]},
+        {"contestId": 1900, "index": "C", "name": "Anji's Binary Tree", "rating": 1500, "tags": ["dp", "trees"]},
+    ]
+    upsert_problems(sample_problems, db_path=db_file)
+
+    loaded = load_problems_from_db(limit=2, db_path=db_file)
+    assert len(loaded) == 2
+    assert loaded[0]["contest_id"] == 1900

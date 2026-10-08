@@ -126,6 +126,36 @@ def run_baseline_batch(
 
     return results
 
+def generate_baseline_conversation(
+    problem_statement: str,
+    problem_name: str = "",
+    llm: Any | None = None
+) -> list[dict[str, Any]]:
+    """Simulate a progressive multi-turn hint conversation (Levels 1 -> 2 -> 3) using a single direct LLM."""
+    history: list[dict[str, Any]] = []
+    turns: list[dict[str, Any]] = []
+    
+    for level in [1, 2, 3]:
+        hint_res = generate_baseline_hint(
+            problem_statement=problem_statement,
+            hint_level=level,
+            history=history,
+            llm=llm,
+            problem_name=problem_name
+        )
+        turns.append(hint_res)
+        
+        # Update history for next turn
+        history.append({"role": "user", "content": f"Can you give me a Level {level} hint?"})
+        history.append({"role": "assistant", "content": hint_res["hint_text"]})
+        
+    return turns
+
+def load_problems_from_db(limit: int = 10, db_path: str = "cp_coach.db") -> list[dict[str, Any]]:
+    """Load problems from local SQLite database for baseline evaluation."""
+    from app.data.db import get_candidate_problems
+    return get_candidate_problems(min_rating=800, max_rating=2000, limit=limit, db_path=db_path)
+
 def main() -> None:
     """CLI entrypoint for running single-agent baseline hints."""
     import argparse
@@ -134,8 +164,33 @@ def main() -> None:
     parser.add_argument("--index", type=str, default="C", help="Problem Index")
     parser.add_argument("--level", type=int, default=1, choices=[1, 2, 3], help="Hint Level (1-3)")
     parser.add_argument("--statement", type=str, default=None, help="Inline statement text")
+    parser.add_argument("--all-levels", action="store_true", help="Generate all 3 hint levels")
+    parser.add_argument("--from-db", action="store_true", help="Load problems from SQLite database")
+    parser.add_argument("--limit", type=int, default=5, help="Number of problems to load from DB")
     parser.add_argument("--output", type=str, default=None, help="Path to save output JSON")
     args = parser.parse_args()
+
+    if args.from_db:
+        problems = load_problems_from_db(limit=args.limit)
+        print(f"\n⚡ Loaded {len(problems)} problems from SQLite database. Running baseline batch...")
+        results = run_baseline_batch(problems, output_file=args.output)
+        print(f"✅ Generated {len(results)} baseline hint evaluations.")
+        return
+
+    if args.all_levels:
+        stmt = args.statement or f"Problem {args.contest}{args.index} on Codeforces."
+        turns = generate_baseline_conversation(stmt, problem_name=f"{args.contest}{args.index}")
+        print(f"\n{'='*60}")
+        print(f" Single-Agent Baseline Multi-Turn Progression ({args.contest}{args.index})")
+        print(f"{'='*60}")
+        for t in turns:
+            print(f"\n[Level {t['hint_level']}] (Latency: {t['latency_seconds']}s):")
+            print(f"  {t['hint_text']}")
+        print(f"\n{'='*60}\n")
+        if args.output:
+            with open(args.output, "w", encoding="utf-8") as fp:
+                json.dump(turns, fp, indent=2)
+        return
 
     stmt = args.statement or f"Problem {args.contest}{args.index} on Codeforces."
     res = generate_baseline_hint(stmt, args.level, problem_name=f"{args.contest}{args.index}")
