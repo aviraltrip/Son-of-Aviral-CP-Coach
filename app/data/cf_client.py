@@ -139,6 +139,23 @@ def get_problemset_problems(ttl_seconds: int = 86400) -> list[dict[str, Any]]:
         return problems
     return []
 
+def get_latest_problem_submission(
+    handle: str,
+    contest_id: int,
+    idx: str,
+    count: int = 50,
+    ttl_seconds: int = 5
+) -> dict[str, Any] | None:
+    """Fetch user submissions and find the latest submission for a specific problem (contest_id, idx)."""
+    submissions = get_user_status(handle, count=count, ttl_seconds=ttl_seconds)
+    for s in submissions:
+        p = s.get("problem", {})
+        sub_cid = p.get("contestId") or s.get("contest_id")
+        sub_idx = p.get("index") or s.get("idx")
+        if sub_cid == contest_id and str(sub_idx).upper() == str(idx).upper():
+            return s
+    return None
+
 from app.data.db import upsert_user, upsert_problems, upsert_submissions
 
 def sync_user_data(handle: str, max_submissions: int = 500, ttl_seconds: int = 60, db_path: str | None = None) -> tuple[dict[str, Any], int]:
