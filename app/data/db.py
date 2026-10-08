@@ -44,3 +44,32 @@ def init_db(db_path: str = DEFAULT_DB_PATH) -> None:
                 PRIMARY KEY (contest_id, idx)
             );
         """)
+        conn.execute("""
+            CREATE TABLE IF NOT EXISTS submissions (
+                id INTEGER PRIMARY KEY,
+                user_handle TEXT NOT NULL,
+                contest_id INTEGER NOT NULL,
+                idx TEXT NOT NULL,
+                verdict TEXT NOT NULL,
+                programming_language TEXT NOT NULL,
+                pass_count INTEGER DEFAULT 0,
+                time_consumed_ms INTEGER DEFAULT 0,
+                memory_consumed_bytes INTEGER DEFAULT 0,
+                creation_time_seconds INTEGER NOT NULL,
+                FOREIGN KEY (user_handle) REFERENCES users(handle) ON DELETE CASCADE,
+                FOREIGN KEY (contest_id, idx) REFERENCES problems(contest_id, idx) ON DELETE CASCADE
+            );
+        """)
+        conn.execute("""
+            CREATE TABLE IF NOT EXISTS topic_stats (
+                user_handle TEXT NOT NULL,
+                tag TEXT NOT NULL,
+                total_attempts INTEGER DEFAULT 0,
+                total_accepted INTEGER DEFAULT 0,
+                weighted_failure_score REAL DEFAULT 0.0,
+                avg_rating_solved REAL,
+                last_attempt_ts INTEGER,
+                PRIMARY KEY (user_handle, tag),
+                FOREIGN KEY (user_handle) REFERENCES users(handle) ON DELETE CASCADE
+            );
+        """)
