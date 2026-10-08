@@ -22,3 +22,25 @@ def get_db_connection(db_path: str = DEFAULT_DB_PATH) -> Generator[sqlite3.Conne
         raise
     finally:
         conn.close()
+
+def init_db(db_path: str = DEFAULT_DB_PATH) -> None:
+    """Initialize SQLite tables idempotently."""
+    with get_db_connection(db_path) as conn:
+        conn.execute("""
+            CREATE TABLE IF NOT EXISTS users (
+                handle TEXT PRIMARY KEY,
+                current_rating INTEGER,
+                max_rating INTEGER,
+                last_synced_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+            );
+        """)
+        conn.execute("""
+            CREATE TABLE IF NOT EXISTS problems (
+                contest_id INTEGER NOT NULL,
+                idx TEXT NOT NULL,
+                name TEXT NOT NULL,
+                rating INTEGER,
+                tags_json TEXT NOT NULL,
+                PRIMARY KEY (contest_id, idx)
+            );
+        """)
