@@ -247,13 +247,14 @@ def run_cli_session(handle: str = "tourist") -> None:
         print("  1. Request Hint Level 1 (Nudge)")
         print("  2. Request Hint Level 2 (Approach)")
         print("  3. Request Hint Level 3 (Pseudocode)")
-        print("  4. Submit solution -> Accepted (AC)")
-        print("  5. Submit solution -> Wrong Answer (WA)")
-        print("  6. Submit solution -> Time Limit Exceeded (TLE)")
-        print("  7. Skip Problem")
-        print("  8. Exit Session")
+        print("  4. 🔄 Poll live Codeforces submission (CF API)")
+        print("  5. Simulate Submission -> Accepted (AC)")
+        print("  6. Simulate Submission -> Wrong Answer (WA)")
+        print("  7. Simulate Submission -> Time Limit Exceeded (TLE)")
+        print("  8. Skip Problem")
+        print("  9. Exit Session")
         
-        choice = input("\nEnter choice (1-8): ").strip()
+        choice = input("\nEnter choice (1-9): ").strip()
         if choice in ["1", "2", "3"]:
             lvl = int(choice)
             graph.update_state(config, {
@@ -263,39 +264,46 @@ def run_cli_session(handle: str = "tourist") -> None:
             }, as_node="wait_for_user")
             graph.invoke(None, config=config)
         elif choice == "4":
+            print("\n📡 Polling latest submission on Codeforces...")
+            graph.update_state(config, {
+                "user_action": "submitted",
+                "last_submission_verdict": None
+            }, as_node="wait_for_user")
+            graph.invoke(None, config=config)
+        elif choice == "5":
             graph.update_state(config, {
                 "user_action": "submitted",
                 "last_submission_verdict": "OK"
             }, as_node="wait_for_user")
             graph.invoke(None, config=config)
             print("\n✅ Submission Accepted! Loading next targeted problem...")
-        elif choice == "5":
+        elif choice == "6":
             graph.update_state(config, {
                 "user_action": "submitted",
                 "last_submission_verdict": "WRONG_ANSWER"
             }, as_node="wait_for_user")
             graph.invoke(None, config=config)
             print("\n❌ Verdict: Wrong Answer. Coach is preparing a targeted diagnostic hint...")
-        elif choice == "6":
+        elif choice == "7":
             graph.update_state(config, {
                 "user_action": "submitted",
                 "last_submission_verdict": "TIME_LIMIT_EXCEEDED"
             }, as_node="wait_for_user")
             graph.invoke(None, config=config)
             print("\n⏱️ Verdict: Time Limit Exceeded. Coach is analyzing asymptotic complexity...")
-        elif choice == "7":
+        elif choice == "8":
             graph.update_state(config, {
                 "user_action": "skip",
                 "last_submission_verdict": None
             }, as_node="wait_for_user")
             graph.invoke(None, config=config)
             print("\n⏭️ Problem skipped. Selecting alternative problem...")
-        elif choice == "8":
+        elif choice == "9":
             graph.update_state(config, {"user_action": "done"}, as_node="wait_for_user")
             graph.invoke(None, config=config)
             break
         else:
-            print("Invalid option. Please choose 1-8.")
+            print("Invalid option. Please choose 1-9.")
 
 if __name__ == "__main__":
     h = sys.argv[1] if len(sys.argv) > 1 else "tourist"
