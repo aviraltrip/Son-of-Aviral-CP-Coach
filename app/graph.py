@@ -136,6 +136,7 @@ def run_cli_session(handle: str = "tourist") -> None:
     print(f"         Session Thread: {thread_id[:8]}... | User: {handle}")
     print(f"{'='*60}")
     print(f"Analyzing Codeforces profile history for '{handle}'...")
+    print("⚡ Live sync & deterministic stats engine active (Rate limit: 1req/2s)...")
     
     # Initial state
     graph.invoke({
