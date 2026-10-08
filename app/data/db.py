@@ -120,3 +120,60 @@ def get_user(handle: str, db_path: str = DEFAULT_DB_PATH) -> dict[str, Any] | No
         cursor = conn.execute("SELECT * FROM users WHERE handle = ?;", (handle.lower(),))
         row = cursor.fetchone()
         return dict(row) if row else None
+
+def upsert_problems(problems_data: list[dict[str, Any]], db_path: str = DEFAULT_DB_PATH) -> int:
+    """Batch insert or update problems in the catalog."""
+    init_db(db_path)
+    inserted = 0
+    with get_db_connection(db_path) as conn:
+        for p in problems_data:
+            contest_id = p.get("contestId") or p.get("contest_id")
+            idx = p.get("index") or p.get("idx")
+            name = p.get("name")
+            rating = p.get("rating")
+            tags = p.get("tags", [])
+            if contest_id and idx and name:
+                tags_json = json.dumps(tags)
+                conn.execute("""
+                    INSERT INTO problems (contest_id, idx, name, rating, tags_json)
+                    VALUES (?, ?, ?, ?, ?)
+                    ON CONFLICT(contest_id, idx) DO UPDATE SET
+                        name = excluded.name,
+                        rating = excluded.rating,
+                        tags_json = excluded.tags_json;
+                """, (contest_id, idx, name, rating, tags_json))
+                inserted += 1
+    return inserted
+
+def get_problem(contest_id: int, idx: str, db_path: str = DEFAULT_DB_PATH) -> dict[str, Any] | None:
+    """Retrieve a single problem by contest ID and index."""
+    init_db(db_path)
+    with get_db_connection(db_path) as conn:
+        cursor = conn.execute("SELECT * FROM problems WHERE contest_id = ? AND idx = ?;", (contest_id, idx))
+        row = cursor.fetchone()
+        if not row:
+            return None
+        d = dict(row)
+        d["tags"] = json.loads(d["tags_json"])
+        return d
+
+def get_candidate_problems(min_rating: int, max_rating: int, tags: list[str] | None = None, limit: int = 100, db_path: str = DEFAULT_DB_PATH) -> list[dict[str, Any]]:
+    """Retrieve candidate practice problems within rating boundaries."""
+    init_db(db_path)
+    with get_db_connection(db_path) as conn:
+        cursor = conn.execute("""
+            SELECT * FROM problems
+            WHERE rating >= ? AND rating <= ?
+            ORDER BY contest_id DESC
+            LIMIT ?;
+        """, (min_rating, max_rating, limit))
+        results = []
+        for row in cursor.fetchall():
+            d = dict(row)
+            d["tags"] = json.loads(d["tags_json"])
+            if tags:
+                if any(t in d["tags"] for t in tags):
+                    results.append(d)
+            else:
+                results.append(d)
+        return results
