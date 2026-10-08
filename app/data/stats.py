@@ -26,3 +26,38 @@ def apply_bayesian_shrinkage(raw_score: float, n_attempts: int, global_mean: flo
     if n_attempts <= 0:
         return global_mean
     return (n_attempts * raw_score + prior_weight * global_mean) / (n_attempts + prior_weight)
+
+def aggregate_tag_statistics(submissions: list[dict[str, Any]], user_rating: int | None, current_ts: int | None = None) -> dict[str, dict[str, Any]]:
+    """Aggregate per-tag attempt metrics, weighted failures, and solve counts."""
+    tag_data: dict[str, dict[str, Any]] = {}
+    
+    for s in submissions:
+        tags = s.get("tags", [])
+        verdict = s.get("verdict", "")
+        p_rating = s.get("problem_rating") or s.get("rating")
+        ts = s.get("creation_time_seconds") or s.get("creationTimeSeconds", int(time.time()))
+        
+        is_ac = (verdict == "OK")
+        recency = compute_recency_decay(ts, current_ts)
+        difficulty = compute_difficulty_weight(p_rating, user_rating)
+        weight = recency * difficulty
+        
+        for t in tags:
+            if t not in tag_data:
+                tag_data[t] = {
+                    "total_attempts": 0,
+                    "total_accepted": 0,
+                    "weighted_attempts": 0.0,
+                    "weighted_failures": 0.0,
+                    "solved_ratings": []
+                }
+            tag_data[t]["total_attempts"] += 1
+            tag_data[t]["weighted_attempts"] += weight
+            if is_ac:
+                tag_data[t]["total_accepted"] += 1
+                if p_rating:
+                    tag_data[t]["solved_ratings"].append(p_rating)
+            else:
+                tag_data[t]["weighted_failures"] += weight
+                
+    return tag_data
