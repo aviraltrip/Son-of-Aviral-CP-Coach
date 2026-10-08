@@ -118,3 +118,24 @@ CREATE TABLE IF NOT EXISTS sessions (
     FOREIGN KEY (user_handle) REFERENCES users(handle),
     FOREIGN KEY (contest_id, idx) REFERENCES problems(contest_id, idx)
 );
+
+CREATE TABLE IF NOT EXISTS references (
+    contest_id INTEGER NOT NULL,
+    idx TEXT NOT NULL,
+    solution_code TEXT,
+    solution_editorial TEXT,
+    source TEXT DEFAULT 'manual', -- 'manual', 'scraped', 'synthetic_validated'
+    PRIMARY KEY (contest_id, idx),
+    FOREIGN KEY (contest_id, idx) REFERENCES problems(contest_id, idx)
+);
+```
+
+---
+
+## 3. Hint Rubrics & Verification Rules
+
+| Hint Level | Allowed Content | Strictly Forbidden Content |
+| :--- | :--- | :--- |
+| **Level 1: Nudge** | • Rephrasing problem constraints.<br>• Observing monotonic properties or parity.<br>• Suggesting broad concept families (e.g. "consider two pointers vs binary search"). | • Specific algorithmic names (e.g. "use Tarjan's algorithm", "use Dijkstra").<br>• Recurrence relations or formulas.<br>• Pseudo-code or variable definitions. |
+| **Level 2: Approach** | • Step-by-step conceptual workflow.<br>• Data structure selection (e.g. "Maintain a Max-Heap for the top k items").<br>• Asymptotic complexity targets (e.g. "This needs to run in O(N log N)"). | • Code snippets in any programming language.<br>• Exact implementation details.<br>• Direct copy-pasteable formulas. |
+| **Level 3: Pseudocode** | • Language-agnostic structured pseudocode.<br>• Explicit base cases & loop invariants.<br>• Edge-case checklist (overflow, zero-case, empty array). | • Complete runnable source code in C++, Python, Java, etc.<br>• Solution paste from competitive programming platforms. |
