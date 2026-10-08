@@ -308,3 +308,26 @@ def get_reference_solution(contest_id: int, idx: str, db_path: str = DEFAULT_DB_
         cursor = conn.execute('SELECT * FROM "references" WHERE contest_id = ? AND idx = ?;', (contest_id, idx))
         row = cursor.fetchone()
         return dict(row) if row else None
+
+def create_session(session_id: str, handle: str, contest_id: int, idx: str, db_path: str = DEFAULT_DB_PATH) -> None:
+    """Create a new coaching session record."""
+    init_db(db_path)
+    with get_db_connection(db_path) as conn:
+        conn.execute("""
+            INSERT INTO sessions (session_id, user_handle, contest_id, idx, hints_requested, keeper_rejections, started_at)
+            VALUES (?, ?, ?, ?, 0, 0, CURRENT_TIMESTAMP)
+            ON CONFLICT(session_id) DO NOTHING;
+        """, (session_id, handle.lower(), contest_id, idx))
+
+def update_session_outcome(session_id: str, final_outcome: str, hints_requested: int = 0, keeper_rejections: int = 0, db_path: str = DEFAULT_DB_PATH) -> None:
+    """Update coaching session outcome ('SOLVED', 'SKIPPED', 'ABANDONED')."""
+    init_db(db_path)
+    with get_db_connection(db_path) as conn:
+        conn.execute("""
+            UPDATE sessions
+            SET final_outcome = ?,
+                hints_requested = ?,
+                keeper_rejections = ?,
+                ended_at = CURRENT_TIMESTAMP
+            WHERE session_id = ?;
+        """, (final_outcome, hints_requested, keeper_rejections, session_id))
