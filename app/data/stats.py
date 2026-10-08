@@ -161,3 +161,25 @@ def select_next_problem(
         tags=["dp", "trees"],
         reason="Default recommended tree dynamic programming problem."
     )
+
+def recalculate_user_topic_stats(handle: str, db_path: str = "cp_coach.db") -> list[TopicStat]:
+    """Retrieve user submissions from DB, recompute topic statistics, and save them back to SQLite."""
+    from app.data.db import get_user, get_user_submissions, save_topic_stats
+    user = get_user(handle, db_path=db_path)
+    rating = user.get("current_rating") if user else None
+    submissions = get_user_submissions(handle, limit=1000, db_path=db_path)
+    topic_stats = compute_weak_topics(submissions, rating)
+    
+    stats_to_save = [
+        {
+            "tag": t.tag,
+            "total_attempts": t.n_attempts,
+            "total_accepted": int(round(t.solved_ratio * t.n_attempts)),
+            "weighted_failure_score": t.weighted_failure_score,
+            "avg_rating_solved": t.avg_rating,
+            "last_attempt_ts": int(time.time())
+        }
+        for t in topic_stats
+    ]
+    save_topic_stats(handle, stats_to_save, db_path=db_path)
+    return topic_stats
