@@ -75,11 +75,13 @@ Phase 8: [Optional] Sandbox Code Judge Execution (1 week)
 
 ---
 
-### Phase 5: Single-Chain Baseline
+### Phase 5: Single-Chain Baseline [COMPLETE]
 - **Goal**: Build a single-agent baseline without a Keeper to serve as an experimental control.
 - **Tasks**:
-  1. Implement `evals/baseline_single.py` where a single prompt generates hints directly.
-- **Definition of Done (DoD)**: Baseline produces reproducible hint outputs on test problem sets.
+  1. Implement `evals/baseline_single.py` where a single prompt generates hints directly. [DONE]
+  2. Implement prompt formatting, direct hint generation, and batch runner in `evals/baseline_single.py`. [DONE]
+  3. Add unit tests for single baseline in `tests/test_baseline_single.py`. [DONE]
+- **Definition of Done (DoD)**: Baseline produces reproducible hint outputs on test problem sets. [VERIFIED]
 
 ---
 
