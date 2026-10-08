@@ -246,3 +246,39 @@ def get_attempted_problem_keys(handle: str, db_path: str = DEFAULT_DB_PATH) -> s
             WHERE user_handle = ?;
         """, (handle.lower(),))
         return {(row["contest_id"], row["idx"]) for row in cursor.fetchall()}
+
+def save_topic_stats(handle: str, topic_stats_list: list[dict[str, Any]], db_path: str = DEFAULT_DB_PATH) -> None:
+    """Save computed topic statistics for a user."""
+    init_db(db_path)
+    handle_clean = handle.lower()
+    with get_db_connection(db_path) as conn:
+        for stat in topic_stats_list:
+            conn.execute("""
+                INSERT INTO topic_stats (user_handle, tag, total_attempts, total_accepted, weighted_failure_score, avg_rating_solved, last_attempt_ts)
+                VALUES (?, ?, ?, ?, ?, ?, ?)
+                ON CONFLICT(user_handle, tag) DO UPDATE SET
+                    total_attempts = excluded.total_attempts,
+                    total_accepted = excluded.total_accepted,
+                    weighted_failure_score = excluded.weighted_failure_score,
+                    avg_rating_solved = excluded.avg_rating_solved,
+                    last_attempt_ts = excluded.last_attempt_ts;
+            """, (
+                handle_clean,
+                stat.get("tag"),
+                stat.get("total_attempts", stat.get("n_attempts", 0)),
+                stat.get("total_accepted", 0),
+                stat.get("weighted_failure_score", 0.0),
+                stat.get("avg_rating_solved", stat.get("avg_rating")),
+                stat.get("last_attempt_ts")
+            ))
+
+def get_user_topic_stats(handle: str, db_path: str = DEFAULT_DB_PATH) -> list[dict[str, Any]]:
+    """Retrieve saved topic statistics for a user ordered by failure score descending."""
+    init_db(db_path)
+    with get_db_connection(db_path) as conn:
+        cursor = conn.execute("""
+            SELECT * FROM topic_stats
+            WHERE user_handle = ?
+            ORDER BY weighted_failure_score DESC;
+        """, (handle.lower(),))
+        return [dict(row) for row in cursor.fetchall()]
