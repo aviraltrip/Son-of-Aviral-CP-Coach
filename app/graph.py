@@ -1,5 +1,6 @@
-"""Parent LangGraph StateGraph, conditional edges, routing, and interrupt."""
+import os
 import sys
+import logging
 from typing import Literal, Any
 from langgraph.graph import StateGraph, START, END
 from langgraph.checkpoint.memory import MemorySaver
@@ -8,6 +9,11 @@ from app.state import CoachState
 from app.agents.analyst import analyst_node
 from app.agents.tutor import tutor_node
 from app.agents.keeper import keeper_node
+from app.data.cf_client import get_latest_problem_submission
+from app.data.db import record_problem_submission
+from app.data.stats import recalculate_user_topic_stats
+
+logger = logging.getLogger(__name__)
 
 def get_checkpointer(persisted: bool = False) -> Any:
     """Return memory or persistent checkpointer instance."""
@@ -27,8 +33,45 @@ def route_user_action(state: CoachState) -> Literal["tutor", "check_submission",
     return "tutor"
 
 def check_submission_node(state: CoachState) -> dict[str, Any]:
-    """Evaluate recent submission verdict and update history."""
-    verdict = state.get("last_submission_verdict", "OK")
+    """Evaluate recent submission verdict, update DB records and topic stats, and append to history."""
+    handle = state.get("handle")
+    problem = state.get("problem")
+    explicit_verdict = state.get("last_submission_verdict")
+    db_path = os.getenv("DATABASE_PATH", "cp_coach.db")
+    
+    verdict = explicit_verdict
+    
+    # If no explicit verdict was set, query Codeforces API for latest submission
+    if not verdict and handle and problem:
+        try:
+            sub = get_latest_problem_submission(handle, problem.contest_id, problem.index, ttl_seconds=0)
+            if sub:
+                verdict = sub.get("verdict", "TESTING")
+            else:
+                verdict = "NO_SUBMISSION_FOUND"
+        except Exception as e:
+            logger.warning(f"Failed to poll live Codeforces submission for {handle}: {e}")
+            verdict = "NO_SUBMISSION_FOUND"
+            
+    if not verdict:
+        verdict = "OK"
+
+    # Record submission into database
+    if handle and problem:
+        try:
+            record_problem_submission(
+                handle=handle,
+                contest_id=problem.contest_id,
+                idx=problem.index,
+                verdict=verdict,
+                problem_name=problem.name,
+                problem_rating=problem.rating,
+                tags=problem.tags,
+                db_path=db_path
+            )
+        except Exception as e:
+            logger.warning(f"Could not record submission in SQLite: {e}")
+
     history = list(state.get("history", []))
     history.append({
         "role": "system",
@@ -37,18 +80,36 @@ def check_submission_node(state: CoachState) -> dict[str, Any]:
         "content": f"Submission check completed with verdict: {verdict}"
     })
     
-    updates: dict[str, Any] = {"history": history}
+    updates: dict[str, Any] = {
+        "history": history,
+        "last_submission_verdict": verdict
+    }
+    
     if verdict == "OK":
+        if handle:
+            try:
+                recalculate_user_topic_stats(handle, db_path=db_path)
+            except Exception as e:
+                logger.warning(f"Could not recalculate topic stats: {e}")
         updates["draft"] = None
         updates["verdict"] = None
         updates["revisions"] = 0
+        updates["problem"] = None
+        updates["problem_statement"] = ""
+    elif verdict in ("WRONG_ANSWER", "TIME_LIMIT_EXCEEDED", "MEMORY_LIMIT_EXCEEDED", "RUNTIME_ERROR", "COMPILATION_ERROR", "CHALLENGED"):
+        updates["draft"] = None
+        updates["verdict"] = None
+        updates["revisions"] = 0
+        
     return updates
 
-def route_submission(state: CoachState) -> Literal["analyst", "tutor"]:
-    """Route after checking submission: loop to analyst on AC, route to tutor on WA/TLE."""
+def route_submission(state: CoachState) -> Literal["analyst", "tutor", "wait_for_user"]:
+    """Route after checking submission: loop to analyst on AC, route to tutor on WA/TLE, or wait if pending."""
     verdict = state.get("last_submission_verdict", "OK")
     if verdict == "OK":
         return "analyst"
+    elif verdict in ("NO_SUBMISSION_FOUND", "TESTING", "PENDING"):
+        return "wait_for_user"
     return "tutor"
 
 def route_keeper_verdict(state: CoachState) -> Literal["tutor", "wait_for_user"]:
@@ -106,13 +167,14 @@ def create_coach_graph(checkpointer: Any = None) -> Any:
         }
     )
     
-    # Submission routing: AC -> analyst | WA/TLE -> tutor (targeted hint)
+    # Submission routing: AC -> analyst | WA/TLE -> tutor (targeted hint) | Pending -> wait_for_user
     workflow.add_conditional_edges(
         "check_submission",
         route_submission,
         {
             "analyst": "analyst",
-            "tutor": "tutor"
+            "tutor": "tutor",
+            "wait_for_user": "wait_for_user"
         }
     )
     
