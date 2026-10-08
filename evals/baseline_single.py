@@ -46,3 +46,38 @@ def build_baseline_prompt(
         
     prompt += "Provide the hint now:"
     return prompt
+
+from app.agents.llm import get_llm
+
+def generate_baseline_hint(
+    problem_statement: str,
+    hint_level: int,
+    history: list[dict[str, Any]] | None = None,
+    llm: Any | None = None,
+    problem_name: str = ""
+) -> dict[str, Any]:
+    """Generate a hint using a single direct LLM call without Keeper audit."""
+    prompt = build_baseline_prompt(problem_statement, hint_level, history)
+    model = llm or get_llm(model_type="tutor")
+    model_name = getattr(model, "model_name", getattr(model, "model", "default-llm"))
+    
+    start_time = time.perf_counter()
+    try:
+        resp = model.invoke([
+            {"role": "system", "content": BASELINE_SYSTEM_PROMPT},
+            {"role": "user", "content": prompt}
+        ])
+        text = resp.content.strip() if hasattr(resp, "content") else str(resp).strip()
+    except Exception as e:
+        logger.warning(f"Baseline LLM invocation failed: {e}")
+        text = f"Observe problem constraints and draw out small examples on paper."
+    elapsed = time.perf_counter() - start_time
+
+    return {
+        "problem_name": problem_name,
+        "hint_level": hint_level,
+        "hint_text": text,
+        "model_name": str(model_name),
+        "latency_seconds": round(elapsed, 4),
+        "timestamp": int(time.time())
+    }
