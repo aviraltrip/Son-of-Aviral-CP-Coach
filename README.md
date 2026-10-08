@@ -24,23 +24,21 @@ CP Coach solves this through **Multi-Agent Information Asymmetry**:
 
 ```mermaid
 flowchart TD
-    START([START]) --> Analyst[Analyst Agent]
-    Analyst --> WaitForUser1{wait_for_user interrupt}
-    
-    WaitForUser1 -- "request_hint" --> Tutor[Tutor Agent]
-    WaitForUser1 -- "skip" --> Analyst
-    WaitForUser1 -- "submitted" --> CheckSub[Check Submission]
-    WaitForUser1 -- "done" --> END([END])
-    
-    Tutor --> Keeper[Keeper Agent]
-    Keeper -- "rejected (revisions < 3)" --> Tutor
-    Keeper -- "approved OR revisions == 3" --> WaitForUser2{wait_for_user interrupt}
-    
-    WaitForUser2 -- "request_hint" --> Tutor
-    WaitForUser2 -- "submitted" --> CheckSub
-    WaitForUser2 -- "skip" --> Analyst
-    WaitForUser2 -- "done" --> END
-    
-    CheckSub -- "Verdict: AC" --> UpdateStats[Update Stats in DB] --> Analyst
-    CheckSub -- "Verdict: WA / TLE" --> Tutor
+    START([Start]) --> Analyst[Analyst: Select Problem]
+    Analyst --> UserAction{User Action}
+
+    subgraph HintLoop ["Hint Safety Loop"]
+        Tutor[Tutor: Draft Hint] --> Keeper{Keeper: Audit Draft}
+        Keeper -- "Leak detected (rev < 3)" --> Tutor
+    end
+
+    UserAction -- "Request Hint" --> Tutor
+    Keeper -- "Approved" --> UserAction
+
+    UserAction -- "Submit Solution" --> CheckSub{Check Submission}
+    CheckSub -- "Accepted (AC)" --> Analyst
+    CheckSub -- "WA / TLE" --> Tutor
+
+    UserAction -- "Skip" --> Analyst
+    UserAction -- "Exit" --> END([End Session])
 ```
