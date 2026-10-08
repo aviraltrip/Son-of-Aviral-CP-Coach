@@ -96,3 +96,68 @@ def compute_weak_topics(submissions: list[dict[str, Any]], user_rating: int | No
         
     topic_stats.sort(key=lambda t: t.weighted_failure_score, reverse=True)
     return topic_stats
+
+def select_next_problem(
+    user_handle: str,
+    user_rating: int | None,
+    weak_topics: list[TopicStat],
+    candidate_problems: list[dict[str, Any]],
+    attempted_keys: set[tuple[int, str]] | None = None
+) -> ProblemChoice:
+    """Select next optimal practice problem matching top weak topics in user target rating window."""
+    attempted = attempted_keys or set()
+    rating = user_rating or 1400
+    target_min = rating + 100
+    target_max = rating + 200
+    
+    top_tags = [t.tag for t in weak_topics[:3]] if weak_topics else ["dp", "greedy", "graphs"]
+    
+    for p in candidate_problems:
+        cid = p.get("contest_id") or p.get("contestId")
+        idx = p.get("idx") or p.get("index")
+        prating = p.get("rating")
+        tags = p.get("tags", [])
+        
+        if (cid, idx) in attempted:
+            continue
+            
+        if prating and target_min <= prating <= target_max:
+            matching = [t for t in top_tags if t in tags]
+            if matching:
+                return ProblemChoice(
+                    contest_id=cid,
+                    index=idx,
+                    name=p.get("name", f"Problem {cid}{idx}"),
+                    rating=prating,
+                    tags=tags,
+                    reason=f"Targeted {prating}-rated problem matching weak topic '{matching[0]}' (Rating target: {target_min}-{target_max})."
+                )
+
+    for p in candidate_problems:
+        cid = p.get("contest_id") or p.get("contestId")
+        idx = p.get("idx") or p.get("index")
+        prating = p.get("rating")
+        tags = p.get("tags", [])
+        
+        if (cid, idx) in attempted:
+            continue
+            
+        matching = [t for t in top_tags if t in tags]
+        if matching:
+            return ProblemChoice(
+                contest_id=cid,
+                index=idx,
+                name=p.get("name", f"Problem {cid}{idx}"),
+                rating=prating,
+                tags=tags,
+                reason=f"Practice problem for weak topic '{matching[0]}'."
+            )
+
+    return ProblemChoice(
+        contest_id=1900,
+        index="C",
+        name="Anji's Binary Tree",
+        rating=1500,
+        tags=["dp", "trees"],
+        reason="Default recommended tree dynamic programming problem."
+    )
