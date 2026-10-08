@@ -47,3 +47,4 @@ class CoachState(TypedDict):
     revisions: int
     history: list[dict[str, Any]]
     user_action: str | None
+    last_submission_verdict: str | None
