@@ -61,3 +61,38 @@ def aggregate_tag_statistics(submissions: list[dict[str, Any]], user_rating: int
                 tag_data[t]["weighted_failures"] += weight
                 
     return tag_data
+
+def compute_weak_topics(submissions: list[dict[str, Any]], user_rating: int | None, min_attempts: int = 2) -> list[TopicStat]:
+    """Compute ranked list of weak algorithm topics based on weighted failure rate & shrinkage."""
+    if not submissions:
+        return []
+        
+    tag_data = aggregate_tag_statistics(submissions, user_rating)
+    if not tag_data:
+        return []
+        
+    total_w_attempts = sum(d["weighted_attempts"] for d in tag_data.values())
+    total_w_failures = sum(d["weighted_failures"] for d in tag_data.values())
+    global_failure_rate = (total_w_failures / total_w_attempts) if total_w_attempts > 0 else 0.5
+    
+    topic_stats: list[TopicStat] = []
+    for tag, d in tag_data.items():
+        n = d["total_attempts"]
+        if n < min_attempts:
+            continue
+            
+        raw_wfr = (d["weighted_failures"] / d["weighted_attempts"]) if d["weighted_attempts"] > 0 else 0.5
+        adj_score = apply_bayesian_shrinkage(raw_wfr, n, global_mean=global_failure_rate, prior_weight=5.0)
+        solved_ratio = (d["total_accepted"] / n) if n > 0 else 0.0
+        avg_rating = (sum(d["solved_ratings"]) / len(d["solved_ratings"])) if d["solved_ratings"] else None
+        
+        topic_stats.append(TopicStat(
+            tag=tag,
+            solved_ratio=round(solved_ratio, 3),
+            avg_rating=round(avg_rating, 1) if avg_rating else None,
+            n_attempts=n,
+            weighted_failure_score=round(adj_score, 4)
+        ))
+        
+    topic_stats.sort(key=lambda t: t.weighted_failure_score, reverse=True)
+    return topic_stats
