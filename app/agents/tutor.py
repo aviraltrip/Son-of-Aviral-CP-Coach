@@ -35,7 +35,7 @@ def draft_targeted_hint(verdict: str, state: CoachState | None = None) -> HintDr
     """Draft a targeted hint addressing a specific submission failure verdict."""
     text = TARGETED_DIAGNOSTICS.get(
         verdict,
-        f"Diagnostic Hint: Submission received verdict {verdict}. Review base cases and edge conditions."
+        f"Diagnostic Hint: Submission received verdict {verdict}. Review base cases, edge constraints, and array indexing."
     )
     return HintDraft(level=1, text=text)
 
