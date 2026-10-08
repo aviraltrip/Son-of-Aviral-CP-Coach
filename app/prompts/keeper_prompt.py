@@ -29,20 +29,10 @@ def build_keeper_prompt(
     hint_level: int,
     draft_text: str
 ) -> str:
-    """Construct audit prompt for the Keeper agent."""
-    return f"""### Problem Statement:
-{problem_statement}
-
-### Private Reference Solution:
-```
-{reference_solution}
-```
-
-### Requested Hint Level: Level {hint_level}
-
-### Tutor's Draft Hint to Audit:
-"""
-{draft_text}
-"""
-
-Audit the draft strictly against the rubric and reference solution. Respond with the JSON object:"""
+    return (
+        f"### Problem Statement:\n{problem_statement}\n\n"
+        f"### Private Reference Solution:\n```\n{reference_solution}\n```\n\n"
+        f"### Requested Hint Level: Level {hint_level}\n\n"
+        f"### Tutor's Draft Hint to Audit:\n'''\n{draft_text}\n'''\n\n"
+        "Audit the draft strictly against the rubric and reference solution. Respond with the JSON object:"
+    )

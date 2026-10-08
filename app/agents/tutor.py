@@ -15,6 +15,30 @@ FALLBACK_HINTS = {
     3: "Maintain a recursive state dp[u] representing minimum operations for the subtree rooted at u."
 }
 
+TARGETED_DIAGNOSTICS = {
+    "WRONG_ANSWER": (
+        "Diagnostic Hint: Your logic may miss key edge cases. "
+        "Check: 1) What if the root is already a leaf? 2) Are single-child nodes handled correctly? "
+        "3) Did you account for direction changes properly ('L' vs 'R')?"
+    ),
+    "TIME_LIMIT_EXCEEDED": (
+        "Diagnostic Hint: Your solution might be recomputing subtree values repeatedly. "
+        "Aim for a single tree traversal (DFS) that computes the answer in O(N) time."
+    ),
+    "MEMORY_LIMIT_EXCEEDED": (
+        "Diagnostic Hint: Deep tree recursion might cause stack overflow. "
+        "Ensure vectors/lists are passed by reference and memory is allocated linearly."
+    )
+}
+
+def draft_targeted_hint(verdict: str, state: CoachState | None = None) -> HintDraft:
+    """Draft a targeted hint addressing a specific submission failure verdict."""
+    text = TARGETED_DIAGNOSTICS.get(
+        verdict,
+        f"Diagnostic Hint: Submission received verdict {verdict}. Review base cases and edge conditions."
+    )
+    return HintDraft(level=1, text=text)
+
 def tutor_node(state: CoachState) -> dict[str, Any]:
     """Draft a hint according to requested level, feedback, or submission errors."""
     level = state.get("hint_level", 1)
