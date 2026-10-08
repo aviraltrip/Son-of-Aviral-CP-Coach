@@ -177,3 +177,72 @@ def get_candidate_problems(min_rating: int, max_rating: int, tags: list[str] | N
             else:
                 results.append(d)
         return results
+
+def upsert_submissions(user_handle: str, submissions_data: list[dict[str, Any]], db_path: str = DEFAULT_DB_PATH) -> int:
+    """Batch upsert user submissions."""
+    init_db(db_path)
+    inserted = 0
+    handle = user_handle.lower()
+    with get_db_connection(db_path) as conn:
+        for s in submissions_data:
+            sub_id = s.get("id")
+            problem = s.get("problem", {})
+            contest_id = problem.get("contestId") or s.get("contest_id")
+            idx = problem.get("index") or s.get("idx")
+            verdict = s.get("verdict", "TESTING")
+            lang = s.get("programmingLanguage", s.get("programming_language", "Unknown"))
+            pass_count = s.get("passedTestCount", s.get("pass_count", 0))
+            time_ms = s.get("timeConsumedMillis", s.get("time_consumed_ms", 0))
+            mem_bytes = s.get("memoryConsumedBytes", s.get("memory_consumed_bytes", 0))
+            ts = s.get("creationTimeSeconds", s.get("creation_time_seconds", int(time.time())))
+
+            if sub_id and contest_id and idx:
+                p_name = problem.get("name", f"Problem {contest_id}{idx}")
+                p_rating = problem.get("rating")
+                p_tags = json.dumps(problem.get("tags", []))
+                conn.execute("""
+                    INSERT INTO problems (contest_id, idx, name, rating, tags_json)
+                    VALUES (?, ?, ?, ?, ?)
+                    ON CONFLICT(contest_id, idx) DO NOTHING;
+                """, (contest_id, idx, p_name, p_rating, p_tags))
+
+                conn.execute("""
+                    INSERT INTO submissions (id, user_handle, contest_id, idx, verdict, programming_language, pass_count, time_consumed_ms, memory_consumed_bytes, creation_time_seconds)
+                    VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+                    ON CONFLICT(id) DO UPDATE SET
+                        verdict = excluded.verdict,
+                        pass_count = excluded.pass_count,
+                        time_consumed_ms = excluded.time_consumed_ms,
+                        memory_consumed_bytes = excluded.memory_consumed_bytes;
+                """, (sub_id, handle, contest_id, idx, verdict, lang, pass_count, time_ms, mem_bytes, ts))
+                inserted += 1
+    return inserted
+
+def get_user_submissions(handle: str, limit: int = 1000, db_path: str = DEFAULT_DB_PATH) -> list[dict[str, Any]]:
+    """Retrieve submissions for a user ordered by creation time descending."""
+    init_db(db_path)
+    with get_db_connection(db_path) as conn:
+        cursor = conn.execute("""
+            SELECT s.*, p.name as problem_name, p.rating as problem_rating, p.tags_json
+            FROM submissions s
+            JOIN problems p ON s.contest_id = p.contest_id AND s.idx = p.idx
+            WHERE s.user_handle = ?
+            ORDER BY s.creation_time_seconds DESC
+            LIMIT ?;
+        """, (handle.lower(), limit))
+        results = []
+        for row in cursor.fetchall():
+            d = dict(row)
+            d["tags"] = json.loads(d["tags_json"])
+            results.append(d)
+        return results
+
+def get_attempted_problem_keys(handle: str, db_path: str = DEFAULT_DB_PATH) -> set[tuple[int, str]]:
+    """Get all (contest_id, idx) pairs attempted by the user."""
+    init_db(db_path)
+    with get_db_connection(db_path) as conn:
+        cursor = conn.execute("""
+            SELECT DISTINCT contest_id, idx FROM submissions
+            WHERE user_handle = ?;
+        """, (handle.lower(),))
+        return {(row["contest_id"], row["idx"]) for row in cursor.fetchall()}
