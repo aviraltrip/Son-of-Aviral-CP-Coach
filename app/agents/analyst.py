@@ -23,3 +23,65 @@ SAMPLE_PROBLEMS_FALLBACK = [
     {"contest_id": 1833, "idx": "E", "name": "Round Dance", "rating": 1600, "tags": ["graphs", "dsu", "dfs and similar"]},
     {"contest_id": 1800, "idx": "E2", "name": "Unforgivable Curse", "rating": 1400, "tags": ["dsu", "strings", "greedy"]},
 ]
+
+def format_diagnostic_summary(handle: str, user_rating: int | None, weak_topics: list[TopicStat]) -> str:
+    """Format a clear diagnostic summary based on computed stats."""
+    rating_str = f"rated {user_rating}" if user_rating else "unrated"
+    if not weak_topics:
+        return f"Diagnostics for {handle} ({rating_str}): Profile synced. Recommended a baseline practice problem to assess initial performance."
+        
+    top_two = [f"{t.tag} ({int(t.solved_ratio*100)}% solve rate, {t.n_attempts} attempts)" for t in weak_topics[:2]]
+    return f"Diagnostics for {handle} ({rating_str}): Primary weak areas identified in {', '.join(top_two)}. Recommended problem targets your weak areas in your optimal rating range."
+
+def analyst_node(state: CoachState) -> dict[str, Any]:
+    """Execute live data analysis, update SQLite cache, compute weak topics, and select next problem."""
+    handle = state.get("handle", "tourist").strip()
+    db_path = os.getenv("DATABASE_PATH", "cp_coach.db")
+    
+    try:
+        user_info, _ = sync_user_data(handle, max_submissions=300, db_path=db_path)
+        user_rating = user_info.get("rating")
+    except Exception as e:
+        logger.warning(f"Could not sync live CF data for {handle}: {e}. Utilizing cached data.")
+        cached_user = get_user(handle, db_path=db_path)
+        user_rating = cached_user["current_rating"] if cached_user else 1400
+
+    submissions = get_user_submissions(handle, limit=300, db_path=db_path)
+    weak_topics = compute_weak_topics(submissions, user_rating=user_rating, min_attempts=2)
+    
+    if weak_topics:
+        save_topic_stats(handle, [t.model_dump() for t in weak_topics], db_path=db_path)
+        
+    rating = user_rating or 1400
+    candidates = get_candidate_problems(rating, rating + 300, db_path=db_path)
+    if not candidates:
+        candidates = SAMPLE_PROBLEMS_FALLBACK
+        
+    attempted = get_attempted_problem_keys(handle, db_path=db_path)
+    problem = select_next_problem(handle, user_rating, weak_topics, candidates, attempted_keys=attempted)
+    
+    summary = format_diagnostic_summary(handle, user_rating, weak_topics)
+    diagnosis = Diagnosis(
+        weak_topics=weak_topics,
+        summary=summary,
+        user_rating=user_rating
+    )
+    
+    problem_statement = (
+        f"Problem {problem.contest_id}{problem.index}: {problem.name} (Rating: {problem.rating or 'Unrated'})\n"
+        f"Tags: {', '.join(problem.tags)}\n\n"
+        f"You are tasked with finding an optimal algorithm matching time and memory constraints.\n"
+        f"Target Topic: {problem.tags[0] if problem.tags else 'general algorithmic reasoning'}"
+    )
+    
+    return {
+        "diagnosis": diagnosis,
+        "problem": problem,
+        "problem_statement": problem_statement,
+        "hint_level": 1,
+        "draft": None,
+        "verdict": None,
+        "revisions": 0,
+        "user_action": None,
+        "last_submission_verdict": None
+    }
