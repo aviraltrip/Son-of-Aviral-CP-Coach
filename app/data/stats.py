@@ -14,3 +14,9 @@ def compute_recency_decay(submission_ts: int, current_ts: int | None = None) -> 
         current_ts = int(time.time())
     delta_t = max(0, current_ts - submission_ts)
     return math.exp(- (delta_t * LN_2) / HALF_LIFE_SECONDS)
+
+def compute_difficulty_weight(problem_rating: int | None, user_rating: int | None) -> float:
+    """Compute difficulty weight: d_i = max(0.5, problem_rating / user_rating)."""
+    if not problem_rating or not user_rating or user_rating <= 0:
+        return 1.0
+    return max(0.5, float(problem_rating) / float(user_rating))
