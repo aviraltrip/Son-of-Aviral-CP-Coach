@@ -138,3 +138,26 @@ def get_problemset_problems(ttl_seconds: int = 86400) -> list[dict[str, Any]]:
         set_cached_response(cache_key, problems)
         return problems
     return []
+
+from app.data.db import upsert_user, upsert_problems, upsert_submissions
+
+def sync_user_data(handle: str, max_submissions: int = 500, ttl_seconds: int = 60, db_path: str | None = None) -> tuple[dict[str, Any], int]:
+    """Fetch user profile and recent submissions, synchronizing them into SQLite."""
+    user_info = get_user_info(handle, ttl_seconds=ttl_seconds)
+    current_rating = user_info.get("rating")
+    max_rating = user_info.get("maxRating")
+    
+    if db_path:
+        upsert_user(handle, current_rating, max_rating, db_path=db_path)
+    else:
+        upsert_user(handle, current_rating, max_rating)
+        
+    submissions = get_user_status(handle, count=max_submissions, ttl_seconds=ttl_seconds)
+    inserted_count = 0
+    if submissions:
+        if db_path:
+            inserted_count = upsert_submissions(handle, submissions, db_path=db_path)
+        else:
+            inserted_count = upsert_submissions(handle, submissions)
+            
+    return user_info, inserted_count
