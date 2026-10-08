@@ -23,3 +23,25 @@ CP Coach uses **multi-agent information asymmetry** to guarantee pedagogical int
 | **Judge** *(Phase 8)* | User code submission, test suite | Runs code in sandbox, reports execution verdicts (AC, WA, TLE, MLE) | Isolated execution environment with time/memory resource limits. |
 
 ---
+
+## 3. High-Level Graph Flow
+
+```mermaid
+flowchart TD
+    START([START]) --> Analyst[Analyst Agent]
+    Analyst --> WaitForUser1{wait_for_user interrupt}
+    
+    WaitForUser1 -- "request_hint" --> Tutor[Tutor Agent]
+    WaitForUser1 -- "skip" --> Analyst
+    WaitForUser1 -- "submitted" --> CheckSub[Check Submission]
+    WaitForUser1 -- "done" --> END([END])
+    
+    Tutor --> Keeper[Keeper Agent]
+    Keeper -- "rejected (revisions < 3)" --> Tutor
+    Keeper -- "approved OR revisions == 3" --> WaitForUser2{wait_for_user interrupt}
+    
+    WaitForUser2 -- "request_hint" --> Tutor
+    WaitForUser2 -- "submitted" --> CheckSub
+    WaitForUser2 -- "skip" --> Analyst
+    WaitForUser2 -- "done" --> END
+    
