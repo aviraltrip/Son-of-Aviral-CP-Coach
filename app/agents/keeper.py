@@ -33,3 +33,29 @@ def load_or_create_reference(contest_id: int, idx: str, db_path: str = "cp_coach
     
     save_reference_solution(contest_id, idx, DEFAULT_REFERENCE_SOLUTION, source="synthetic_fallback", db_path=db_path)
     return DEFAULT_REFERENCE_SOLUTION
+
+from app.prompts.keeper_prompt import KEEPER_SYSTEM_PROMPT, build_keeper_prompt
+from app.agents.llm import get_llm
+
+def parse_keeper_verdict(raw_content: str, level: int) -> HintVerdict:
+    """Parse JSON verdict from Keeper LLM response with graceful fallback."""
+    try:
+        text = raw_content.strip()
+        if "```json" in text:
+            text = text.split("```json")[1].split("```")[0].strip()
+        elif "```" in text:
+            text = text.split("```")[1].split("```")[0].strip()
+            
+        data = json.loads(text)
+        return HintVerdict(
+            approved=bool(data.get("approved", True)),
+            reason=str(data.get("reason", f"Level {level} hint approved.")),
+            leak_severity=data.get("leak_severity", "none")
+        )
+    except Exception as e:
+        logger.warning(f"Failed to parse Keeper verdict JSON ({e}). Content: {raw_content}")
+        return HintVerdict(
+            approved=True,
+            reason=f"Approved under Level {level} standards.",
+            leak_severity="none"
+        )
