@@ -32,3 +32,34 @@ flowchart TD
         sub_verdict -- "Yes (AC)" --> update_stats_node[Update DB Stats]
         update_stats_node --> analyst_node
         sub_verdict -- "No (WA / TLE)" --> tutor_targeted_node[Tutor Targeted Hint]
+        tutor_targeted_node --> keeper_node
+    end
+
+    subgraph GraphExit
+        route_action -- action == 'skip' --> analyst_node
+        route_action -- action == 'done' --> END([END])
+    end
+```
+
+---
+
+## 3. Node Responsibilities & Boundaries
+
+```mermaid
+classDiagram
+    class AnalystNode {
+        +sync_cf_data(handle)
+        +compute_weak_topics() list~TopicStat~
+        +select_problem() ProblemChoice
+        +generate_diagnosis() str
+    }
+
+    class TutorNode {
+        +draft_hint(problem_statement, level, history, feedback) HintDraft
+        +draft_targeted_error_hint(verdict, history) HintDraft
+    }
+
+    class KeeperNode {
+        -load_private_reference(contest_id, idx) str
+        +audit_hint(problem_statement, draft, reference) HintVerdict
+    }
