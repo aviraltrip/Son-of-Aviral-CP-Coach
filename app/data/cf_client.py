@@ -124,3 +124,17 @@ def get_user_status(handle: str, count: int = 500, ttl_seconds: int = 60) -> lis
         set_cached_response(cache_key, result)
         return result
     return []
+
+def get_problemset_problems(ttl_seconds: int = 86400) -> list[dict[str, Any]]:
+    """Fetch complete Codeforces problem catalog (cached 24 hours)."""
+    cache_key = "problemset_problems"
+    cached = get_cached_response(cache_key, ttl_seconds=ttl_seconds)
+    if cached:
+        return cached
+        
+    result = _make_api_request("problemset.problems")
+    if isinstance(result, dict) and "problems" in result:
+        problems = result["problems"]
+        set_cached_response(cache_key, problems)
+        return problems
+    return []
