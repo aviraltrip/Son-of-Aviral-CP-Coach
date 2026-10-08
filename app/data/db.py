@@ -331,3 +331,65 @@ def update_session_outcome(session_id: str, final_outcome: str, hints_requested:
                 ended_at = CURRENT_TIMESTAMP
             WHERE session_id = ?;
         """, (final_outcome, hints_requested, keeper_rejections, session_id))
+
+def get_session(session_id: str, db_path: str = DEFAULT_DB_PATH) -> dict[str, Any] | None:
+    """Retrieve session record by session_id."""
+    init_db(db_path)
+    with get_db_connection(db_path) as conn:
+        cursor = conn.execute("SELECT * FROM sessions WHERE session_id = ?;", (session_id,))
+        row = cursor.fetchone()
+        return dict(row) if row else None
+
+def record_problem_submission(
+    handle: str,
+    contest_id: int,
+    idx: str,
+    verdict: str,
+    programming_language: str = "C++17",
+    sub_id: int | None = None,
+    pass_count: int = 0,
+    time_consumed_ms: int = 0,
+    memory_consumed_bytes: int = 0,
+    problem_name: str | None = None,
+    problem_rating: int | None = None,
+    tags: list[str] | None = None,
+    creation_time_seconds: int | None = None,
+    db_path: str = DEFAULT_DB_PATH
+) -> int:
+    """Insert or update a single submission and ensure problem metadata is recorded."""
+    init_db(db_path)
+    clean_handle = handle.lower()
+    ts = creation_time_seconds or int(time.time())
+    actual_sub_id = sub_id or int(time.time() * 1000) % 2147483647
+    
+    with get_db_connection(db_path) as conn:
+        # Ensure problem row exists
+        tags_json = json.dumps(tags or [])
+        name = problem_name or f"Problem {contest_id}{idx}"
+        conn.execute("""
+            INSERT INTO problems (contest_id, idx, name, rating, tags_json)
+            VALUES (?, ?, ?, ?, ?)
+            ON CONFLICT(contest_id, idx) DO UPDATE SET
+                rating = COALESCE(excluded.rating, problems.rating),
+                tags_json = CASE WHEN excluded.tags_json != '[]' THEN excluded.tags_json ELSE problems.tags_json END;
+        """, (contest_id, idx, name, problem_rating, tags_json))
+
+        # Insert submission
+        conn.execute("""
+            INSERT INTO submissions (
+                id, user_handle, contest_id, idx, verdict,
+                programming_language, pass_count, time_consumed_ms,
+                memory_consumed_bytes, creation_time_seconds
+            )
+            VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+            ON CONFLICT(id) DO UPDATE SET
+                verdict = excluded.verdict,
+                pass_count = excluded.pass_count,
+                time_consumed_ms = excluded.time_consumed_ms,
+                memory_consumed_bytes = excluded.memory_consumed_bytes;
+        """, (
+            actual_sub_id, clean_handle, contest_id, idx, verdict,
+            programming_language, pass_count, time_consumed_ms,
+            memory_consumed_bytes, ts
+        ))
+    return actual_sub_id
