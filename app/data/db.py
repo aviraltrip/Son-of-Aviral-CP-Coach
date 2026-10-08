@@ -282,3 +282,29 @@ def get_user_topic_stats(handle: str, db_path: str = DEFAULT_DB_PATH) -> list[di
             ORDER BY weighted_failure_score DESC;
         """, (handle.lower(),))
         return [dict(row) for row in cursor.fetchall()]
+
+def save_reference_solution(contest_id: int, idx: str, solution_code: str, solution_editorial: str = "", source: str = "manual", db_path: str = DEFAULT_DB_PATH) -> None:
+    """Save private reference solution for the Keeper agent."""
+    init_db(db_path)
+    with get_db_connection(db_path) as conn:
+        conn.execute("""
+            INSERT INTO problems (contest_id, idx, name, rating, tags_json)
+            VALUES (?, ?, ?, NULL, '[]')
+            ON CONFLICT(contest_id, idx) DO NOTHING;
+        """, (contest_id, idx, f"Problem {contest_id}{idx}"))
+        conn.execute("""
+            INSERT INTO "references" (contest_id, idx, solution_code, solution_editorial, source)
+            VALUES (?, ?, ?, ?, ?)
+            ON CONFLICT(contest_id, idx) DO UPDATE SET
+                solution_code = excluded.solution_code,
+                solution_editorial = excluded.solution_editorial,
+                source = excluded.source;
+        """, (contest_id, idx, solution_code, solution_editorial, source))
+
+def get_reference_solution(contest_id: int, idx: str, db_path: str = DEFAULT_DB_PATH) -> dict[str, Any] | None:
+    """Retrieve private reference solution. Strictly for Keeper Agent use only."""
+    init_db(db_path)
+    with get_db_connection(db_path) as conn:
+        cursor = conn.execute('SELECT * FROM "references" WHERE contest_id = ? AND idx = ?;', (contest_id, idx))
+        row = cursor.fetchone()
+        return dict(row) if row else None
