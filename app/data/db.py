@@ -99,3 +99,24 @@ def init_db(db_path: str = DEFAULT_DB_PATH) -> None:
                 FOREIGN KEY (contest_id, idx) REFERENCES problems(contest_id, idx) ON DELETE CASCADE
             );
         """)
+
+def upsert_user(handle: str, current_rating: int | None, max_rating: int | None, db_path: str = DEFAULT_DB_PATH) -> None:
+    """Insert or update a Codeforces user record."""
+    init_db(db_path)
+    with get_db_connection(db_path) as conn:
+        conn.execute("""
+            INSERT INTO users (handle, current_rating, max_rating, last_synced_at)
+            VALUES (?, ?, ?, CURRENT_TIMESTAMP)
+            ON CONFLICT(handle) DO UPDATE SET
+                current_rating = excluded.current_rating,
+                max_rating = excluded.max_rating,
+                last_synced_at = CURRENT_TIMESTAMP;
+        """, (handle.lower(), current_rating, max_rating))
+
+def get_user(handle: str, db_path: str = DEFAULT_DB_PATH) -> dict[str, Any] | None:
+    """Retrieve user record by handle."""
+    init_db(db_path)
+    with get_db_connection(db_path) as conn:
+        cursor = conn.execute("SELECT * FROM users WHERE handle = ?;", (handle.lower(),))
+        row = cursor.fetchone()
+        return dict(row) if row else None
