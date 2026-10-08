@@ -108,3 +108,79 @@ def create_coach_graph(checkpointer: Any = None) -> Any:
         checkpointer=checkpointer,
         interrupt_before=["wait_for_user"]
     )
+
+import sys
+
+def run_cli_session(handle: str = "tourist") -> None:
+    """Run an interactive CLI coaching session."""
+    import uuid
+    thread_id = str(uuid.uuid4())
+    config = {"configurable": {"thread_id": thread_id}}
+    graph = create_coach_graph()
+    
+    print(f"\n================ CP COACH CLI ================")
+    print(f"Initializing coaching session for handle: {handle}...")
+    
+    # Initial state
+    graph.invoke({
+        "handle": handle,
+        "diagnosis": None,
+        "problem": None,
+        "problem_statement": "",
+        "hint_level": 1,
+        "draft": None,
+        "verdict": None,
+        "revisions": 0,
+        "history": [],
+        "user_action": None,
+    }, config=config)
+    
+    while True:
+        state = graph.get_state(config)
+        values = state.values
+        
+        if not state.next:
+            print("\nSession ended. Great practice!")
+            break
+            
+        print("\n" + "="*50)
+        if values.get("problem"):
+            p = values["problem"]
+            print(f"Problem: {p.contest_id}{p.index} - {p.name} (Rating: {p.rating})")
+            print(f"Tags: {', '.join(p.tags)}")
+            print(f"Reason: {p.reason}")
+            print(f"\nStatement:\n{values.get('problem_statement')}")
+            
+        if values.get("draft") and values.get("verdict") and values["verdict"].approved:
+            print(f"\n[Hint Level {values['draft'].level}]:\n{values['draft'].text}")
+            
+        print("\nOptions:")
+        print("1. Request Hint Level 1 (Nudge)")
+        print("2. Request Hint Level 2 (Approach)")
+        print("3. Request Hint Level 3 (Pseudocode)")
+        print("4. Submit solution (check verdict)")
+        print("5. Skip problem")
+        print("6. Exit")
+        
+        choice = input("\nEnter choice (1-6): ").strip()
+        if choice in ["1", "2", "3"]:
+            lvl = int(choice)
+            graph.update_state(config, {"user_action": "request_hint", "hint_level": lvl}, as_node="wait_for_user")
+            graph.invoke(None, config=config)
+        elif choice == "4":
+            graph.update_state(config, {"user_action": "submitted"}, as_node="wait_for_user")
+            graph.invoke(None, config=config)
+            print("\nChecked submission -> Solved! Loading next problem...")
+        elif choice == "5":
+            graph.update_state(config, {"user_action": "skip"}, as_node="wait_for_user")
+            graph.invoke(None, config=config)
+        elif choice == "6":
+            graph.update_state(config, {"user_action": "done"}, as_node="wait_for_user")
+            graph.invoke(None, config=config)
+            break
+        else:
+            print("Invalid option. Please choose 1-6.")
+
+if __name__ == "__main__":
+    h = sys.argv[1] if len(sys.argv) > 1 else "tourist"
+    run_cli_session(h)
