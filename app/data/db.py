@@ -73,3 +73,29 @@ def init_db(db_path: str = DEFAULT_DB_PATH) -> None:
                 FOREIGN KEY (user_handle) REFERENCES users(handle) ON DELETE CASCADE
             );
         """)
+        conn.execute("""
+            CREATE TABLE IF NOT EXISTS sessions (
+                session_id TEXT PRIMARY KEY,
+                user_handle TEXT NOT NULL,
+                contest_id INTEGER NOT NULL,
+                idx TEXT NOT NULL,
+                hints_requested INTEGER DEFAULT 0,
+                keeper_rejections INTEGER DEFAULT 0,
+                final_outcome TEXT,
+                started_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+                ended_at TIMESTAMP,
+                FOREIGN KEY (user_handle) REFERENCES users(handle) ON DELETE CASCADE,
+                FOREIGN KEY (contest_id, idx) REFERENCES problems(contest_id, idx) ON DELETE CASCADE
+            );
+        """)
+        conn.execute("""
+            CREATE TABLE IF NOT EXISTS "references" (
+                contest_id INTEGER NOT NULL,
+                idx TEXT NOT NULL,
+                solution_code TEXT,
+                solution_editorial TEXT,
+                source TEXT DEFAULT 'manual',
+                PRIMARY KEY (contest_id, idx),
+                FOREIGN KEY (contest_id, idx) REFERENCES problems(contest_id, idx) ON DELETE CASCADE
+            );
+        """)
