@@ -41,7 +41,7 @@ Phase 8: [Optional] Sandbox Code Judge Execution (1 week)
 
 ---
 
-### Phase 2: Real Analyst, CF Client & Stats Engine
+### Phase 2: Real Analyst, CF Client & Stats Engine ✅ [COMPLETED]
 - **Goal**: Connect to Codeforces API, calculate actual user topic statistics, and recommend appropriate problems.
 - **Tasks**:
   1. Build `app/data/cf_client.py` with polite rate limiting (1 req / 2s), disk caching, and error resilience.
