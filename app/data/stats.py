@@ -20,3 +20,9 @@ def compute_difficulty_weight(problem_rating: int | None, user_rating: int | Non
     if not problem_rating or not user_rating or user_rating <= 0:
         return 1.0
     return max(0.5, float(problem_rating) / float(user_rating))
+
+def apply_bayesian_shrinkage(raw_score: float, n_attempts: int, global_mean: float = 0.5, prior_weight: float = 5.0) -> float:
+    """Smooth raw failure score toward global mean when attempt sample size is small."""
+    if n_attempts <= 0:
+        return global_mean
+    return (n_attempts * raw_score + prior_weight * global_mean) / (n_attempts + prior_weight)
