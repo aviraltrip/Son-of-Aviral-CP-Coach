@@ -24,10 +24,15 @@ class MockLLM:
             user_content = prompt_str
         
         # 1. Keeper Audit Prompts
-        if "Audit the draft strictly" in prompt_str or "Private Reference Solution" in prompt_str:
+        if "Audit the draft strictly" in prompt_str or "Private Reference Solution" in prompt_str or "Zero-Shot Heuristic Rubric Audit" in prompt_str:
             draft_part = ""
             if "Tutor's Draft Hint to Audit:" in prompt_str:
-                draft_part = prompt_str.split("Tutor's Draft Hint to Audit:")[1]
+                raw_draft = prompt_str.split("Tutor's Draft Hint to Audit:")[1]
+                if "'''" in raw_draft:
+                    parts = raw_draft.split("'''")
+                    draft_part = parts[1] if len(parts) > 1 else raw_draft
+                else:
+                    draft_part = raw_draft
             else:
                 draft_part = prompt_str
                 
