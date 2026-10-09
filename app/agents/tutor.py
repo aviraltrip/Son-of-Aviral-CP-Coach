@@ -62,6 +62,9 @@ def draft_targeted_hint(verdict: str, state: CoachState | None = None) -> HintDr
     )
     return HintDraft(level=1, text=text)
 
+import os
+from app.data.db import get_cached_hint
+
 def tutor_node(state: CoachState) -> dict[str, Any]:
     """Draft a hint according to requested level, feedback, or submission errors."""
     level = state.get("hint_level", 1)
@@ -69,8 +72,27 @@ def tutor_node(state: CoachState) -> dict[str, Any]:
     verdict = state.get("verdict")
     last_sub = state.get("last_submission_verdict")
     user_action = state.get("user_action")
+    problem = state.get("problem")
     problem_stmt = state.get("problem_statement", "No problem statement provided.")
     history = state.get("history", [])
+    db_path = os.getenv("DATABASE_PATH", "cp_coach.db")
+
+    # Instant Zero-Latency Cache Lookup for Initial Requests
+    if revisions == 0 and not (last_sub and last_sub not in ("OK", "AC") and user_action in ("submitted", "submit_code", "judge")):
+        if problem:
+            cached_text = get_cached_hint(problem.contest_id, problem.index, level, db_path=db_path)
+            if cached_text:
+                logger.info(f"[Tutor] Serving approved hint from SQLite cache for Problem {problem.contest_id}{problem.index} Level {level}")
+                draft = HintDraft(level=level, text=cached_text)
+                new_history = list(history)
+                new_history.append({
+                    "role": "assistant",
+                    "type": "draft",
+                    "level": level,
+                    "text": cached_text,
+                    "revision": 0
+                })
+                return {"draft": draft, "history": new_history}
 
     llm = get_llm(model_type="tutor")
 
