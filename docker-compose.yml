@@ -1,0 +1,28 @@
+services:
+  cp-coach:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    container_name: cp-coach
+    ports:
+      - "8501:8501"
+    volumes:
+      - cp_coach_data:/app/data
+    environment:
+      - DATABASE_PATH=/app/data/cp_coach.db
+      - OPENAI_API_KEY=${OPENAI_API_KEY:-}
+      - ANTHROPIC_API_KEY=${ANTHROPIC_API_KEY:-}
+      - GEMINI_API_KEY=${GEMINI_API_KEY:-}
+    restart: unless-stopped
+    deploy:
+      resources:
+        limits:
+          cpus: "2.0"
+          memory: 2048M
+        reservations:
+          cpus: "0.5"
+          memory: 512M
+
+volumes:
+  cp_coach_data:
+    name: cp_coach_data

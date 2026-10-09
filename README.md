@@ -44,3 +44,21 @@ flowchart TD
     UserAction -- "Exit" --> END([End Session])
 ```
 
+---
+
+## Running with Docker
+
+You can run CP Coach using Docker and Docker Compose:
+
+```bash
+# 1. Build and run container
+docker compose up --build -d
+
+# 2. Access the Streamlit dashboard
+# Open http://localhost:8501 in your browser
+
+# 3. View logs
+docker compose logs -f
+```
+
+
