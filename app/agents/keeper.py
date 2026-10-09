@@ -5,7 +5,7 @@ import logging
 from typing import Any
 
 from app.state import CoachState, HintVerdict
-from app.data.db import get_reference_solution, save_reference_solution
+from app.data.db import get_reference_solution, save_reference_solution, save_cached_hint
 
 logger = logging.getLogger(__name__)
 
@@ -118,5 +118,12 @@ def keeper_node(state: CoachState) -> dict[str, Any]:
         verdict.reason = "Approved via Safe Generic Fallback (Max 3 revisions reached)."
         updates["draft"] = draft
         updates["verdict"] = verdict
+
+    # Cache approved hints for instant zero-latency future retrieval
+    if verdict.approved and draft and draft.text:
+        try:
+            save_cached_hint(cid, idx, level, draft.text, db_path=db_path)
+        except Exception as e:
+            logger.debug(f"Could not cache approved hint: {e}")
         
     return updates
