@@ -52,3 +52,28 @@ def test_select_next_problem():
     assert choice.contest_id == 1900
     assert choice.index == "C"
     assert choice.rating == 1550
+
+def test_non_algorithmic_tags_are_filtered_from_weak_topics():
+    from app.data.stats import is_valid_algorithmic_tag
+    assert not is_valid_algorithmic_tag("*special")
+    assert not is_valid_algorithmic_tag("special problem")
+    assert not is_valid_algorithmic_tag("interactive")
+    assert not is_valid_algorithmic_tag("combine tags by or")
+    assert is_valid_algorithmic_tag("dp")
+    assert is_valid_algorithmic_tag("trees")
+    assert is_valid_algorithmic_tag("graphs")
+
+    now = int(time.time())
+    submissions = [
+        {"tags": ["*special", "special problem", "interactive"], "verdict": "WRONG_ANSWER", "problem_rating": 1500, "creation_time_seconds": now},
+        {"tags": ["*special", "interactive"], "verdict": "WRONG_ANSWER", "problem_rating": 1500, "creation_time_seconds": now},
+        {"tags": ["dp"], "verdict": "WRONG_ANSWER", "problem_rating": 1500, "creation_time_seconds": now},
+        {"tags": ["dp"], "verdict": "WRONG_ANSWER", "problem_rating": 1500, "creation_time_seconds": now},
+    ]
+    
+    weak = compute_weak_topics(submissions, user_rating=1400, min_attempts=2)
+    tags_in_weak = [t.tag for t in weak]
+    assert "*special" not in tags_in_weak
+    assert "special problem" not in tags_in_weak
+    assert "interactive" not in tags_in_weak
+    assert "dp" in tags_in_weak
