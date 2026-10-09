@@ -225,3 +225,15 @@ To safely run user and candidate code locally, the sandbox execution runner impl
 1. **Python AST Pre-Flight Scanner**: Parses source code into an Abstract Syntax Tree before execution, disallowing dangerous module imports (`os`, `subprocess`, `shutil`, `socket`, `pty`, `multiprocessing`, `threading`, `ctypes`) and built-ins (`eval`, `exec`, `open`, `__import__`).
 2. **C++ & Java Regex Guards**: Rejects forbidden header inclusions (`<cstdlib>`, `<sys/*>`, `<unistd.h>`, `<windows.h>`) and hazardous system invocations (`system(`, `fork(`, `popen(`, `Runtime.getRuntime()`, `ProcessBuilder`).
 3. **Containerized Resource Capping**: Docker compose enforces strict CPU and memory limits (`cpus: 2.0`, `memory: 2048M`) with isolated temporary working directories.
+
+---
+
+## 8. Latency Optimization & SQLite Hint Caching
+
+To minimize LLM inference latency and token overhead:
+1. **Asymmetric Model Tiering**:
+   - **Tutor Node**: Uses smart reasoning models (`claude-3.5-sonnet` or `gemini-1.5-flash`) for nuanced hint composition.
+   - **Keeper Node**: Uses token-capped, low-latency models (`gpt-4o-mini` or `gemini-1.5-flash`) for rapid binary audit validation (<400ms).
+2. **Instant SQLite Hint Caching (`cached_hints`)**:
+   - Once a hint is approved by Keeper, it is saved into `cached_hints (contest_id, idx, hint_level, hint_text)`.
+   - Repeated requests for the same problem tier are retrieved in **0ms** from SQLite without making external API network calls.
