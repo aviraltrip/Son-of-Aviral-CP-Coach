@@ -34,7 +34,7 @@ def load_or_create_reference(contest_id: int, idx: str, db_path: str = "cp_coach
     save_reference_solution(contest_id, idx, DEFAULT_REFERENCE_SOLUTION, source="synthetic_fallback", db_path=db_path)
     return DEFAULT_REFERENCE_SOLUTION
 
-from app.prompts.keeper_prompt import KEEPER_SYSTEM_PROMPT, build_keeper_prompt
+from app.prompts.keeper_prompt import KEEPER_SYSTEM_PROMPT, build_keeper_prompt, build_heuristic_keeper_prompt
 from app.agents.llm import get_llm
 
 def parse_keeper_verdict(raw_content: str, level: int) -> HintVerdict:
@@ -61,7 +61,7 @@ def parse_keeper_verdict(raw_content: str, level: int) -> HintVerdict:
         )
 
 def keeper_node(state: CoachState) -> dict[str, Any]:
-    """Audit the tutor's hint draft against private reference solution and rubric."""
+    """Audit the tutor's hint draft against private reference solution or zero-shot heuristic rubric."""
     draft = state.get("draft")
     revisions = state.get("revisions", 0)
     level = state.get("hint_level", 1)
@@ -77,10 +77,19 @@ def keeper_node(state: CoachState) -> dict[str, Any]:
         
     cid = problem.contest_id if problem else 1900
     idx = problem.index if problem else "C"
-    reference_code = load_or_create_reference(cid, idx, db_path=db_path)
+    
+    ref = get_reference_solution(cid, idx, db_path=db_path)
+    has_ref = bool(ref and ref.get("solution_code") and ref["solution_code"].strip() != DEFAULT_REFERENCE_SOLUTION.strip())
+    
+    if has_ref and ref is not None:
+        reference_code = ref["solution_code"]
+        prompt = build_keeper_prompt(problem_stmt, reference_code, level, draft.text)
+        logger.info(f"[Keeper] Auditing Problem {cid}{idx} with Solution-Aware Mode.")
+    else:
+        prompt = build_heuristic_keeper_prompt(problem_stmt, level, draft.text)
+        logger.info(f"[Keeper] Auditing Problem {cid}{idx} with Zero-Shot Heuristic Rubric Mode.")
     
     llm = get_llm(model_type="keeper")
-    prompt = build_keeper_prompt(problem_stmt, reference_code, level, draft.text)
     
     try:
         resp = llm.invoke([
