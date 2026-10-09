@@ -1,5 +1,5 @@
-"""UI Component styling and presentation helpers for CP Coach Streamlit App."""
 import streamlit as st
+from typing import Any
 
 CUSTOM_CSS = """
 <style>
