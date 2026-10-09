@@ -1,4 +1,4 @@
-# CP Coach: Multi-Agent Competitive Programming Coach
+# Son of Aviral: Multi-Agent Competitive Programming Coach
 
 [![Python](https://img.shields.io/badge/Python-blue.svg)](https://www.python.org/downloads/)
 [![LangGraph](https://img.shields.io/badge/LangGraph-orange.svg)](https://github.com/langchain-ai/langgraph)
