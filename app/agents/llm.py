@@ -71,10 +71,24 @@ class MockLLM:
 
 def get_llm(model_type: str = "tutor") -> Any:
     """Instantiate configured LLM provider or fallback to MockLLM."""
+    openrouter_key = os.getenv("OPENROUTER_API_KEY")
     google_key = os.getenv("GOOGLE_API_KEY")
     openai_key = os.getenv("OPENAI_API_KEY")
     anthropic_key = os.getenv("ANTHROPIC_API_KEY")
     
+    if openrouter_key:
+        try:
+            from langchain_openai import ChatOpenAI
+            model_name = os.getenv("TUTOR_MODEL_NAME", "anthropic/claude-3.5-sonnet") if model_type == "tutor" else os.getenv("KEEPER_MODEL_NAME", "openai/gpt-4o-mini")
+            return ChatOpenAI(
+                model=model_name,
+                api_key=openrouter_key,
+                base_url=os.getenv("OPENROUTER_BASE_URL", "https://openrouter.ai/api/v1"),
+                temperature=0.2
+            )
+        except ImportError:
+            pass
+
     if google_key:
         try:
             from langchain_google_genai import ChatGoogleGenerativeAI
