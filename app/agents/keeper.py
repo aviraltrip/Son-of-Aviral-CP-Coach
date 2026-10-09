@@ -6,6 +6,8 @@ from typing import Any
 
 from app.state import CoachState, HintVerdict
 from app.data.db import get_reference_solution, save_reference_solution, save_cached_hint
+from app.prompts.keeper_prompt import KEEPER_SYSTEM_PROMPT, build_keeper_prompt, build_heuristic_keeper_prompt
+from app.agents.llm import get_llm
 
 logger = logging.getLogger(__name__)
 
@@ -33,9 +35,6 @@ def load_or_create_reference(contest_id: int, idx: str, db_path: str = "cp_coach
     
     save_reference_solution(contest_id, idx, DEFAULT_REFERENCE_SOLUTION, source="synthetic_fallback", db_path=db_path)
     return DEFAULT_REFERENCE_SOLUTION
-
-from app.prompts.keeper_prompt import KEEPER_SYSTEM_PROMPT, build_keeper_prompt, build_heuristic_keeper_prompt
-from app.agents.llm import get_llm
 
 def parse_keeper_verdict(raw_content: str, level: int) -> HintVerdict:
     """Parse JSON verdict from Keeper LLM response with graceful fallback."""

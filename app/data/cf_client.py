@@ -1,10 +1,11 @@
-"""Codeforces API client with polite rate limiting, disk caching, and error resilience."""
 import os
 import time
 import json
 import logging
-import requests
 from typing import Any, Tuple
+import requests
+
+from app.data.db import upsert_user, upsert_problems, upsert_submissions
 
 logger = logging.getLogger(__name__)
 
@@ -165,8 +166,6 @@ def get_latest_problem_submission(
         if sub_cid == contest_id and str(sub_idx).upper() == str(idx).upper():
             return s
     return None
-
-from app.data.db import upsert_user, upsert_problems, upsert_submissions
 
 def sync_user_data(handle: str, max_submissions: int = 500, ttl_seconds: int = 60, db_path: str | None = None) -> tuple[dict[str, Any], int]:
     """Fetch user profile and recent submissions, synchronizing them into SQLite."""

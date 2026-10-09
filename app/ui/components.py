@@ -1,5 +1,7 @@
 import streamlit as st
+import pandas as pd
 from typing import Any
+from app.data.stats import is_valid_algorithmic_tag
 
 CUSTOM_CSS = """
 <style>
@@ -141,7 +143,6 @@ def get_rank_badge(rating: int | None) -> tuple[str, str]:
 
 def render_tag_chips(tags: list[str]) -> str:
     """Generate HTML string of tag chips, filtering out non-algorithmic/administrative tags."""
-    from app.data.stats import is_valid_algorithmic_tag
     valid_tags = [t for t in tags if is_valid_algorithmic_tag(t)]
     display_tags = valid_tags if valid_tags else (tags if tags else ["implementation"])
     return "".join(f'<span class="badge-tag">{t}</span>' for t in display_tags)
@@ -152,7 +153,6 @@ def render_weak_topics_summary(weak_topics: list[Any]) -> None:
         st.info("No weak topics identified yet. Sync submission history to compute statistics.")
         return
 
-    import pandas as pd
     data = []
     for t in weak_topics:
         avg_r = getattr(t, "avg_rating", t.get("avg_rating_solved", None) if isinstance(t, dict) else None)

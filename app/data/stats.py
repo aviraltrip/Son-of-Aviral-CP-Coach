@@ -1,8 +1,9 @@
-"""Deterministic scoring, exponential decay, shrinkage, and problem recommendation engine."""
 import math
 import time
 from typing import Any
+
 from app.state import TopicStat, ProblemChoice
+from app.data.db import get_user, get_user_submissions, save_topic_stats
 
 HALF_LIFE_DAYS = 30.0
 HALF_LIFE_SECONDS = HALF_LIFE_DAYS * 86400.0
@@ -187,7 +188,6 @@ def select_next_problem(
 
 def recalculate_user_topic_stats(handle: str, db_path: str = "cp_coach.db") -> list[TopicStat]:
     """Retrieve user submissions from DB, recompute topic statistics, and save them back to SQLite."""
-    from app.data.db import get_user, get_user_submissions, save_topic_stats
     user = get_user(handle, db_path=db_path)
     rating = user.get("current_rating") if user else None
     submissions = get_user_submissions(handle, limit=1000, db_path=db_path)

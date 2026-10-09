@@ -1,4 +1,5 @@
 """Tutor agent: drafts progressive hints strictly solution-blind using LLM prompts."""
+import os
 import logging
 from typing import Any
 
@@ -6,6 +7,7 @@ from app.state import CoachState, HintDraft
 from app.prompts.tutor_prompt import TUTOR_SYSTEM_PROMPT, build_tutor_prompt
 from app.prompts.targeted_hint_prompt import TARGETED_HINT_SYSTEM_PROMPT, build_targeted_hint_prompt
 from app.agents.llm import get_llm
+from app.data.db import get_cached_hint
 
 logger = logging.getLogger(__name__)
 
@@ -61,9 +63,6 @@ def draft_targeted_hint(verdict: str, state: CoachState | None = None) -> HintDr
         f"Diagnostic Hint: Submission received verdict {verdict}. Review base cases, edge constraints, and array indexing."
     )
     return HintDraft(level=1, text=text)
-
-import os
-from app.data.db import get_cached_hint
 
 def tutor_node(state: CoachState) -> dict[str, Any]:
     """Draft a hint according to requested level, feedback, or submission errors."""

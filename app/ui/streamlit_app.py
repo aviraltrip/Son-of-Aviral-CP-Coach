@@ -168,7 +168,6 @@ def main() -> None:
         stmt = values.get("problem_statement", "")
         
         # 1. Problem Viewer Card
-        from app.ui.components import render_problem_card, render_hint_box, render_agent_trace
         render_problem_card(problem, stmt)
 
         st.markdown("### 💡 Progressive Hint Requests")
