@@ -98,7 +98,6 @@ def test_run_baseline_batch(tmp_path):
         llm=mock_llm
     )
 
-    # 2 problems * 3 hint levels = 6 hint records
     assert len(results) == 6
     assert results[0]["contest_id"] == 1900
     assert results[0]["index"] == "C"
@@ -106,7 +105,6 @@ def test_run_baseline_batch(tmp_path):
     assert results[1]["hint_level"] == 2
     assert results[2]["hint_level"] == 3
 
-    # Check written file
     with open(out_file, "r", encoding="utf-8") as fp:
         saved_data = json.load(fp)
     assert len(saved_data) == 6

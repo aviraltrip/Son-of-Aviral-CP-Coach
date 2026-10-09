@@ -25,7 +25,6 @@ def test_progressive_hint_level_1():
     assert tutor_res["draft"].level == 1
     assert "dp[" not in tutor_res["draft"].text
     
-    # Keeper audit
     state["draft"] = tutor_res["draft"]
     keeper_res = keeper_node(state)
     assert keeper_res["verdict"].approved is True
@@ -107,18 +106,15 @@ def test_multi_round_revision_safety():
         "last_submission_verdict": None,
     }
     
-    # Turn 1: Rejected
     r1 = keeper_node(state)
     assert r1["verdict"].approved is False
     assert r1["revisions"] == 1
     
-    # Turn 2: Tutor revises
     state["revisions"] = r1["revisions"]
     state["verdict"] = r1["verdict"]
     tutor_r2 = tutor_node(state)
     assert "[Revision 1]" in tutor_r2["draft"].text
     
-    # Turn 3: 3rd rejection triggers safe fallback
     state["revisions"] = 2
     state["draft"] = HintDraft(level=1, text="Another leak: dp[u] = ...")
     r3 = keeper_node(state)
@@ -135,7 +131,6 @@ def test_keeper_dual_mode_heuristic_audit():
     assert "Zero-Shot Heuristic Rubric Audit" in prompt
     assert "Level 1" in prompt
     
-    # State with an unseen problem that has no reference in DB
     state: CoachState = {
         "handle": "tourist",
         "diagnosis": None,

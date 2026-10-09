@@ -67,7 +67,6 @@ def test_check_submission_node_accepted_flow(clean_db):
     assert res["draft"] is None
     assert res["revisions"] == 0
 
-    # Verify DB logging
     subs = get_user_submissions("tourist", db_path=clean_db)
     assert len(subs) >= 1
     assert subs[0]["contest_id"] == 1900
@@ -102,7 +101,6 @@ def test_check_submission_node_wrong_answer_flow(clean_db):
     assert res["draft"] is None
     assert res["revisions"] == 0
 
-    # Verify DB logging
     subs = get_user_submissions("tourist", db_path=clean_db)
     assert len(subs) >= 1
     assert subs[0]["verdict"] == "WRONG_ANSWER"

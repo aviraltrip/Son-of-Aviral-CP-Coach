@@ -65,7 +65,6 @@ def test_render_judge_verdict_banner_no_error():
             expected_output="15\n"
         )
     )
-    # Ensure it executes without raising exceptions
     render_judge_verdict_banner(jv)
     render_judge_verdict_banner(None)
 
