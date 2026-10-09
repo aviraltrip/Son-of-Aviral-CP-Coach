@@ -96,12 +96,13 @@ Phase 8: [Optional] Sandbox Code Judge Execution (1 week)
 
 ---
 
-### Phase 7: Streamlit UI & Visual Dashboard
+### Phase 7: Streamlit UI & Visual Dashboard [COMPLETE]
 - **Goal**: Deliver a polished, interactive web interface for competitive programmers.
 - **Tasks**:
-  1. Implement `app/ui/streamlit_app.py`.
-  2. UI features: CF Handle input, Radar/Bar chart of weak topics, Problem statement viewer, 3-Tier Hint Buttons, Real-time multi-agent reasoning trace.
-- **Definition of Done (DoD)**: User can complete a full coaching session in the browser with live agent feedback.
+  1. Implement `app/ui/streamlit_app.py` and `app/ui/components.py`. [DONE]
+  2. UI features: CF Handle input, rank badges, Weak topics bar chart & dataframe, Problem statement viewer, 3-Tier Hint Buttons, Real-time multi-agent reasoning trace, Live CF submission polling & simulation controls. [DONE]
+  3. Add unit tests for UI helper components in `tests/test_ui_components.py`. [DONE]
+- **Definition of Done (DoD)**: User can complete a full coaching session in the browser with live multi-agent feedback and verified 3-tier hints. [VERIFIED]
 
 ---
 
