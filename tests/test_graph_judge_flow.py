@@ -1,7 +1,6 @@
 """End-to-End Integration tests for Sandbox Judge LangGraph flow (Phase 8.3)."""
 import pytest
-from langgraph.checkpoint.memory import MemorySaver
-from app.graph import create_coach_graph
+from app.graph import create_coach_graph, get_checkpointer
 from app.state import CoachState, ProblemChoice, CodeSubmission
 from app.data.db import init_db, upsert_user, upsert_problems, upsert_test_case
 from app.agents.judge import judge_node
@@ -16,7 +15,7 @@ def judge_graph_setup(tmp_path, monkeypatch):
     upsert_problems([{"contestId": 9999, "index": "C", "name": "Problem C", "rating": 1200, "tags": ["dp"]}], db_path=db_file)
     upsert_test_case(9999, "C", 1, "5\n", "10\n", is_sample=True, db_path=db_file)
 
-    checkpointer = MemorySaver()
+    checkpointer = get_checkpointer()
     graph = create_coach_graph(checkpointer=checkpointer)
     config = {"configurable": {"thread_id": "test_judge_flow_thread"}}
     return graph, config, db_file

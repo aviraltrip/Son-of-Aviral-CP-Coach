@@ -4,6 +4,7 @@ import logging
 from typing import Literal, Any
 from langgraph.graph import StateGraph, START, END
 from langgraph.checkpoint.memory import MemorySaver
+from langgraph.checkpoint.serde.jsonplus import JsonPlusSerializer
 
 from app.state import CoachState
 from app.agents.analyst import analyst_node
@@ -16,9 +17,23 @@ from app.data.stats import recalculate_user_topic_stats
 
 logger = logging.getLogger(__name__)
 
+ALLOWED_MSGPACK_MODULES = [
+    ("app.state", "Diagnosis"),
+    ("app.state", "ProblemChoice"),
+    ("app.state", "HintDraft"),
+    ("app.state", "HintVerdict"),
+    ("app.state", "CodeSubmission"),
+    ("app.state", "JudgeVerdict"),
+    ("app.state", "TestCaseResult"),
+    ("app.state", "TopicStat"),
+    ("app.state", "TestCase"),
+    ("app.state", "UserMessage")
+]
+
 def get_checkpointer(persisted: bool = False) -> Any:
-    """Return memory or persistent checkpointer instance."""
-    return MemorySaver()
+    """Return memory or persistent checkpointer instance with registered Pydantic types."""
+    serde = JsonPlusSerializer(allowed_msgpack_modules=ALLOWED_MSGPACK_MODULES)
+    return MemorySaver(serde=serde)
 
 def route_user_action(state: CoachState) -> Literal["tutor", "check_submission", "judge", "analyst", "__end__"]:
     """Route based on user action taken at the wait_for_user interrupt."""

@@ -166,7 +166,7 @@ def render_weak_topics_summary(weak_topics: list[Any]) -> None:
     
     st.dataframe(
         df,
-        use_container_width=True,
+        width="stretch",
         hide_index=True,
         column_config={
             "Failure Score": st.column_config.ProgressColumn(

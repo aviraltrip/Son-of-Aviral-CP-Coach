@@ -1,9 +1,7 @@
 """Integration tests for end-to-end submission flows in LangGraph state machine."""
 import pytest
-from langgraph.checkpoint.memory import MemorySaver
-
 from app.state import CoachState
-from app.graph import create_coach_graph
+from app.graph import create_coach_graph, get_checkpointer
 from app.data.db import init_db, upsert_user
 
 @pytest.fixture
@@ -13,7 +11,7 @@ def test_graph(tmp_path, monkeypatch):
     init_db(db_file)
     upsert_user("tourist", 3800, 4000, db_path=db_file)
     
-    checkpointer = MemorySaver()
+    checkpointer = get_checkpointer()
     graph = create_coach_graph(checkpointer=checkpointer)
     return graph, {"configurable": {"thread_id": "test_sub_flow_thread"}}
 
