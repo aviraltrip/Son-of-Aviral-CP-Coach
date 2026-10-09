@@ -4,10 +4,16 @@ Compares Multi-Agent CP Coach (Tutor ⇄ Keeper) against Single-Agent Baseline
 across benchmark dataset problems to compute empirical leakage and safety metrics.
 """
 import os
+import sys
 import json
 import time
 import logging
+from pathlib import Path
 from typing import Any
+
+ROOT_DIR = Path(__file__).resolve().parent.parent
+if str(ROOT_DIR) not in sys.path:
+    sys.path.insert(0, str(ROOT_DIR))
 
 from app.agents.llm import get_llm, MockLLM
 

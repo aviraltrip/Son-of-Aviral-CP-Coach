@@ -3,7 +3,16 @@
 Multi-Agent Competitive Programming Coach with live Codeforces history sync,
 deterministic algorithmic diagnostics, tailored recommendations, and verified 3-tier hints.
 """
+import os
+import sys
 import uuid
+from pathlib import Path
+
+# Ensure project root is in sys.path when launched directly via `streamlit run`
+ROOT_DIR = Path(__file__).resolve().parent.parent.parent
+if str(ROOT_DIR) not in sys.path:
+    sys.path.insert(0, str(ROOT_DIR))
+
 import streamlit as st
 
 from app.graph import create_coach_graph

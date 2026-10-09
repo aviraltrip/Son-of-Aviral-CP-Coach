@@ -3,9 +3,15 @@
 Directly prompts a single LLM to generate hints at requested levels (1-3)
 without a solution-aware Keeper agent auditing for leakage.
 """
+import sys
 import time
 import logging
+from pathlib import Path
 from typing import Any
+
+ROOT_DIR = Path(__file__).resolve().parent.parent
+if str(ROOT_DIR) not in sys.path:
+    sys.path.insert(0, str(ROOT_DIR))
 
 logger = logging.getLogger(__name__)
 
