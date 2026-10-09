@@ -3,6 +3,8 @@
 Provides isolated process execution with CPU timeout enforcement, memory tracking,
 and automated verdict classification (AC, WA, TLE, MLE, CE, RE).
 """
+import ast
+import re
 import os
 import sys
 import time
@@ -17,6 +19,74 @@ VerdictType = Literal["AC", "WA", "TLE", "MLE", "CE", "RE", "UNKNOWN"]
 LanguageType = Literal["cpp", "cpp17", "cpp20", "python", "python3", "java"]
 
 MAX_OUTPUT_BYTES = 64 * 1024  # 64 KB stdout/stderr buffer limit
+
+BLOCKED_PYTHON_MODULES = {
+    "os", "subprocess", "shutil", "socket", "pty", "commands",
+    "posix", "nt", "ctypes", "winreg", "win32api", "builtins", "__builtin__",
+    "http", "urllib", "requests", "ftplib", "telnetlib", "multiprocessing",
+    "threading", "signal", "tempfile", "importlib"
+}
+
+BLOCKED_CPP_PATTERNS = [
+    r'#\s*include\s*<cstdlib>',
+    r'#\s*include\s*<sys/',
+    r'#\s*include\s*<unistd\.h>',
+    r'#\s*include\s*<windows\.h>',
+    r'#\s*include\s*<process\.h>',
+    r'\bsystem\s*\(',
+    r'\bfork\s*\(',
+    r'\bpopen\s*\(',
+    r'\bexec[lv]?[p|e]?\s*\(',
+    r'\bkill\s*\(',
+    r'\bremove\s*\(',
+    r'\b_wsystem\s*\(',
+]
+
+BLOCKED_JAVA_PATTERNS = [
+    r'Runtime\.getRuntime\s*\(',
+    r'ProcessBuilder',
+    r'System\.exit\s*\(',
+    r'java\.io\.File\.delete',
+    r'java\.net\.',
+    r'java\.lang\.reflect',
+]
+
+def validate_source_code_safety(source_code: str, language: str) -> tuple[bool, str | None]:
+    """Validate source code against dangerous syscalls, file manipulation, and forbidden modules."""
+    lang = language.lower()
+    
+    if lang in ("python", "python3"):
+        try:
+            tree = ast.parse(source_code)
+            for node in ast.walk(tree):
+                if isinstance(node, ast.Import):
+                    for alias in node.names:
+                        mod_root = alias.name.split('.')[0]
+                        if mod_root in BLOCKED_PYTHON_MODULES:
+                            return False, f"Forbidden import '{alias.name}' detected."
+                elif isinstance(node, ast.ImportFrom):
+                    if node.module:
+                        mod_root = node.module.split('.')[0]
+                        if mod_root in BLOCKED_PYTHON_MODULES:
+                            return False, f"Forbidden import from '{node.module}' detected."
+                elif isinstance(node, ast.Call):
+                    if isinstance(node.func, ast.Name):
+                        if node.func.id in ("eval", "exec", "__import__", "open"):
+                            return False, f"Forbidden built-in function '{node.func.id}' detected."
+        except SyntaxError:
+            pass
+            
+    elif lang in ("cpp", "cpp17", "cpp20"):
+        for pattern in BLOCKED_CPP_PATTERNS:
+            if re.search(pattern, source_code):
+                return False, f"Forbidden C++ system operation or header matching '{pattern}' detected."
+                
+    elif lang == "java":
+        for pattern in BLOCKED_JAVA_PATTERNS:
+            if re.search(pattern, source_code):
+                return False, f"Forbidden Java system operation matching '{pattern}' detected."
+                
+    return True, None
 
 
 class ExecutionConfig(BaseModel):
@@ -56,6 +126,11 @@ def compile_code(
         tuple[bool, list[str], str]: (success, execution_command, compiler_error_message)
     """
     lang = language.lower()
+
+    # Pre-Flight AST & Regex Security Guard
+    is_safe, sec_err = validate_source_code_safety(source_code, lang)
+    if not is_safe and sec_err:
+        return False, [], f"Security Violation: {sec_err}"
 
     if lang in ("python", "python3"):
         script_path = work_dir / "solution.py"
