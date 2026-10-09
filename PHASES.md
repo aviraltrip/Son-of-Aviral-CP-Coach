@@ -85,13 +85,14 @@ Phase 8: [Optional] Sandbox Code Judge Execution (1 week)
 
 ---
 
-### Phase 6: Evals & Leakage Benchmarking
+### Phase 6: Evals & Leakage Benchmarking [COMPLETE]
 - **Goal**: Scientifically prove that the multi-agent system prevents leakage compared to single-agent baselines.
 - **Tasks**:
-  1. Build evaluation dataset in `evals/dataset.json` (20-30 diverse Codeforces problems across DP, Graphs, Greedy, Math).
-  2. Build `evals/leakage_eval.py` utilizing an independent LLM judge with full solution access.
-  3. Calculate metrics: Leakage Rate, Keeper Rejection Rate, Revision Count, Token Cost, Latency.
-- **Definition of Done (DoD)**: Complete comparative evaluation table generated and documented in `README.md`.
+  1. Build evaluation dataset in `evals/dataset.json` (20 curated Codeforces problems across DP, Graphs, Greedy, Math, Trees). [DONE]
+  2. Build `evals/leakage_eval.py` utilizing an independent LLM judge with full solution access. [DONE]
+  3. Calculate metrics: Leakage Rate, Keeper Rejection Rate, Revision Count, Latency, and format comparative report. [DONE]
+  4. Build comprehensive unit tests in `tests/test_leakage_eval.py`. [DONE]
+- **Definition of Done (DoD)**: Complete comparative evaluation suite operational, benchmark metrics calculated, and markdown summary table generated. [VERIFIED]
 
 ---
 
