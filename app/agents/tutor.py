@@ -21,13 +21,36 @@ TARGETED_DIAGNOSTICS = {
         "Check: 1) What if the root is already a leaf? 2) Are single-child nodes handled correctly? "
         "3) Did you account for direction changes properly ('L' vs 'R')?"
     ),
+    "WA": (
+        "Diagnostic Hint: Your solution produces a Wrong Answer on a test case. "
+        "Check boundary conditions, zero values, off-by-one loops, and 64-bit integer overflow."
+    ),
     "TIME_LIMIT_EXCEEDED": (
         "Diagnostic Hint: Your solution might be recomputing subtree values repeatedly. "
         "Aim for a single tree traversal (DFS) that computes the answer in O(N) time."
     ),
+    "TLE": (
+        "Diagnostic Hint: Time Limit Exceeded. Review your time complexity. "
+        "Ensure your algorithm runs within O(N log N) or O(N) and avoid nested quadratic loops."
+    ),
     "MEMORY_LIMIT_EXCEEDED": (
-        "Diagnostic Hint: Deep tree recursion might cause stack overflow. "
+        "Diagnostic Hint: Deep tree recursion or large allocations might exceed memory limits. "
         "Ensure vectors/lists are passed by reference and memory is allocated linearly."
+    ),
+    "MLE": (
+        "Diagnostic Hint: Memory Limit Exceeded. Check for memory leaks or excessive dynamic array allocations."
+    ),
+    "COMPILATION_ERROR": (
+        "Diagnostic Hint: Compilation failed. Check syntax, headers, type conversions, and semicolons."
+    ),
+    "CE": (
+        "Diagnostic Hint: Compilation Error. Inspect compiler error messages for missing declarations or typos."
+    ),
+    "RUNTIME_ERROR": (
+        "Diagnostic Hint: Runtime Crash (SIGSEGV/RE). Check for out-of-bounds array access, null pointer dereference, or division by zero."
+    ),
+    "RE": (
+        "Diagnostic Hint: Runtime Error. Verify array indexing bounds, stack depth recursion limits, and non-zero divisors."
     )
 }
 
@@ -52,7 +75,7 @@ def tutor_node(state: CoachState) -> dict[str, Any]:
     llm = get_llm(model_type="tutor")
 
     try:
-        if last_sub and last_sub != "OK" and user_action == "submitted":
+        if last_sub and last_sub not in ("OK", "AC") and user_action in ("submitted", "submit_code", "judge"):
             prompt = build_targeted_hint_prompt(problem_stmt, last_sub, history)
             resp = llm.invoke([{"role": "system", "content": TARGETED_HINT_SYSTEM_PROMPT}, {"role": "user", "content": prompt}])
             text = resp.content.strip() if hasattr(resp, "content") else str(resp)

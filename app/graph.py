@@ -9,6 +9,7 @@ from app.state import CoachState
 from app.agents.analyst import analyst_node
 from app.agents.tutor import tutor_node
 from app.agents.keeper import keeper_node
+from app.agents.judge import judge_node
 from app.data.cf_client import get_latest_problem_submission
 from app.data.db import record_problem_submission
 from app.data.stats import recalculate_user_topic_stats
@@ -19,18 +20,38 @@ def get_checkpointer(persisted: bool = False) -> Any:
     """Return memory or persistent checkpointer instance."""
     return MemorySaver()
 
-def route_user_action(state: CoachState) -> Literal["tutor", "check_submission", "analyst", "__end__"]:
+def route_user_action(state: CoachState) -> Literal["tutor", "check_submission", "judge", "analyst", "__end__"]:
     """Route based on user action taken at the wait_for_user interrupt."""
     action = state.get("user_action")
-    if action == "request_hint":
+    if action in ("submit_code", "judge"):
+        return "judge"
+    elif action == "request_hint":
         return "tutor"
-    elif action == "submitted":
+    elif action in ("submitted", "check_submission"):
         return "check_submission"
-    elif action == "skip":
+    elif action in ("skip", "skip_problem"):
         return "analyst"
     elif action == "done":
         return "__end__"
     return "tutor"
+
+def route_judge_verdict(state: CoachState) -> Literal["analyst", "tutor", "wait_for_user"]:
+    """Route based on Sandbox Judge execution outcome."""
+    jv = state.get("judge_verdict")
+    status = jv.status if jv else state.get("last_submission_verdict", "UNKNOWN")
+    handle = state.get("handle")
+    db_path = os.getenv("DATABASE_PATH", "cp_coach.db")
+    
+    if status == "AC":
+        if handle:
+            try:
+                recalculate_user_topic_stats(handle, db_path=db_path)
+            except Exception as e:
+                logger.warning(f"Could not recalculate topic stats on judge AC: {e}")
+        return "analyst"
+    elif status in ("WA", "TLE", "MLE", "RE", "CE"):
+        return "tutor"
+    return "wait_for_user"
 
 def check_submission_node(state: CoachState) -> dict[str, Any]:
     """Evaluate recent submission verdict, update DB records and topic stats, and append to history."""
@@ -139,6 +160,7 @@ def create_coach_graph(checkpointer: Any = None) -> Any:
     workflow.add_node("tutor", tutor_node)
     workflow.add_node("keeper", keeper_node)
     workflow.add_node("check_submission", check_submission_node)
+    workflow.add_node("judge", judge_node)
     
     # Flow Edges
     workflow.add_edge(START, "analyst")
@@ -151,6 +173,7 @@ def create_coach_graph(checkpointer: Any = None) -> Any:
         {
             "tutor": "tutor",
             "check_submission": "check_submission",
+            "judge": "judge",
             "analyst": "analyst",
             "__end__": END,
         }
@@ -167,7 +190,18 @@ def create_coach_graph(checkpointer: Any = None) -> Any:
         }
     )
     
-    # Submission routing: AC -> analyst | WA/TLE -> tutor (targeted hint) | Pending -> wait_for_user
+    # Sandbox Judge routing: AC -> analyst | WA/TLE/CE/RE -> tutor (targeted hint) | other -> wait_for_user
+    workflow.add_conditional_edges(
+        "judge",
+        route_judge_verdict,
+        {
+            "analyst": "analyst",
+            "tutor": "tutor",
+            "wait_for_user": "wait_for_user"
+        }
+    )
+    
+    # Submission polling routing: AC -> analyst | WA/TLE -> tutor (targeted hint) | Pending -> wait_for_user
     workflow.add_conditional_edges(
         "check_submission",
         route_submission,

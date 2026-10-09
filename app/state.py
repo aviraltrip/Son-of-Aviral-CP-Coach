@@ -1,4 +1,5 @@
 """State definitions and Pydantic schemas for CP Coach."""
+import time
 from typing import Literal, TypedDict, Any
 from pydantic import BaseModel, Field
 
@@ -44,6 +45,32 @@ class TestCase(BaseModel):
     expected_output: str = Field(..., description="Expected standard output")
     is_sample: bool = Field(False, description="Whether this is an official sample test case")
 
+class CodeSubmission(BaseModel):
+    language: str = Field("cpp", description="Language: cpp, python3, java")
+    source_code: str = Field(..., description="Submitted program source code")
+    timestamp: float = Field(default_factory=time.time, description="Submission timestamp")
+
+class TestCaseResult(BaseModel):
+    test_index: int = Field(..., description="1-indexed test case number")
+    verdict: str = Field(..., description="Test result: AC, WA, TLE, MLE, RE, CE")
+    time_ms: float = Field(0.0, description="Execution time in ms")
+    memory_kb: float = Field(0.0, description="Memory used in KB")
+    input_snippet: str = Field("", description="Input preview snippet")
+    user_output: str = Field("", description="Output produced by candidate code")
+    expected_output: str = Field("", description="Expected reference output")
+    error_message: str = Field("", description="Error message or diff")
+
+class JudgeVerdict(BaseModel):
+    status: Literal["AC", "WA", "TLE", "MLE", "CE", "RE", "UNKNOWN"] = Field(..., description="Overall evaluation verdict")
+    passed_count: int = Field(0, description="Number of passed test cases")
+    total_count: int = Field(0, description="Total number of evaluated test cases")
+    time_consumed_ms: float = Field(0.0, description="Max or total execution time in ms")
+    memory_consumed_bytes: int = Field(0, description="Peak memory consumed in bytes")
+    compiler_output: str = Field("", description="Compiler warnings or compilation error details")
+    failing_test_index: int | None = Field(None, description="1-indexed number of first failing test case")
+    failing_test_result: TestCaseResult | None = Field(None, description="Detailed result of the failing test")
+    detailed_results: list[TestCaseResult] = Field(default_factory=list, description="Per-test results")
+
 class CoachState(TypedDict):
     handle: str
     diagnosis: Diagnosis | None
@@ -56,3 +83,5 @@ class CoachState(TypedDict):
     history: list[dict[str, Any]]
     user_action: str | None
     last_submission_verdict: str | None
+    submission_code: CodeSubmission | None
+    judge_verdict: JudgeVerdict | None

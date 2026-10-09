@@ -375,6 +375,13 @@ def record_problem_submission(
     actual_sub_id = sub_id or int(time.time() * 1000) % 2147483647
     
     with get_db_connection(db_path) as conn:
+        # Ensure user row exists
+        conn.execute("""
+            INSERT INTO users (handle)
+            VALUES (?)
+            ON CONFLICT(handle) DO NOTHING;
+        """, (clean_handle,))
+
         # Ensure problem row exists
         tags_json = json.dumps(tags or [])
         name = problem_name or f"Problem {contest_id}{idx}"
