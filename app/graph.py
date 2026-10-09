@@ -77,7 +77,6 @@ def check_submission_node(state: CoachState) -> dict[str, Any]:
     
     verdict = explicit_verdict
     
-    # If no explicit verdict was set, query Codeforces API for latest submission
     if not verdict and handle and problem:
         try:
             sub = get_latest_problem_submission(handle, problem.contest_id, problem.index, ttl_seconds=0)
@@ -92,7 +91,6 @@ def check_submission_node(state: CoachState) -> dict[str, Any]:
     if not verdict:
         verdict = "OK"
 
-    # Record submission into database
     if handle and problem:
         try:
             record_problem_submission(
@@ -169,7 +167,6 @@ def create_coach_graph(checkpointer: Any = None) -> Any:
     """Build and compile the CP Coach LangGraph state machine."""
     workflow = StateGraph(CoachState)
     
-    # Add Nodes
     workflow.add_node("analyst", analyst_node)
     workflow.add_node("wait_for_user", wait_for_user_node)
     workflow.add_node("tutor", tutor_node)
@@ -177,11 +174,9 @@ def create_coach_graph(checkpointer: Any = None) -> Any:
     workflow.add_node("check_submission", check_submission_node)
     workflow.add_node("judge", judge_node)
     
-    # Flow Edges
     workflow.add_edge(START, "analyst")
     workflow.add_edge("analyst", "wait_for_user")
     
-    # User interaction routing
     workflow.add_conditional_edges(
         "wait_for_user",
         route_user_action,
@@ -194,7 +189,6 @@ def create_coach_graph(checkpointer: Any = None) -> Any:
         }
     )
     
-    # Tutor ⇄ Keeper verification loop
     workflow.add_edge("tutor", "keeper")
     workflow.add_conditional_edges(
         "keeper",
@@ -205,7 +199,6 @@ def create_coach_graph(checkpointer: Any = None) -> Any:
         }
     )
     
-    # Sandbox Judge routing: AC -> analyst | WA/TLE/CE/RE -> tutor (targeted hint) | other -> wait_for_user
     workflow.add_conditional_edges(
         "judge",
         route_judge_verdict,
@@ -216,7 +209,6 @@ def create_coach_graph(checkpointer: Any = None) -> Any:
         }
     )
     
-    # Submission polling routing: AC -> analyst | WA/TLE -> tutor (targeted hint) | Pending -> wait_for_user
     workflow.add_conditional_edges(
         "check_submission",
         route_submission,
@@ -249,7 +241,6 @@ def run_cli_session(handle: str = "tourist") -> None:
     print(f"Analyzing Codeforces profile history for '{handle}'...")
     print("⚡ Live sync & deterministic stats engine active (Rate limit: 1req/2s)...")
     
-    # Initial state
     graph.invoke({
         "handle": handle,
         "diagnosis": None,
