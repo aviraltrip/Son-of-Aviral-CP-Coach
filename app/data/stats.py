@@ -9,7 +9,6 @@ HALF_LIFE_DAYS = 30.0
 HALF_LIFE_SECONDS = HALF_LIFE_DAYS * 86400.0
 LN_2 = math.log(2)
 
-# Non-algorithmic or administrative Codeforces tags that should not be evaluated as weak topics
 NON_ALGORITHMIC_TAGS: set[str] = {
     "*special",
     "special problem",

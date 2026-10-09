@@ -386,14 +386,12 @@ def record_problem_submission(
     actual_sub_id = sub_id or int(time.time() * 1000) % 2147483647
     
     with get_db_connection(db_path) as conn:
-        # Ensure user row exists
         conn.execute("""
             INSERT INTO users (handle)
             VALUES (?)
             ON CONFLICT(handle) DO NOTHING;
         """, (clean_handle,))
 
-        # Ensure problem row exists
         tags_json = json.dumps(tags or [])
         name = problem_name or f"Problem {contest_id}{idx}"
         conn.execute("""
@@ -404,7 +402,6 @@ def record_problem_submission(
                 tags_json = CASE WHEN excluded.tags_json != '[]' THEN excluded.tags_json ELSE problems.tags_json END;
         """, (contest_id, idx, name, problem_rating, tags_json))
 
-        # Insert submission
         conn.execute("""
             INSERT INTO submissions (
                 id, user_handle, contest_id, idx, verdict,
@@ -552,7 +549,6 @@ def get_cached_hint(contest_id: int, idx: str, hint_level: int, db_path: str = D
         row = cursor.fetchone()
         return row["hint_text"] if row else None
 
-
 def save_cached_hint(contest_id: int, idx: str, hint_level: int, hint_text: str, db_path: str = DEFAULT_DB_PATH) -> None:
     """Save an approved hint into the cache for instant zero-latency retrieval."""
     if not hint_text or not hint_text.strip():
@@ -566,5 +562,4 @@ def save_cached_hint(contest_id: int, idx: str, hint_level: int, hint_text: str,
                 hint_text = excluded.hint_text,
                 created_at = CURRENT_TIMESTAMP;
         """, (contest_id, idx.upper(), hint_level, hint_text.strip()))
-
 
