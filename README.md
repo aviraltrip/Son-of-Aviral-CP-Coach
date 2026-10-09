@@ -1,6 +1,6 @@
 # CP Coach: Multi-Agent Competitive Programming Coach
 
-[![Python 3.11+](https://img.shields.io/badge/python-3.11+-blue.svg)](https://www.python.org/downloads/)
+[![Python](https://img.shields.io/badge/Python-blue.svg)](https://www.python.org/downloads/)
 [![LangGraph](https://img.shields.io/badge/LangGraph-orange.svg)](https://github.com/langchain-ai/langgraph)
 [![Pydantic v2](https://img.shields.io/badge/Pydantic%20v2-green.svg)](https://docs.pydantic.dev/)
 [![Streamlit](https://img.shields.io/badge/Streamlit-red.svg)](https://streamlit.io/)
