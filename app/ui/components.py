@@ -140,8 +140,11 @@ def get_rank_badge(rating: int | None) -> tuple[str, str]:
     return "Newbie", "#808080"
 
 def render_tag_chips(tags: list[str]) -> str:
-    """Generate HTML string of tag chips."""
-    return "".join(f'<span class="badge-tag">{t}</span>' for t in tags)
+    """Generate HTML string of tag chips, filtering out non-algorithmic/administrative tags."""
+    from app.data.stats import is_valid_algorithmic_tag
+    valid_tags = [t for t in tags if is_valid_algorithmic_tag(t)]
+    display_tags = valid_tags if valid_tags else (tags if tags else ["implementation"])
+    return "".join(f'<span class="badge-tag">{t}</span>' for t in display_tags)
 
 def render_weak_topics_summary(weak_topics: list[Any]) -> None:
     """Render weak topics in a clean bar chart and structured summary table."""
