@@ -8,7 +8,6 @@ import sys
 import uuid
 from pathlib import Path
 
-# Ensure project root is in sys.path when launched directly via `streamlit run`
 ROOT_DIR = Path(__file__).resolve().parent.parent.parent
 if str(ROOT_DIR) not in sys.path:
     sys.path.insert(0, str(ROOT_DIR))
@@ -90,7 +89,6 @@ def render_sidebar() -> str:
                     st.warning(f"Could not reach CF API ({e}). Using local database cache.")
                     st.session_state.user_info = get_user(st.session_state.handle) or {"handle": st.session_state.handle, "current_rating": 1400}
 
-            # Initialize LangGraph
             st.session_state.graph.invoke({
                 "handle": st.session_state.handle,
                 "diagnosis": None,
@@ -167,7 +165,6 @@ def main() -> None:
         problem = values.get("problem")
         stmt = values.get("problem_statement", "")
         
-        # 1. Problem Viewer Card
         render_problem_card(problem, stmt)
 
         st.markdown("### 💡 Progressive Hint Requests")
@@ -191,7 +188,6 @@ def main() -> None:
                 st.session_state.graph.invoke(None, config=st.session_state.config)
             st.rerun()
 
-        # 2. Render Approved Hint Display
         draft = values.get("draft")
         verdict = values.get("verdict")
         if draft and verdict and verdict.approved:
@@ -262,11 +258,9 @@ def main() -> None:
                     )
                 st.rerun()
 
-        # Render Fuzzing Outcome if present
         if st.session_state.fuzz_result:
             render_fuzz_result_banner(st.session_state.fuzz_result)
 
-        # Render Sandbox Judge Verdict Banner
         judge_verdict = values.get("judge_verdict")
         if judge_verdict:
             render_judge_verdict_banner(judge_verdict)
@@ -320,7 +314,6 @@ def main() -> None:
                 st.session_state.graph.invoke(None, config=st.session_state.config)
             st.rerun()
 
-        # 3. Agent Inspection Trace
         with st.expander("🔍 Multi-Agent Reasoning Trace (Tutor ⇄ Keeper Dialogue)", expanded=False):
             render_agent_trace(values.get("history", []))
 

@@ -408,7 +408,6 @@ def render_judge_verdict_banner(judge_verdict: Any) -> None:
                 st.caption("🎯 Expected Output")
                 st.code(failing_res.expected_output or "[Empty]", language="text")
 
-
 def render_fuzz_result_banner(fuzz_result: Any) -> None:
     """Render differential fuzzing / stress testing result."""
     if not fuzz_result:
