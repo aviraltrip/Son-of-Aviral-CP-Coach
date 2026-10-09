@@ -117,3 +117,22 @@ def test_test_cases_crud(temp_db):
     assert len(samples) == 1
     assert samples[0]["test_index"] == 1
 
+def test_cached_hints_crud(temp_db):
+    from app.data.db import get_cached_hint, save_cached_hint
+    upsert_problems([{"contestId": 1900, "index": "C", "name": "Tree DP", "rating": 1500, "tags": []}], db_path=temp_db)
+    
+    # Initially no cached hint
+    hint = get_cached_hint(1900, "C", 1, db_path=temp_db)
+    assert hint is None
+    
+    # Save approved hint
+    save_cached_hint(1900, "C", 1, "Consider binary tree traversal invariants.", db_path=temp_db)
+    hint = get_cached_hint(1900, "C", 1, db_path=temp_db)
+    assert hint == "Consider binary tree traversal invariants."
+    
+    # Overwrite/update cache
+    save_cached_hint(1900, "C", 1, "Updated Level 1 hint text.", db_path=temp_db)
+    hint_updated = get_cached_hint(1900, "C", 1, db_path=temp_db)
+    assert hint_updated == "Updated Level 1 hint text."
+
+
