@@ -35,3 +35,51 @@ def test_custom_css_structure():
     assert "hint-box" in CUSTOM_CSS
     assert "agent-bubble-tutor" in CUSTOM_CSS
     assert "agent-bubble-keeper" in CUSTOM_CSS
+
+def test_starter_templates():
+    from app.ui.components import STARTER_TEMPLATES
+    assert "cpp" in STARTER_TEMPLATES
+    assert "python3" in STARTER_TEMPLATES
+    assert "java" in STARTER_TEMPLATES
+    assert "iostream" in STARTER_TEMPLATES["cpp"]
+    assert "sys.stdin" in STARTER_TEMPLATES["python3"]
+    assert "Scanner" in STARTER_TEMPLATES["java"]
+
+def test_render_judge_verdict_banner_no_error():
+    from app.ui.components import render_judge_verdict_banner
+    from app.state import JudgeVerdict, TestCaseResult
+    jv = JudgeVerdict(
+        status="WA",
+        passed_count=1,
+        total_count=2,
+        time_consumed_ms=45.2,
+        memory_consumed_bytes=2048,
+        failing_test_index=2,
+        failing_test_result=TestCaseResult(
+            test_index=2,
+            verdict="WA",
+            time_ms=20.0,
+            memory_kb=2.0,
+            input_snippet="5\n",
+            user_output="10\n",
+            expected_output="15\n"
+        )
+    )
+    # Ensure it executes without raising exceptions
+    render_judge_verdict_banner(jv)
+    render_judge_verdict_banner(None)
+
+def test_render_fuzz_result_banner_no_error():
+    from app.ui.components import render_fuzz_result_banner
+    from app.judge.fuzzer import FuzzResult
+    fuzz_res = FuzzResult(
+        counterexample_found=True,
+        trials_run=5,
+        user_verdict="WA",
+        failing_input="1 2\n",
+        expected_output="3\n",
+        user_output="2\n"
+    )
+    render_fuzz_result_banner(fuzz_res)
+    render_fuzz_result_banner(None)
+

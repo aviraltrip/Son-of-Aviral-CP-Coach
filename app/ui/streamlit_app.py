@@ -16,12 +16,20 @@ if str(ROOT_DIR) not in sys.path:
 import streamlit as st
 
 from app.graph import create_coach_graph
+from app.state import CodeSubmission
 from app.ui.components import (
     inject_custom_css,
     get_rank_badge,
     render_tag_chips,
-    render_weak_topics_summary
+    render_weak_topics_summary,
+    render_problem_card,
+    render_hint_box,
+    render_agent_trace,
+    render_judge_verdict_banner,
+    render_fuzz_result_banner,
+    STARTER_TEMPLATES
 )
+from app.judge.fuzzer import stress_test_problem_submission
 from app.data.db import get_user, get_user_topic_stats
 from app.data.cf_client import sync_user_data
 
@@ -44,6 +52,15 @@ def init_session_state() -> None:
         
     if "initialized" not in st.session_state:
         st.session_state.initialized = False
+
+    if "code_lang" not in st.session_state:
+        st.session_state.code_lang = "cpp"
+
+    if "user_code" not in st.session_state:
+        st.session_state.user_code = STARTER_TEMPLATES["cpp"]
+
+    if "fuzz_result" not in st.session_state:
+        st.session_state.fuzz_result = None
 
 def render_sidebar() -> str:
     """Render sidebar with user handle settings, sync actions, and profile stats."""
@@ -182,15 +199,88 @@ def main() -> None:
             render_hint_box(draft, verdict)
 
         st.markdown("---")
-        st.markdown("### 🚀 Submission & Verification")
-        st.markdown("Check your Codeforces submission to update your proficiency stats or receive targeted failure diagnostics.")
+        st.markdown("### 💻 Solution Code Editor & Local Sandbox Judge")
+        st.markdown("Write and test your solution locally with CPU timeouts, memory constraints, and differential fuzzing.")
 
-        col_poll, col_ac, col_wa, col_tle, col_skip = st.columns([1.2, 1, 1, 1, 1])
+        col_lang, col_space = st.columns([1, 3])
+        with col_lang:
+            selected_lang = st.selectbox(
+                "Language",
+                options=["cpp", "python3", "java"],
+                format_func=lambda x: {"cpp": "C++17 (g++)", "python3": "Python 3.10", "java": "Java 17"}.get(x, x),
+                index=0 if st.session_state.code_lang == "cpp" else (1 if st.session_state.code_lang == "python3" else 2),
+                key="select_code_lang"
+            )
+            if selected_lang != st.session_state.code_lang:
+                st.session_state.code_lang = selected_lang
+                st.session_state.user_code = STARTER_TEMPLATES.get(selected_lang, "")
+
+        code_input = st.text_area(
+            "Source Code",
+            value=st.session_state.user_code,
+            height=260,
+            key="text_user_code"
+        )
+        st.session_state.user_code = code_input
+
+        col_run_judge, col_fuzz, col_skip = st.columns([1.5, 1.5, 1])
+        judge_submit_clicked = col_run_judge.button("⚡ Submit to Sandbox Judge", use_container_width=True, type="primary")
+        fuzz_clicked = col_fuzz.button("🧪 Run Differential Fuzzer", use_container_width=True, help="Stress test against reference solution to find counterexamples.")
+        skip_clicked = col_skip.button("⏭️ Skip Problem", use_container_width=True)
+
+        if judge_submit_clicked:
+            cid = getattr(problem, "contest_id", None) if problem else None
+            idx = getattr(problem, "index", None) if problem else None
+            if not problem or not cid or not idx:
+                st.warning("No active problem selected.")
+            else:
+                submission_obj = CodeSubmission(
+                    language=st.session_state.code_lang,
+                    source_code=code_input
+                )
+                with st.spinner("Compiling and executing test cases in sandbox..."):
+                    st.session_state.graph.update_state(st.session_state.config, {
+                        "user_action": "submit_code",
+                        "submission_code": submission_obj,
+                        "last_submission_verdict": None
+                    }, as_node="wait_for_user")
+                    st.session_state.graph.invoke(None, config=st.session_state.config)
+                st.rerun()
+
+        if fuzz_clicked:
+            cid = getattr(problem, "contest_id", None) if problem else None
+            idx = getattr(problem, "index", None) if problem else None
+            if not problem or not cid or not idx:
+                st.warning("No active problem selected.")
+            else:
+                with st.spinner("Differential fuzzer generating randomized test inputs against reference solution..."):
+                    st.session_state.fuzz_result = stress_test_problem_submission(
+                        contest_id=cid,
+                        idx=idx,
+                        user_code=code_input,
+                        user_lang=st.session_state.code_lang,
+                        max_trials=30
+                    )
+                st.rerun()
+
+        # Render Fuzzing Outcome if present
+        if st.session_state.fuzz_result:
+            render_fuzz_result_banner(st.session_state.fuzz_result)
+
+        # Render Sandbox Judge Verdict Banner
+        judge_verdict = values.get("judge_verdict")
+        if judge_verdict:
+            render_judge_verdict_banner(judge_verdict)
+
+        st.markdown("---")
+        st.markdown("### 🌐 Remote Codeforces Synchronization")
+        st.markdown("Poll live Codeforces submission verdict or manually simulate outcomes.")
+
+        col_poll, col_ac, col_wa, col_tle = st.columns(4)
         poll_clicked = col_poll.button("🔄 Poll Codeforces", use_container_width=True, help="Poll live Codeforces API for latest submission.")
-        ac_clicked = col_ac.button("✅ Submit (AC)", use_container_width=True, help="Simulate Accepted solution.")
-        wa_clicked = col_wa.button("❌ Submit (WA)", use_container_width=True, help="Simulate Wrong Answer.")
-        tle_clicked = col_tle.button("⏱️ Submit (TLE)", use_container_width=True, help="Simulate Time Limit Exceeded.")
-        skip_clicked = col_skip.button("⏭️ Skip", use_container_width=True, help="Skip problem and pick another.")
+        ac_clicked = col_ac.button("✅ Force Accepted", use_container_width=True, help="Simulate Accepted solution.")
+        wa_clicked = col_wa.button("❌ Force Wrong Answer", use_container_width=True, help="Simulate Wrong Answer.")
+        tle_clicked = col_tle.button("⏱️ Force Time Limit", use_container_width=True, help="Simulate Time Limit Exceeded.")
 
         if poll_clicked:
             with st.spinner("Polling live submission on Codeforces API..."):

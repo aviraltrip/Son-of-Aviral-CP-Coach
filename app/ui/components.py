@@ -284,3 +284,156 @@ def render_agent_trace(history: list[dict[str, Any]]) -> None:
                 """,
                 unsafe_allow_html=True
             )
+
+STARTER_TEMPLATES = {
+    "cpp": """#include <iostream>
+#include <vector>
+#include <algorithm>
+using namespace std;
+
+void solve() {
+    // Write your solution logic here
+    int n;
+    if (!(cin >> n)) return;
+    cout << n << "\\n";
+}
+
+int main() {
+    ios_base::sync_with_stdio(false);
+    cin.tie(NULL);
+    int t = 1;
+    if (cin >> t) {
+        while (t--) solve();
+    }
+    return 0;
+}
+""",
+    "python3": """import sys
+
+def solve():
+    input_data = sys.stdin.read().split()
+    if not input_data:
+        return
+    # Process test cases
+    print("Solution output")
+
+if __name__ == '__main__':
+    solve()
+""",
+    "java": """import java.util.Scanner;
+
+public class Solution {
+    public static void main(String[] args) {
+        Scanner sc = new Scanner(System.in);
+        if (sc.hasNext()) {
+            int t = sc.nextInt();
+            while (t-- > 0) {
+                // Solution logic
+            }
+        }
+    }
+}
+"""
+}
+
+def render_judge_verdict_banner(judge_verdict: Any) -> None:
+    """Render modern styled card and telemetry for Sandbox Judge outcomes."""
+    if not judge_verdict:
+        return
+
+    status = getattr(judge_verdict, "status", "UNKNOWN")
+    passed = getattr(judge_verdict, "passed_count", 0)
+    total = getattr(judge_verdict, "total_count", 0)
+    time_ms = getattr(judge_verdict, "time_consumed_ms", 0.0)
+    mem_bytes = getattr(judge_verdict, "memory_consumed_bytes", 0)
+    mem_kb = round(mem_bytes / 1024, 1)
+
+    color_map = {
+        "AC": ("#10b981", "rgba(16, 185, 129, 0.12)", "✅ Accepted"),
+        "WA": ("#ef4444", "rgba(239, 68, 68, 0.12)", "❌ Wrong Answer"),
+        "TLE": ("#f59e0b", "rgba(245, 158, 11, 0.12)", "⏱️ Time Limit Exceeded"),
+        "MLE": ("#f59e0b", "rgba(245, 158, 11, 0.12)", "💾 Memory Limit Exceeded"),
+        "CE": ("#a855f7", "rgba(168, 85, 247, 0.12)", "⚠️ Compilation Error"),
+        "RE": ("#ef4444", "rgba(239, 68, 68, 0.12)", "💥 Runtime Error"),
+        "UNKNOWN": ("#94a3b8", "rgba(148, 163, 184, 0.12)", "❓ Unknown")
+    }
+
+    border_color, bg_color, title_text = color_map.get(status, color_map["UNKNOWN"])
+    failing_idx = getattr(judge_verdict, "failing_test_index", None)
+    fail_detail = f"on Test #{failing_idx}" if (failing_idx and status != "AC") else ""
+
+    st.markdown(
+        f"""
+        <div style="background: {bg_color}; border: 1px solid {border_color}; border-radius: 10px; padding: 1rem 1.25rem; margin-top: 1rem; margin-bottom: 1rem;">
+            <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 0.5rem;">
+                <div style="font-size: 1.15rem; font-weight: 700; color: {border_color};">
+                    {title_text} {fail_detail}
+                </div>
+                <div style="font-size: 0.85rem; color: #cbd5e1;">
+                    <span style="background: rgba(255,255,255,0.08); padding: 0.2rem 0.6rem; border-radius: 6px; margin-right: 0.4rem;">
+                        ⚡ {time_ms:.1f} ms
+                    </span>
+                    <span style="background: rgba(255,255,255,0.08); padding: 0.2rem 0.6rem; border-radius: 6px; margin-right: 0.4rem;">
+                        💾 {mem_kb} KB
+                    </span>
+                    <span style="background: rgba(255,255,255,0.08); padding: 0.2rem 0.6rem; border-radius: 6px;">
+                        Passed: {passed}/{total}
+                    </span>
+                </div>
+            </div>
+        </div>
+        """,
+        unsafe_allow_html=True
+    )
+
+    if status == "CE" and getattr(judge_verdict, "compiler_output", ""):
+        with st.expander("🔍 View Compiler Diagnostic Logs", expanded=True):
+            st.code(judge_verdict.compiler_output, language="text")
+
+    failing_res = getattr(judge_verdict, "failing_test_result", None)
+    if failing_res:
+        with st.expander(f"⚠️ Inspect Failing Test Case #{failing_res.test_index}", expanded=True):
+            col_in, col_out, col_exp = st.columns(3)
+            with col_in:
+                st.caption("📥 Standard Input")
+                st.code(failing_res.input_snippet or "[Empty]", language="text")
+            with col_out:
+                st.caption("📤 Your Output")
+                st.code(failing_res.user_output or "[No Output]", language="text")
+            with col_exp:
+                st.caption("🎯 Expected Output")
+                st.code(failing_res.expected_output or "[Empty]", language="text")
+
+
+def render_fuzz_result_banner(fuzz_result: Any) -> None:
+    """Render differential fuzzing / stress testing result."""
+    if not fuzz_result:
+        return
+
+    if fuzz_result.counterexample_found:
+        st.markdown(
+            f"""
+            <div style="background: rgba(239, 68, 68, 0.12); border: 1px solid #ef4444; border-radius: 10px; padding: 1rem 1.25rem; margin-top: 1rem;">
+                <div style="font-size: 1.1rem; font-weight: 700; color: #ef4444; margin-bottom: 0.4rem;">
+                    💥 Counterexample Discovered (Trial {fuzz_result.trials_run})
+                </div>
+                <div style="font-size: 0.9rem; color: #cbd5e1; margin-bottom: 0.6rem;">
+                    The differential fuzzer caught a mismatch against the reference solution!
+                </div>
+            </div>
+            """,
+            unsafe_allow_html=True
+        )
+        col_in, col_usr, col_ref = st.columns(3)
+        with col_in:
+            st.caption("📥 Fuzzer Input")
+            st.code(fuzz_result.failing_input or "", language="text")
+        with col_usr:
+            st.caption(f"❌ Your Output ({fuzz_result.user_verdict})")
+            st.code(fuzz_result.user_output or "", language="text")
+        with col_ref:
+            st.caption("✅ Ground Truth Reference Output")
+            st.code(fuzz_result.expected_output or "", language="text")
+    else:
+        st.success(f"🎉 Stress testing passed! No counterexamples found across {fuzz_result.trials_run} randomized trials.")
+
