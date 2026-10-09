@@ -417,7 +417,13 @@ def upsert_test_case(
 ) -> None:
     """Insert or update a test case for a problem."""
     init_db(db_path)
+    clean_idx = idx.upper()
     with get_db_connection(db_path) as conn:
+        conn.execute("""
+            INSERT INTO problems (contest_id, idx, name, rating, tags_json)
+            VALUES (?, ?, ?, NULL, '[]')
+            ON CONFLICT(contest_id, idx) DO NOTHING;
+        """, (contest_id, clean_idx, f"Problem {contest_id}{clean_idx}"))
         conn.execute("""
             INSERT INTO test_cases (contest_id, idx, test_index, input_data, expected_output, is_sample)
             VALUES (?, ?, ?, ?, ?, ?)
@@ -425,7 +431,7 @@ def upsert_test_case(
                 input_data = excluded.input_data,
                 expected_output = excluded.expected_output,
                 is_sample = excluded.is_sample;
-        """, (contest_id, idx.upper(), test_index, input_data, expected_output, int(is_sample)))
+        """, (contest_id, clean_idx, test_index, input_data, expected_output, int(is_sample)))
 
 def upsert_test_cases_batch(
     test_cases: list[dict[str, Any]],
@@ -443,6 +449,12 @@ def upsert_test_cases_batch(
             expected_output = tc.get("expected_output", "")
             is_sample = bool(tc.get("is_sample", False))
             if contest_id and idx:
+                clean_idx = str(idx).upper()
+                conn.execute("""
+                    INSERT INTO problems (contest_id, idx, name, rating, tags_json)
+                    VALUES (?, ?, ?, NULL, '[]')
+                    ON CONFLICT(contest_id, idx) DO NOTHING;
+                """, (contest_id, clean_idx, f"Problem {contest_id}{clean_idx}"))
                 conn.execute("""
                     INSERT INTO test_cases (contest_id, idx, test_index, input_data, expected_output, is_sample)
                     VALUES (?, ?, ?, ?, ?, ?)
@@ -450,7 +462,7 @@ def upsert_test_cases_batch(
                         input_data = excluded.input_data,
                         expected_output = excluded.expected_output,
                         is_sample = excluded.is_sample;
-                """, (contest_id, str(idx).upper(), test_index, input_data, expected_output, int(is_sample)))
+                """, (contest_id, clean_idx, test_index, input_data, expected_output, int(is_sample)))
                 count += 1
     return count
 
