@@ -246,7 +246,7 @@ def render_hint_box(draft: Any, verdict: Any) -> None:
                 {draft.text}
             </div>
             <div class="audit-box">
-                🛡️ <strong>Safety Audit:</strong> {audit_text}
+                🛡️ <strong>Keeper Safety Audit:</strong> {audit_text}
             </div>
         </div>
         """,
