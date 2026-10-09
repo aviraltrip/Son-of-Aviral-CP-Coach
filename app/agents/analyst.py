@@ -12,7 +12,7 @@ from app.data.db import (
     save_topic_stats
 )
 from app.data.cf_client import sync_user_data, CFAPIError
-from app.data.stats import compute_weak_topics, select_next_problem
+from app.data.stats import compute_weak_topics, select_next_problem, is_valid_algorithmic_tag
 
 logger = logging.getLogger(__name__)
 
@@ -25,12 +25,13 @@ SAMPLE_PROBLEMS_FALLBACK = [
 ]
 
 def format_diagnostic_summary(handle: str, user_rating: int | None, weak_topics: list[TopicStat]) -> str:
-    """Format a clear diagnostic summary based on computed stats."""
+    """Format a clear diagnostic summary based on computed stats, focusing strictly on algorithmic tags."""
     rating_str = f"rated {user_rating}" if user_rating else "unrated"
-    if not weak_topics:
+    valid_weak = [t for t in weak_topics if is_valid_algorithmic_tag(t.tag)]
+    if not valid_weak:
         return f"Diagnostics for {handle} ({rating_str}): Profile synced. Recommended a baseline practice problem to assess initial performance."
         
-    top_two = [f"{t.tag} ({int(t.solved_ratio*100)}% solve rate, {t.n_attempts} attempts)" for t in weak_topics[:2]]
+    top_two = [f"{t.tag} ({int(t.solved_ratio*100)}% solve rate, {t.n_attempts} attempts)" for t in valid_weak[:2]]
     return f"Diagnostics for {handle} ({rating_str}): Primary weak areas identified in {', '.join(top_two)}. Recommended problem targets your weak areas in your optimal rating range."
 
 def analyst_node(state: CoachState) -> dict[str, Any]:
