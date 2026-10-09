@@ -61,8 +61,11 @@ def aggregate_tag_statistics(submissions: list[dict[str, Any]], user_rating: int
         weight = recency * difficulty
         
         for t in tags:
-            if t not in tag_data:
-                tag_data[t] = {
+            if not is_valid_algorithmic_tag(t):
+                continue
+            normalized_tag = t.strip()
+            if normalized_tag not in tag_data:
+                tag_data[normalized_tag] = {
                     "total_attempts": 0,
                     "total_accepted": 0,
                     "weighted_attempts": 0.0,
