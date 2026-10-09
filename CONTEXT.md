@@ -74,8 +74,9 @@ Where weight $w_i$ combines **Difficulty Weight** and **Recency Decay**:
 - **Sample Size Shrinkage (Empirical Bayes)**: For tags with very few attempts ($n < 10$), shrink toward global failure rate $\mu$:
   $$\text{AdjustedScore}(T) = \frac{n \cdot WFR(T) + m \cdot \mu}{n + m} \quad (\text{with default prior weight } m = 5)$$
 
-### Problem Selection Rule:
-- Top 3 weak tags by adjusted failure score.
+### Problem Selection & Tag Filtering Rule:
+- **Non-Algorithmic Tag Filtering**: Meta and administrative Codeforces tags (e.g. `*special`, `special problem`, `interactive`, `combine tags by OR`, `submit fail`) are strictly filtered out to avoid polluting diagnostic radar and recommendations.
+- Top 3 weak tags by adjusted failure score among valid algorithmic tags.
 - Target rating: $\text{UserRating} + 100 \le \text{ProblemRating} \le \text{UserRating} + 200$.
 - Filter: Problem has never been attempted by the user before.
 
