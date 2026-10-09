@@ -106,8 +106,14 @@ Phase 8: [Optional] Sandbox Code Judge Execution (1 week)
 
 ---
 
-### Phase 8 (Optional): Sandbox Code Judge
-- **Goal**: Local code execution against test cases.
+### Phase 8: Sandbox Code Judge & Execution Engine ✅ [COMPLETED]
+- **Goal**: Local sandboxed code execution, test case management, differential stress fuzzer, and LangGraph integration.
 - **Tasks**:
-  1. Docker or Judge0 integration with memory and CPU cgroups.
-  2. Brute-force test generator for automated verification.
+  1. Multi-language sandboxed runner (`app/judge/runner.py`) supporting C++17, Python 3, and Java with CPU time limits and memory monitoring. [DONE]
+  2. Test case persistence layer (`test_cases` table in SQLite) and dataset seeder (`app/data/db.py`). [DONE]
+  3. Differential stress fuzzer (`app/judge/fuzzer.py`) comparing candidate code against ground truth reference solutions to isolate minimal counterexamples. [DONE]
+  4. LangGraph `judge_node` integration (`app/agents/judge.py` & `app/graph.py`) with automatic routing to AC or Tutor targeted failure diagnostics. [DONE]
+  5. Interactive Streamlit code editor panel, starter templates, telemetry cards, and diff inspector (`app/ui/components.py` & `app/ui/streamlit_app.py`). [DONE]
+  6. Unit & integration test suites (`tests/test_judge_runner.py`, `tests/test_fuzzer.py`, `tests/test_graph_judge_flow.py`, `tests/test_ui_components.py`). [DONE]
+- **Definition of Done (DoD)**: Users can write, test, stress-test, and submit code inside CP Coach with automatic sandbox verdicts and AI targeted hints. [VERIFIED]
+

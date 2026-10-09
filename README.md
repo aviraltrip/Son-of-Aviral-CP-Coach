@@ -16,6 +16,7 @@ Standard LLMs and editorial walkthroughs spoil competitive programming problems 
 CP Coach solves this through **Multi-Agent Information Asymmetry**:
 - **Tutor Agent**: Sees *only* the problem statement and user chat history. It drafts hints at the requested tier (Level 1: Nudge, Level 2: Approach, Level 3: Pseudocode) without ever seeing the reference solution.
 - **Keeper Agent**: An independent auditor that sees the reference solution (loaded privately from database storage) and verifies that the Tutor's draft does not leak algorithms, variable names, or solutions.
+- **Judge Agent**: Executes code submissions locally in an isolated sandbox (C++17, Python 3, Java) with CPU timeout/memory limits and differential stress fuzzing against ground-truth reference code.
 - **Analyst Agent**: Evaluates submission history, computes weak topics using deterministic math, and selects an optimal problem.
 
 ---
@@ -35,10 +36,11 @@ flowchart TD
     UserAction -- "Request Hint" --> Tutor
     Keeper -- "Approved" --> UserAction
 
-    UserAction -- "Submit Solution" --> CheckSub{Check Submission}
-    CheckSub -- "Accepted (AC)" --> Analyst
-    CheckSub -- "WA / TLE" --> Tutor
+    UserAction -- "Submit Sandbox / Remote" --> Judge{Judge & Submission Node}
+    Judge -- "Accepted (AC)" --> Analyst
+    Judge -- "WA / TLE / CE" --> Tutor
 
     UserAction -- "Skip" --> Analyst
     UserAction -- "Exit" --> END([End Session])
 ```
+

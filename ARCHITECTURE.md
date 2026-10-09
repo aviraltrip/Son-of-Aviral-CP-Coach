@@ -26,8 +26,13 @@ flowchart TD
         keeper_verdict -- "Yes (Approve OR Fallback)" --> wait_user
     end
 
-    subgraph SubmissionHandling ["Submission & Progress Tracking"]
-        route_action -- action == 'submitted' --> check_submission_node[Check Submission Node]
+    subgraph SubmissionHandling ["Submission & Sandbox Judge Execution"]
+        route_action -- action == 'submit_code' --> judge_node[Sandbox Judge Node\n(Compile & Run Tests)]
+        judge_node --> judge_verdict{Judge Verdict == AC?}
+        judge_verdict -- "Yes (AC)" --> update_stats_node
+        judge_verdict -- "No (WA / TLE / MLE / CE / RE)" --> tutor_targeted_node
+
+        route_action -- action == 'submitted' --> check_submission_node[Check Submission Node\n(Poll Remote CF)]
         check_submission_node --> sub_verdict{Verdict == AC?}
         sub_verdict -- "Yes (AC)" --> update_stats_node[Update DB Stats]
         update_stats_node --> analyst_node
@@ -64,6 +69,12 @@ classDiagram
         +audit_hint(problem_statement, draft, reference) HintVerdict
     }
 
+    class JudgeNode {
+        +compile_code(source, language)
+        +evaluate_test_cases(contest_id, idx) JudgeVerdict
+        +fuzz_counterexamples() FuzzResult
+    }
+
     class CheckSubmissionNode {
         +poll_recent_submission(handle, contest_id, idx) dict
     }
@@ -75,6 +86,8 @@ classDiagram
 
     AnalystNode --> TutorNode : passes selected problem
     TutorNode <--> KeeperNode : drafts & audits
+    JudgeNode --> StatsUpdaterNode : on AC
+    JudgeNode --> TutorNode : on WA/TLE/CE
     CheckSubmissionNode --> StatsUpdaterNode : on AC
     CheckSubmissionNode --> TutorNode : on WA/TLE
 ```
@@ -91,6 +104,7 @@ erDiagram
     USERS ||--o{ SESSIONS : conducts
     PROBLEMS ||--o{ SUBMISSIONS : receives
     PROBLEMS ||--o| REFERENCES : has_private
+    PROBLEMS ||--o{ TEST_CASES : contains
     PROBLEMS ||--o{ SESSIONS : targeted_in
 
     USERS {
@@ -119,6 +133,15 @@ erDiagram
         int time_consumed_ms
         int memory_consumed_bytes
         int creation_time_seconds
+    }
+
+    TEST_CASES {
+        int contest_id PK
+        string idx PK
+        int test_index PK
+        string input_data
+        string expected_output
+        boolean is_sample
     }
 
     TOPIC_STATS {
