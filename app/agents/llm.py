@@ -1,7 +1,8 @@
 """Unified LLM client factory supporting Gemini, OpenAI, Anthropic, and local mock fallback."""
-import os
+import importlib
 import json
 import logging
+import os
 from typing import Any
 
 logger = logging.getLogger(__name__)
@@ -80,7 +81,8 @@ def get_llm(model_type: str = "tutor") -> Any:
     
     if openrouter_key:
         try:
-            from langchain_openai import ChatOpenAI
+            openai_mod = importlib.import_module("langchain_openai")
+            ChatOpenAI = getattr(openai_mod, "ChatOpenAI")
             if model_type == "tutor":
                 model_name = os.getenv("TUTOR_MODEL_NAME", "anthropic/claude-3.5-sonnet")
             elif model_type == "analyst":
@@ -94,12 +96,13 @@ def get_llm(model_type: str = "tutor") -> Any:
                 base_url=os.getenv("OPENROUTER_BASE_URL", "https://openrouter.ai/api/v1"),
                 temperature=0.2
             )
-        except ImportError:
+        except (ImportError, AttributeError):
             pass
 
     if google_key:
         try:
-            from langchain_google_genai import ChatGoogleGenerativeAI
+            genai_mod = importlib.import_module("langchain_google_genai")
+            ChatGoogleGenerativeAI = getattr(genai_mod, "ChatGoogleGenerativeAI")
             if model_type == "tutor":
                 model_name = os.getenv("TUTOR_MODEL_NAME", "gemini-1.5-flash")
             elif model_type == "analyst":
@@ -107,12 +110,13 @@ def get_llm(model_type: str = "tutor") -> Any:
             else:
                 model_name = os.getenv("KEEPER_MODEL_NAME", "gemini-1.5-flash")
             return ChatGoogleGenerativeAI(model=model_name, google_api_key=google_key, temperature=0.2)
-        except ImportError:
+        except (ImportError, AttributeError):
             pass
 
     if openai_key:
         try:
-            from langchain_openai import ChatOpenAI
+            openai_mod = importlib.import_module("langchain_openai")
+            ChatOpenAI = getattr(openai_mod, "ChatOpenAI")
             if model_type == "tutor":
                 model_name = os.getenv("TUTOR_MODEL_NAME", "gpt-4o")
             elif model_type == "analyst":
@@ -120,15 +124,17 @@ def get_llm(model_type: str = "tutor") -> Any:
             else:
                 model_name = os.getenv("KEEPER_MODEL_NAME", "gpt-4o-mini")
             return ChatOpenAI(model=model_name, api_key=openai_key, temperature=0.2)
-        except ImportError:
+        except (ImportError, AttributeError):
             pass
 
     if anthropic_key:
         try:
-            from langchain_anthropic import ChatAnthropic
+            anthropic_mod = importlib.import_module("langchain_anthropic")
+            ChatAnthropic = getattr(anthropic_mod, "ChatAnthropic")
             model_name = os.getenv("TUTOR_MODEL_NAME", "claude-3-5-sonnet-20240620") if model_type == "tutor" else os.getenv("KEEPER_MODEL_NAME", "claude-3-haiku-20240307")
             return ChatAnthropic(model=model_name, api_key=anthropic_key, temperature=0.2)
-        except ImportError:
+        except (ImportError, AttributeError):
             pass
 
     return MockLLM(model_name=f"mock-{model_type}")
+
