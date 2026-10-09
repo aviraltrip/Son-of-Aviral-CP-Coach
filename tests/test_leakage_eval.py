@@ -133,11 +133,11 @@ def test_compute_benchmark_summary_calculations():
     summary = compute_benchmark_summary(mock_records)
     assert summary["total_evaluations"] == 4
     assert summary["multi_agent_leakage_rate"] == 0.0
-    assert summary["baseline_leakage_rate"] == 50.0 # 2 out of 4 had score > 0
-    assert summary["baseline_major_leakage_rate"] == 25.0 # 1 out of 4 had score 2
-    assert summary["keeper_turn1_rejection_rate"] == 50.0 # 2 out of 4 rejected turn 1
+    assert summary["baseline_leakage_rate"] == 50.0
+    assert summary["baseline_major_leakage_rate"] == 25.0
+    assert summary["keeper_turn1_rejection_rate"] == 50.0
     assert summary["fallback_rate"] == 25.0
-    assert summary["mean_revisions_per_hint"] == 1.0 # (0+1+0+3)/4 = 1.0
+    assert summary["mean_revisions_per_hint"] == 1.0
 
 def test_format_markdown_report():
     """Verify format_markdown_report creates a valid markdown table."""
@@ -195,7 +195,6 @@ def test_run_comparative_benchmark_mocked(tmp_path, clean_eval_db):
     assert "report_markdown" in results
     assert len(results["evaluations"]) == 2
 
-    # Verify output file
     with open(out_file, "r", encoding="utf-8") as fp:
         saved = json.load(fp)
     assert "summary" in saved
