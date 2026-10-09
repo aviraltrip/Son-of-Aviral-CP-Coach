@@ -1,0 +1,202 @@
+[
+  {
+    "contest_id": 1900,
+    "index": "C",
+    "name": "Anji's Binary Tree",
+    "rating": 1500,
+    "tags": ["dp", "trees", "dfs and similar"],
+    "statement": "Anji has a binary tree with n vertices rooted at 1. Each vertex has a letter 'U', 'L', or 'R'. If you are at vertex u with letter 'L', you move to left child; 'R' to right child; 'U' you don't move. You can modify any vertex's letter to any of 'U', 'L', 'R'. Find the minimum number of modifications so that you can reach some leaf starting from the root.",
+    "reference_solution": "#include <bits/stdc++.h>\nusing namespace std;\nconst int N = 3e5 + 5;\nint l[N], r[N], n;\nstring s;\nint dfs(int u) {\n    if (!u) return 1e9;\n    if (!l[u] && !r[u]) return 0;\n    int res = 1e9;\n    if (l[u]) res = min(res, dfs(l[u]) + (s[u - 1] != 'L'));\n    if (r[u]) res = min(res, dfs(r[u]) + (s[u - 1] != 'R'));\n    return res;\n}\nint main() {\n    int t; if (!(cin >> t)) return 0;\n    while (t--) {\n        cin >> n >> s;\n        for (int i = 1; i <= n; i++) cin >> l[i] >> r[i];\n        cout << dfs(1) << \"\\n\";\n    }\n}",
+    "key_insight": "Tree dynamic programming where dp[u] is minimum modifications to reach a leaf in u's subtree: dp[u] = min(dp[left] + [s[u]!='L'], dp[right] + [s[u]!='R'])."
+  },
+  {
+    "contest_id": 1800,
+    "index": "B",
+    "name": "Count the Number of Pairs",
+    "rating": 1000,
+    "tags": ["greedy", "strings"],
+    "statement": "You are given a string s of lowercase and uppercase Latin letters and an integer k. You can perform at most k operations: convert a lowercase letter to uppercase or vice versa. A pair is formed by one uppercase and one lowercase instance of the same letter. Find the maximum number of pairs you can form.",
+    "reference_solution": "#include <bits/stdc++.h>\nusing namespace std;\nint main() {\n    int t; cin >> t;\n    while (t--) {\n        int n, k; string s; cin >> n >> k >> s;\n        vector<int> low(26, 0), up(26, 0);\n        for (char c : s) {\n            if (islower(c)) low[c - 'a']++;\n            else up[c - 'A']++;\n        }\n        int ans = 0;\n        for (int i = 0; i < 26; i++) {\n            int pairs = min(low[i], up[i]);\n            ans += pairs;\n            low[i] -= pairs; up[i] -= pairs;\n            int rem = (low[i] + up[i]) / 2;\n            int add = min(rem, k);\n            ans += add;\n            k -= add;\n        }\n        cout << ans << \"\\n\";\n    }\n}",
+    "key_insight": "Greedily match existing lowercase and uppercase pairs, then convert leftover duplicate letters of the same case using at most k operations."
+  },
+  {
+    "contest_id": 1850,
+    "index": "F",
+    "name": "We Were Both Children",
+    "rating": 1200,
+    "tags": ["math", "number theory", "greedy"],
+    "statement": "There are n frogs at coordinate 0. The i-th frog hops by ai units per second. A trap is placed at some integer coordinate x from 1 to n. A frog is caught if its hop sequence lands on x. Find the maximum number of frogs that can be caught by placing a single trap at an optimal coordinate x <= n.",
+    "reference_solution": "#include <bits/stdc++.h>\nusing namespace std;\nint main() {\n    int t; cin >> t;\n    while (t--) {\n        int n; cin >> n;\n        vector<int> cnt(n + 1, 0), caught(n + 1, 0);\n        for (int i = 0; i < n; i++) {\n            int a; cin >> a;\n            if (a <= n) cnt[a]++;\n        }\n        for (int i = 1; i <= n; i++) {\n            if (!cnt[i]) continue;\n            for (int j = i; j <= n; j += i) caught[j] += cnt[i];\n        }\n        int ans = 0;\n        for (int i = 1; i <= n; i++) ans = max(ans, caught[i]);\n        cout << ans << \"\\n\";\n    }\n}",
+    "key_insight": "Harmonic series iteration: count frequency of each step size a <= n, then for each a add count to all its multiples j <= n in O(n log n) total time."
+  },
+  {
+    "contest_id": 1360,
+    "index": "E",
+    "name": "Polygon",
+    "rating": 1300,
+    "tags": ["implementation", "matrices"],
+    "statement": "A polygon has an n x n square grid. Cannons on the top and left borders shoot '1's into the matrix. A '1' travels down or right until it hits another '1' or the matrix border. Given the final matrix of '0's and '1's, determine if this configuration could have been created by a sequence of valid cannon shots.",
+    "reference_solution": "#include <bits/stdc++.h>\nusing namespace std;\nint main() {\n    int t; cin >> t;\n    while (t--) {\n        int n; cin >> n;\n        vector<string> g(n);\n        for (int i = 0; i < n; i++) cin >> g[i];\n        bool ok = true;\n        for (int i = 0; i < n - 1; i++) {\n            for (int j = 0; j < n - 1; j++) {\n                if (g[i][j] == '1' && g[i + 1][j] == '0' && g[i][j + 1] == '0') {\n                    ok = false;\n                }\n            }\n        }\n        cout << (ok ? \"YES\\n\" : \"NO\\n\");\n    }\n}",
+    "key_insight": "For any '1' not on the bottom row or rightmost column, it must be supported by a '1' directly below it or directly to its right."
+  },
+  {
+    "contest_id": 1829,
+    "index": "E",
+    "name": "The Lakes",
+    "rating": 1100,
+    "tags": ["graphs", "dfs and similar"],
+    "statement": "You are given an n x m grid of non-negative integers representing water depths. A lake is a maximal connected component of cells with depth > 0 connected 4-directionally. The volume of a lake is the sum of depths of all cells in it. Find the maximum volume of a lake.",
+    "reference_solution": "#include <bits/stdc++.h>\nusing namespace std;\nint n, m;\nint grid[1005][1005];\nbool vis[1005][1005];\nint dx[4] = {0, 0, 1, -1};\nint dy[4] = {1, -1, 0, 0};\nint dfs(int r, int c) {\n    vis[r][c] = true;\n    int sum = grid[r][c];\n    for (int k = 0; k < 4; k++) {\n        int nr = r + dx[k], nc = c + dy[k];\n        if (nr >= 0 && nr < n && nc >= 0 && nc < m && !vis[nr][nc] && grid[nr][nc] > 0) {\n            sum += dfs(nr, nc);\n        }\n    }\n    return sum;\n}\nint main() {\n    int t; cin >> t;\n    while (t--) {\n        cin >> n >> m;\n        for (int i = 0; i < n; i++) {\n            for (int j = 0; j < m; j++) {\n                cin >> grid[i][j];\n                vis[i][j] = false;\n            }\n        }\n        int max_vol = 0;\n        for (int i = 0; i < n; i++) {\n            for (int j = 0; j < m; j++) {\n                if (!vis[i][j] && grid[i][j] > 0) {\n                    max_vol = max(max_vol, dfs(i, j));\n                }\n            }\n        }\n        cout << max_vol << \"\\n\";\n    }\n}",
+    "key_insight": "Standard connected component search using DFS/BFS to sum cell depths in each 4-directional positive component."
+  },
+  {
+    "contest_id": 1352,
+    "index": "C",
+    "name": "K-th Not Divisible by n",
+    "rating": 1200,
+    "tags": ["binary search", "math"],
+    "statement": "You are given two positive integers n and k. Print the k-th positive integer that is not divisible by n.",
+    "reference_solution": "#include <bits/stdc++.h>\nusing namespace std;\nint main() {\n    int t; cin >> t;\n    while (t--) {\n        long long n, k; cin >> n >> k;\n        long long ans = k + (k - 1) / (n - 1);\n        cout << ans << \"\\n\";\n    }\n}",
+    "key_insight": "Each block of n numbers contains exactly (n-1) non-divisible numbers. The k-th number is k + floor((k-1)/(n-1))."
+  },
+  {
+    "contest_id": 1873,
+    "index": "E",
+    "name": "Building an Aquarium",
+    "rating": 1100,
+    "tags": ["binary search"],
+    "statement": "You have n columns of heights a1, a2, ..., an. You want to build a tank of height h such that pouring water to level h requires at most x units of water. Water needed is sum(max(0, h - ai)). Find the maximum integer height h.",
+    "reference_solution": "#include <bits/stdc++.h>\nusing namespace std;\nint main() {\n    int t; cin >> t;\n    while (t--) {\n        int n; long long x; cin >> n >> x;\n        vector<long long> a(n);\n        for (int i = 0; i < n; i++) cin >> a[i];\n        long long low = 1, high = 2e9 + 7, ans = 1;\n        while (low <= high) {\n            long long mid = low + (high - low) / 2;\n            long long water = 0;\n            for (int i = 0; i < n; i++) {\n                if (mid > a[i]) water += (mid - a[i]);\n            }\n            if (water <= x) {\n                ans = mid;\n                low = mid + 1;\n            } else {\n                high = mid - 1;\n            }\n        }\n        cout << ans << \"\\n\";\n    }\n}",
+    "key_insight": "Water required is monotonically non-decreasing with height h, so binary search on h over the range [1, 2e9]."
+  },
+  {
+    "contest_id": 1840,
+    "index": "C",
+    "name": "Ski Resort",
+    "rating": 1000,
+    "tags": ["two pointers", "combinatorics"],
+    "statement": "A skier can ski on days where temperature is at most q. The skier wants to ski for at least k consecutive days. Given temperatures of n days, find the total number of valid continuous vacation intervals of length >= k where every day has temperature <= q.",
+    "reference_solution": "#include <bits/stdc++.h>\nusing namespace std;\nint main() {\n    int t; cin >> t;\n    while (t--) {\n        int n, k; long long q; cin >> n >> k >> q;\n        vector<long long> a(n);\n        for (int i = 0; i < n; i++) cin >> a[i];\n        long long ans = 0, len = 0;\n        for (int i = 0; i < n; i++) {\n            if (a[i] <= q) len++;\n            else {\n                if (len >= k) ans += (len - k + 1) * (len - k + 2) / 2;\n                len = 0;\n            }\n        }\n        if (len >= k) ans += (len - k + 1) * (len - k + 2) / 2;\n        cout << ans << \"\\n\";\n    }\n}",
+    "key_insight": "Decompose into maximal contiguous segments of valid days with length L >= k; each segment contributes (L - k + 1)*(L - k + 2)/2 subsegments."
+  },
+  {
+    "contest_id": 1899,
+    "index": "C",
+    "name": "Yarik and Array",
+    "rating": 1100,
+    "tags": ["dp", "greedy", "two pointers"],
+    "statement": "An array is good if adjacent elements have alternating parities. Find the maximum sum of a non-empty subarray that is good.",
+    "reference_solution": "#include <bits/stdc++.h>\nusing namespace std;\nint main() {\n    int t; cin >> t;\n    while (t--) {\n        int n; cin >> n;\n        vector<long long> a(n);\n        for (int i = 0; i < n; i++) cin >> a[i];\n        long long max_sum = a[0], cur_sum = a[0];\n        for (int i = 1; i < n; i++) {\n            if (abs(a[i] % 2) != abs(a[i - 1] % 2)) {\n                cur_sum = max(a[i], cur_sum + a[i]);\n            } else {\n                cur_sum = a[i];\n            }\n            max_sum = max(max_sum, cur_sum);\n        }\n        cout << max_sum << \"\\n\";\n    }\n}",
+    "key_insight": "Kadane's algorithm modified: reset the running sum whenever two adjacent elements have the same parity or when running sum drops below 0."
+  },
+  {
+    "contest_id": 1872,
+    "index": "D",
+    "name": "Plus Minus Permutation",
+    "rating": 1200,
+    "tags": ["greedy", "math"],
+    "statement": "Given n, x, y, construct a permutation of 1..n to maximize the score: sum of elements at indices divisible by x minus sum of elements at indices divisible by y.",
+    "reference_solution": "#include <bits/stdc++.h>\nusing namespace std;\nlong long gcd(long long a, long long b) { return b ? gcd(b, a % b) : a; }\nlong long lcm(long long a, long long b) { return (a / gcd(a, b)) * b; }\nint main() {\n    int t; cin >> t;\n    while (t--) {\n        long long n, x, y; cin >> n >> x >> y;\n        long long c_x = n / x, c_y = n / y, c_xy = n / lcm(x, y);\n        long long only_x = c_x - c_xy;\n        long long only_y = c_y - c_xy;\n        long long sum_x = only_x * (2 * n - only_x + 1) / 2;\n        long long sum_y = only_y * (only_y + 1) / 2;\n        cout << sum_x - sum_y << \"\\n\";\n    }\n}",
+    "key_insight": "Common multiples of x and y cancel out. Assign the largest available numbers from n downwards to indices uniquely divisible by x, and smallest numbers 1 upwards to indices uniquely divisible by y."
+  },
+  {
+    "contest_id": 1862,
+    "index": "D",
+    "name": "Ice Cream Balls",
+    "rating": 1300,
+    "tags": ["binary search", "math", "combinatorics"],
+    "statement": "You want to create exactly n distinct pairs of ice cream balls. Two balls with different flavors count as 1 distinct type of 2-ball ice cream. Two balls with the same flavor count as 1 distinct type. What is the minimum total number of balls needed?",
+    "reference_solution": "#include <bits/stdc++.h>\nusing namespace std;\nint main() {\n    int t; cin >> t;\n    while (t--) {\n        long long n; cin >> n;\n        long long l = 1, r = 2e9, k = 1;\n        while (l <= r) {\n            long long mid = l + (r - l) / 2;\n            if (mid * (mid - 1) / 2 <= n) {\n                k = mid;\n                l = mid + 1;\n            } else {\n                r = mid - 1;\n            }\n        }\n        long long diff = n - k * (k - 1) / 2;\n        cout << k + diff << \"\\n\";\n    }\n}",
+    "key_insight": "Using k distinct flavors gives C(k, 2) pairs. The remaining n - C(k, 2) pairs can be achieved by adding 1 duplicate ball for each required extra pair."
+  },
+  {
+    "contest_id": 1857,
+    "index": "C",
+    "name": "Assembly via Minimums",
+    "rating": 1200,
+    "tags": ["greedy", "sortings"],
+    "statement": "An array a of n integers was used to form an array b of n*(n-1)/2 elements where b contains min(a_i, a_j) for all 1 <= i < j <= n. You are given array b in random order. Reconstruct any possible original array a.",
+    "reference_solution": "#include <bits/stdc++.h>\nusing namespace std;\nint main() {\n    int t; cin >> t;\n    while (t--) {\n        int n; cin >> n;\n        int m = n * (n - 1) / 2;\n        vector<int> b(m);\n        for (int i = 0; i < m; i++) cin >> b[i];\n        sort(b.begin(), b.end());\n        int idx = 0;\n        for (int i = n - 1; i >= 1; i--) {\n            cout << b[idx] << \" \";\n            idx += i;\n        }\n        cout << 1000000000 << \"\\n\";\n    }\n}",
+    "key_insight": "When sorted, the smallest element of a appears n-1 times in b, the second smallest appears n-2 times, etc. Sample values by advancing indices by n-1, n-2, ..., 1."
+  },
+  {
+    "contest_id": 1846,
+    "index": "D",
+    "name": "Rudolph and Christmas Tree",
+    "rating": 1200,
+    "tags": ["geometry", "math"],
+    "statement": "Rudolph has a Christmas tree with n identical isosceles triangle branches, each with base d and height h. The i-th branch's base is at height y_i. Find the total area covered by the tree branches without double counting overlapping regions.",
+    "reference_solution": "#include <bits/stdc++.h>\nusing namespace std;\nint main() {\n    int t; cin >> t;\n    while (t--) {\n        int n; double d, h; cin >> n >> d >> h;\n        vector<double> y(n);\n        for (int i = 0; i < n; i++) cin >> y[i];\n        double single_area = 0.5 * d * h;\n        double total = single_area * n;\n        for (int i = 0; i < n - 1; i++) {\n            if (y[i + 1] < y[i] + h) {\n                double overlap_h = (y[i] + h) - y[i + 1];\n                double overlap_d = d * (overlap_h / h);\n                total -= 0.5 * overlap_d * overlap_h;\n            }\n        }\n        cout << fixed << setprecision(7) << total << \"\\n\";\n    }\n}",
+    "key_insight": "Overlapping portion of consecutive triangles forms a smaller similar triangle of height overlap_h = y_i + h - y_{i+1}; subtract its area."
+  },
+  {
+    "contest_id": 1833,
+    "index": "C",
+    "name": "Vlad Building Beautiful Array",
+    "rating": 900,
+    "tags": ["greedy", "math"],
+    "statement": "An array is beautiful if all elements are positive and have the same parity. You can replace ai with ai - aj for any j != i. Determine if you can make all elements in array a have the same parity and remain strictly positive.",
+    "reference_solution": "#include <bits/stdc++.h>\nusing namespace std;\nint main() {\n    int t; cin >> t;\n    while (t--) {\n        int n; cin >> n;\n        vector<int> a(n);\n        int min_odd = 2e9, min_even = 2e9, odd_count = 0;\n        for (int i = 0; i < n; i++) {\n            cin >> a[i];\n            if (a[i] % 2 != 0) { odd_count++; min_odd = min(min_odd, a[i]); }\n            else { min_even = min(min_even, a[i]); }\n        }\n        if (odd_count == 0 || min_odd < min_even) cout << \"YES\\n\";\n        else cout << \"NO\\n\";\n    }\n}",
+    "key_insight": "All-even is possible only if there are no odd numbers. All-odd is possible if and only if the global minimum is odd (so evals can subtract min_odd and become positive odd)."
+  },
+  {
+    "contest_id": 1829,
+    "index": "D",
+    "name": "Gold Rush",
+    "rating": 1000,
+    "tags": ["dfs and similar", "recursion"],
+    "statement": "You have a pile of n gold coins. If the pile size is divisible by 3, you can split it into two piles of sizes 2n/3 and n/3. Can you ever obtain a pile of exactly m coins by repeating this process?",
+    "reference_solution": "#include <bits/stdc++.h>\nusing namespace std;\nbool solve(int n, int m) {\n    if (n == m) return true;\n    if (n % 3 != 0 || n < m) return false;\n    return solve(n / 3, m) || solve(2 * (n / 3), m);\n}\nint main() {\n    int t; cin >> t;\n    while (t--) {\n        int n, m; cin >> n >> m;\n        cout << (solve(n, m) ? \"YES\\n\" : \"NO\\n\");\n    }\n}",
+    "key_insight": "Direct recursive branch check: at each state n, branch to n/3 and 2n/3 with pruning when n < m or n is not divisible by 3."
+  },
+  {
+    "contest_id": 1807,
+    "index": "D",
+    "name": "Odd Queries",
+    "rating": 900,
+    "tags": ["data structures", "prefix sums"],
+    "statement": "Given an array a of n integers, answer q queries: if elements from index l to r are replaced with value k, will the sum of all elements in the array become odd?",
+    "reference_solution": "#include <bits/stdc++.h>\nusing namespace std;\nint main() {\n    int t; cin >> t;\n    while (t--) {\n        int n, q; cin >> n >> q;\n        vector<long long> pref(n + 1, 0);\n        for (int i = 1; i <= n; i++) {\n            long long x; cin >> x;\n            pref[i] = pref[i - 1] + x;\n        }\n        while (q--) {\n            long long l, r, k; cin >> l >> r >> k;\n            long long range_sum = pref[r] - pref[l - 1];\n            long long new_sum = pref[n] - range_sum + (r - l + 1) * k;\n            cout << (new_sum % 2 != 0 ? \"YES\\n\" : \"NO\\n\");\n        }\n    }\n}",
+    "key_insight": "Use 1D prefix sum array to answer each range replacement query in O(1) time."
+  },
+  {
+    "contest_id": 1791,
+    "index": "E",
+    "name": "Negatives and Positives",
+    "rating": 1100,
+    "tags": ["dp", "greedy"],
+    "statement": "Given an array a of n integers. You can multiply any two adjacent elements by -1 any number of times. Find the maximum possible sum of the array.",
+    "reference_solution": "#include <bits/stdc++.h>\nusing namespace std;\nint main() {\n    int t; cin >> t;\n    while (t--) {\n        int n; cin >> n;\n        long long sum = 0, neg_count = 0, min_abs = 2e9;\n        for (int i = 0; i < n; i++) {\n            long long x; cin >> x;\n            if (x < 0) neg_count++;\n            sum += abs(x);\n            min_abs = min(min_abs, abs(x));\n        }\n        if (neg_count % 2 != 0) sum -= 2 * min_abs;\n        cout << sum << \"\\n\";\n    }\n}",
+    "key_insight": "Flipping signs of adjacent elements preserves parity of negative counts. If total negatives is even, all elements can be made positive; if odd, leave the element with minimum absolute value negative."
+  },
+  {
+    "contest_id": 1760,
+    "index": "E",
+    "name": "Binary Inversions",
+    "rating": 1100,
+    "tags": ["greedy", "math"],
+    "statement": "You are given a binary array a of length n. You can flip at most one element (0 to 1 or 1 to 0). An inversion is a pair (i, j) with i < j and a_i = 1, a_j = 0. Find the maximum number of inversions after at most one flip.",
+    "reference_solution": "#include <bits/stdc++.h>\nusing namespace std;\nlong long count_inv(const vector<int>& v) {\n    long long ones = 0, inv = 0;\n    for (int x : v) {\n        if (x == 1) ones++;\n        else inv += ones;\n    }\n    return inv;\n}\nint main() {\n    int t; cin >> t;\n    while (t--) {\n        int n; cin >> n;\n        vector<int> a(n);\n        for (int i = 0; i < n; i++) cin >> a[i];\n        long long ans = count_inv(a);\n        vector<int> a1 = a, a2 = a;\n        for (int i = 0; i < n; i++) {\n            if (a1[i] == 0) { a1[i] = 1; break; }\n        }\n        for (int i = n - 1; i >= 0; i--) {\n            if (a2[i] == 1) { a2[i] = 0; break; }\n        }\n        ans = max({ans, count_inv(a1), count_inv(a2)});\n        cout << ans << \"\\n\";\n    }\n}",
+    "key_insight": "Optimal flip is either flipping the first 0 to 1 or the last 1 to 0 (or making no flips)."
+  },
+  {
+    "contest_id": 1742,
+    "index": "E",
+    "name": "Scuza",
+    "rating": 1200,
+    "tags": ["binary search", "data structures", "prefix sums"],
+    "statement": "There is a staircase of n steps with step heights a1, a2, ..., an. Timur has legs of length k. He can climb steps as long as the step height <= k. For q queries with leg length k, find the maximum height (sum of step heights climbed) Timur can reach.",
+    "reference_solution": "#include <bits/stdc++.h>\nusing namespace std;\nint main() {\n    int t; cin >> t;\n    while (t--) {\n        int n, q; cin >> n >> q;\n        vector<long long> a(n), pref(n + 1, 0), max_step(n + 1, 0);\n        for (int i = 0; i < n; i++) {\n            cin >> a[i];\n            pref[i + 1] = pref[i] + a[i];\n            max_step[i + 1] = max(max_step[i], a[i]);\n        }\n        while (q--) {\n            long long k; cin >> k;\n            int idx = upper_bound(max_step.begin(), max_step.end(), k) - max_step.begin() - 1;\n            cout << pref[idx] << \" \";\n        }\n        cout << \"\\n\";\n    }\n}",
+    "key_insight": "Maintain prefix maximums of step heights. For each query k, use binary search (`std::upper_bound`) to find the farthest reachable step and return its prefix sum."
+  },
+  {
+    "contest_id": 1692,
+    "index": "E",
+    "name": "Binary Deque",
+    "rating": 1200,
+    "tags": ["two pointers", "binary search"],
+    "statement": "You have a deque of n binary elements (0s and 1s). In one operation, you can remove one element from the front or the back. Find the minimum number of operations to make the sum of remaining elements in the deque equal to s, or -1 if impossible.",
+    "reference_solution": "#include <bits/stdc++.h>\nusing namespace std;\nint main() {\n    int t; cin >> t;\n    while (t--) {\n        int n, s; cin >> n >> s;\n        vector<int> a(n);\n        int total = 0;\n        for (int i = 0; i < n; i++) { cin >> a[i]; total += a[i]; }\n        if (total < s) { cout << -1 << \"\\n\"; continue; }\n        if (total == s) { cout << 0 << \"\\n\"; continue; }\n        int max_len = 0, l = 0, cur = 0;\n        for (int r = 0; r < n; r++) {\n            cur += a[r];\n            while (cur > s) { cur -= a[l++]; }\n            if (cur == s) max_len = max(max_len, r - l + 1);\n        }\n        cout << n - max_len << \"\\n\";\n    }\n}",
+    "key_insight": "Minimizing removed elements from ends is equivalent to maximizing the length of a contiguous subarray with sum equal to s using sliding window / two pointers."
+  }
+]
