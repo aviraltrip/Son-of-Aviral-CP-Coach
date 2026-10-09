@@ -18,7 +18,7 @@ from pydantic import BaseModel, Field
 VerdictType = Literal["AC", "WA", "TLE", "MLE", "CE", "RE", "UNKNOWN"]
 LanguageType = Literal["cpp", "cpp17", "cpp20", "python", "python3", "java"]
 
-MAX_OUTPUT_BYTES = 64 * 1024  # 64 KB stdout/stderr buffer limit
+MAX_OUTPUT_BYTES = 64 * 1024
 
 BLOCKED_PYTHON_MODULES = {
     "os", "subprocess", "shutil", "socket", "pty", "commands",
@@ -88,13 +88,11 @@ def validate_source_code_safety(source_code: str, language: str) -> tuple[bool, 
                 
     return True, None
 
-
 class ExecutionConfig(BaseModel):
     """Execution constraints and configuration."""
     time_limit_ms: int = Field(2000, ge=100, le=10000, description="CPU execution timeout in milliseconds")
     memory_limit_mb: int = Field(256, ge=16, le=1024, description="Memory limit in megabytes")
     max_output_bytes: int = Field(MAX_OUTPUT_BYTES, description="Maximum bytes of output to capture")
-
 
 class ExecutionResult(BaseModel):
     """Result of running a single code submission against a test case."""
@@ -106,14 +104,12 @@ class ExecutionResult(BaseModel):
     exit_code: int | None = Field(None, description="Process exit code")
     error_message: str = Field("", description="Human-readable error details")
 
-
 def normalize_output(text: str) -> str:
     """Normalize output by stripping trailing whitespace on each line and trailing newlines."""
     lines = [line.rstrip() for line in text.replace("\r\n", "\n").replace("\r", "\n").split("\n")]
     while lines and lines[-1] == "":
         lines.pop()
     return "\n".join(lines)
-
 
 def compile_code(
     source_code: str,
@@ -127,7 +123,6 @@ def compile_code(
     """
     lang = language.lower()
 
-    # Pre-Flight AST & Regex Security Guard
     is_safe, sec_err = validate_source_code_safety(source_code, lang)
     if not is_safe and sec_err:
         return False, [], f"Security Violation: {sec_err}"
@@ -136,7 +131,6 @@ def compile_code(
         script_path = work_dir / "solution.py"
         script_path.write_text(source_code, encoding="utf-8")
         
-        # Verify syntax with py_compile
         try:
             compile_res = subprocess.run(
                 [sys.executable, "-m", "py_compile", str(script_path)],
@@ -216,7 +210,6 @@ def compile_code(
     else:
         return False, [], f"Unsupported programming language: '{language}'."
 
-
 def run_isolated(
     command: list[str],
     input_data: str,
@@ -242,7 +235,6 @@ def run_isolated(
             stdout, stderr = proc.communicate(input=input_data, timeout=timeout_sec)
             elapsed_ms = (time.perf_counter() - start_time) * 1000.0
             
-            # Truncate output if excessive
             if len(stdout.encode("utf-8")) > cfg.max_output_bytes:
                 stdout = stdout[:cfg.max_output_bytes] + "\n...[OUTPUT TRUNCATED]"
             if len(stderr.encode("utf-8")) > cfg.max_output_bytes:
@@ -259,7 +251,7 @@ def run_isolated(
                 )
 
             return ExecutionResult(
-                verdict="UNKNOWN",  # Will be classified to AC/WA upon comparing with expected
+                verdict="UNKNOWN",
                 time_ms=round(elapsed_ms, 2),
                 stdout=stdout,
                 stderr=stderr,
@@ -288,7 +280,6 @@ def run_isolated(
             error_message=f"Execution failed to start: {str(e)}"
         )
 
-
 def evaluate_test_case(
     source_code: str,
     language: LanguageType,
@@ -302,7 +293,6 @@ def evaluate_test_case(
     with tempfile.TemporaryDirectory(prefix="cp_judge_") as temp_dir_str:
         work_dir = Path(temp_dir_str)
 
-        # 1. Compile
         success, cmd, comp_err = compile_code(source_code, language, work_dir)
         if not success:
             return ExecutionResult(
@@ -312,12 +302,10 @@ def evaluate_test_case(
                 error_message="Compilation Error:\n" + comp_err
             )
 
-        # 2. Run
         exec_res = run_isolated(cmd, input_data=input_data, config=cfg, cwd=work_dir)
         if exec_res.verdict in ("TLE", "MLE", "RE"):
             return exec_res
 
-        # 3. Compare Output
         norm_actual = normalize_output(exec_res.stdout)
         norm_expected = normalize_output(expected_output)
 

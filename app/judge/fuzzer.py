@@ -22,7 +22,6 @@ from app.judge.runner import (
 )
 from app.data.db import get_reference_solution, DEFAULT_DB_PATH
 
-
 class FuzzResult(BaseModel):
     """Result of a differential fuzzing session."""
     counterexample_found: bool = Field(False, description="Whether a failing counterexample was detected")
@@ -32,7 +31,6 @@ class FuzzResult(BaseModel):
     expected_output: str | None = Field(None, description="Output produced by reference solution")
     user_output: str | None = Field(None, description="Output produced by user submission")
     error_message: str | None = Field(None, description="Diagnostic error description")
-
 
 class InputGenerators:
     """Standard competitive programming input generators."""
@@ -86,7 +84,6 @@ class InputGenerators:
             edges.append(f"{p} {i}")
         return f"{n}\n" + "\n".join(edges) + "\n"
 
-
 def find_counterexample(
     user_code: str,
     user_lang: LanguageType,
@@ -110,7 +107,6 @@ def find_counterexample(
         user_dir = Path(user_dir_str)
         ref_dir = Path(ref_dir_str)
 
-        # 1. Compile both solutions
         u_ok, u_cmd, u_err = compile_code(user_code, user_lang, user_dir)
         if not u_ok:
             return FuzzResult(
@@ -128,16 +124,13 @@ def find_counterexample(
                 error_message=f"Reference compilation error: {r_err}"
             )
 
-        # 2. Run trials
         for trial in range(1, max_trials + 1):
             test_input = gen()
 
-            # Execute Reference
             ref_res = run_isolated(r_cmd, input_data=test_input, config=cfg, cwd=ref_dir)
             if ref_res.verdict in ("TLE", "MLE", "RE"):
-                continue  # Skip if generator created invalid input for reference
+                continue
 
-            # Execute User
             user_res = run_isolated(u_cmd, input_data=test_input, config=cfg, cwd=user_dir)
 
             if user_res.verdict in ("TLE", "MLE", "RE"):
@@ -172,7 +165,6 @@ def find_counterexample(
             error_message=f"No counterexample found across {max_trials} randomized trials."
         )
 
-
 def stress_test_problem_submission(
     contest_id: int,
     idx: str,
@@ -192,7 +184,6 @@ def stress_test_problem_submission(
         )
 
     ref_code = ref_row["solution_code"]
-    # Infer reference language (default C++ if includes iostream/vector, else python)
     ref_lang = "cpp" if ("#include" in ref_code or "using namespace" in ref_code) else "python3"
 
     return find_counterexample(
