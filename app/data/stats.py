@@ -131,13 +131,14 @@ def select_next_problem(
     target_min = rating + 100
     target_max = rating + 200
     
-    top_tags = [t.tag for t in weak_topics[:3]] if weak_topics else ["dp", "greedy", "graphs"]
+    top_tags = [t.tag for t in weak_topics[:3] if is_valid_algorithmic_tag(t.tag)] if weak_topics else ["dp", "greedy", "graphs"]
     
     for p in candidate_problems:
         cid = p.get("contest_id") or p.get("contestId")
         idx = p.get("idx") or p.get("index")
         prating = p.get("rating")
-        tags = p.get("tags", [])
+        raw_tags = p.get("tags", [])
+        tags = [t.strip() for t in raw_tags if is_valid_algorithmic_tag(t)]
         
         if (cid, idx) in attempted:
             continue
@@ -150,7 +151,7 @@ def select_next_problem(
                     index=idx,
                     name=p.get("name", f"Problem {cid}{idx}"),
                     rating=prating,
-                    tags=tags,
+                    tags=tags if tags else ["implementation"],
                     reason=f"Targeted {prating}-rated problem matching weak topic '{matching[0]}' (Rating target: {target_min}-{target_max})."
                 )
 
@@ -158,7 +159,8 @@ def select_next_problem(
         cid = p.get("contest_id") or p.get("contestId")
         idx = p.get("idx") or p.get("index")
         prating = p.get("rating")
-        tags = p.get("tags", [])
+        raw_tags = p.get("tags", [])
+        tags = [t.strip() for t in raw_tags if is_valid_algorithmic_tag(t)]
         
         if (cid, idx) in attempted:
             continue
@@ -170,7 +172,7 @@ def select_next_problem(
                 index=idx,
                 name=p.get("name", f"Problem {cid}{idx}"),
                 rating=prating,
-                tags=tags,
+                tags=tags if tags else ["implementation"],
                 reason=f"Practice problem for weak topic '{matching[0]}'."
             )
 
