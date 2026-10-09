@@ -206,3 +206,11 @@ erDiagram
 1. **Zero Exposure for Tutor**: The prompt to the Tutor never contains the solution. Even if the Tutor model hallucinates or over-explains, it can only speculate based on the problem statement.
 2. **Strict Verification for Keeper**: The Keeper acts as an independent adversarial auditor whose sole job is to protect the user from spoilers.
 3. **Graceful Degeneracy Handling**: If the Tutor drafts 3 consecutive invalid hints, the system replaces the output with a pre-vetted generic heuristic (e.g., "Review problem constraints and try writing out small examples by hand").
+
+---
+
+## 6. Algorithmic Tag Filtering & Noise Suppression Policy
+
+To preserve high pedagogical value, the deterministic stats engine and recommendation router explicitly filter out non-algorithmic and administrative Codeforces tags:
+- **Filtered Meta-Tags**: `*special`, `special problem`, `special problems`, `interactive`, `combine tags by or`, `submit fail`.
+- **Core Algorithmic Focus**: Only genuine algorithmic topics (`dp`, `graphs`, `trees`, `math`, `greedy`, `data structures`, `binary search`, `strings`, `geometry`, `number theory`, `bitmasks`, etc.) are scored in topic aggregates and recommended to users.
