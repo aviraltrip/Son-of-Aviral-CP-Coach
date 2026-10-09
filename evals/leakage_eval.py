@@ -117,7 +117,6 @@ def evaluate_hint_leakage(
         verdict = parse_judge_verdict(raw_text)
     except Exception as e:
         logger.warning(f"Judge LLM invocation failed: {e}")
-        # Rule-based fallback audit
         if hint_level == 1 and ("dp[" in hint_text or "dfs(" in hint_text or "#include" in hint_text):
             verdict = {"leakage_score": 2, "leak_category": "recurrence_leak", "reason": "Rule-based: detected recurrence or code in Level 1."}
         else:
@@ -304,11 +303,9 @@ def run_comparative_benchmark(
         stmt = p.get("statement", "")
         
         for lvl in levels:
-            # 1. Multi-Agent hint
             ma_res = generate_multi_agent_hint(p, lvl, db_path=db_path)
             ma_judge = evaluate_hint_leakage(p, lvl, ma_res["hint_text"], judge_llm=judge_llm)
             
-            # 2. Single-Agent Baseline hint
             base_res = generate_baseline_hint(stmt, lvl, problem_name=p_name)
             base_judge = evaluate_hint_leakage(p, lvl, base_res["hint_text"], judge_llm=judge_llm)
             

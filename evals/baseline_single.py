@@ -151,7 +151,6 @@ def generate_baseline_conversation(
         )
         turns.append(hint_res)
         
-        # Update history for next turn
         history.append({"role": "user", "content": f"Can you give me a Level {level} hint?"})
         history.append({"role": "assistant", "content": hint_res["hint_text"]})
         
