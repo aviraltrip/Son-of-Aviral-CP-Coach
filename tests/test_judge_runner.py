@@ -111,3 +111,53 @@ int main() {
         pytest.skip("g++ not available on host system")
     assert res.verdict == "AC"
     assert res.stdout.strip() == "56"
+
+
+def test_sandbox_security_guard_blocks_malicious_code():
+    from app.judge.runner import validate_source_code_safety
+    
+    # 1. Block malicious Python imports
+    safe_py = "import sys\nprint(42)"
+    is_safe, err = validate_source_code_safety(safe_py, "python")
+    assert is_safe is True
+    assert err is None
+    
+    bad_py_os = "import os\nos.system('dir')"
+    is_safe, err = validate_source_code_safety(bad_py_os, "python")
+    assert is_safe is False
+    assert "Forbidden import 'os'" in err
+
+    bad_py_sub = "from subprocess import Popen"
+    is_safe, err = validate_source_code_safety(bad_py_sub, "python")
+    assert is_safe is False
+    assert "Forbidden import from 'subprocess'" in err
+
+    bad_py_exec = "exec('print(1)')"
+    is_safe, err = validate_source_code_safety(bad_py_exec, "python")
+    assert is_safe is False
+    assert "Forbidden built-in function 'exec'" in err
+
+    # 2. Block malicious C++ calls
+    safe_cpp = "#include <iostream>\nint main() { return 0; }"
+    is_safe, err = validate_source_code_safety(safe_cpp, "cpp")
+    assert is_safe is True
+
+    bad_cpp_sys = "#include <iostream>\nint main() { system(\"rm -rf\"); }"
+    is_safe, err = validate_source_code_safety(bad_cpp_sys, "cpp")
+    assert is_safe is False
+    assert "Forbidden C++ system operation" in err
+
+    bad_cpp_hdr = "#include <cstdlib>\nint main() { return 0; }"
+    is_safe, err = validate_source_code_safety(bad_cpp_hdr, "cpp")
+    assert is_safe is False
+
+    # 3. Block malicious Java calls
+    bad_java = "public class Solution { public static void main(String[] args) { Runtime.getRuntime().exec(\"calc\"); } }"
+    is_safe, err = validate_source_code_safety(bad_java, "java")
+    assert is_safe is False
+    assert "Forbidden Java system operation" in err
+
+    # 4. End-to-end evaluation returns CE on security violation
+    res = evaluate_test_case(bad_py_os, language="python3", input_data="", expected_output="")
+    assert res.verdict == "CE"
+    assert "Security Violation" in res.error_message
