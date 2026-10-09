@@ -26,7 +26,6 @@ from app.data.db import (
 
 logger = logging.getLogger(__name__)
 
-
 def judge_node(state: CoachState) -> dict[str, Any]:
     """LangGraph node executing submitted user code against problem test cases."""
     problem = state.get("problem")
@@ -51,7 +50,6 @@ def judge_node(state: CoachState) -> dict[str, Any]:
             "last_submission_verdict": "UNKNOWN"
         }
 
-    # Extract source code & language
     if isinstance(sub_code, dict):
         source = sub_code.get("source_code", "")
         lang = sub_code.get("language", "cpp")
@@ -61,14 +59,12 @@ def judge_node(state: CoachState) -> dict[str, Any]:
 
     db_path = os.getenv("DATABASE_PATH", DEFAULT_DB_PATH)
 
-    # Fetch test cases
     test_cases = get_problem_test_cases(contest_id, idx, db_path=db_path)
     if not test_cases:
         seed_dataset_test_cases(db_path=db_path)
         test_cases = get_problem_test_cases(contest_id, idx, db_path=db_path)
 
     if not test_cases:
-        # Fallback default test case
         test_cases = [{
             "contest_id": contest_id,
             "idx": idx,
@@ -89,7 +85,6 @@ def judge_node(state: CoachState) -> dict[str, Any]:
     with tempfile.TemporaryDirectory(prefix=f"judge_{contest_id}{idx}_") as temp_dir_str:
         work_dir = Path(temp_dir_str)
 
-        # 1. Compile
         success, cmd, comp_err = compile_code(source, lang, work_dir)
         if not success:
             verdict = JudgeVerdict(
@@ -98,7 +93,6 @@ def judge_node(state: CoachState) -> dict[str, Any]:
                 total_count=len(test_cases),
                 compiler_output=comp_err or "Compilation failed."
             )
-            # Record failed compilation submission
             record_problem_submission(
                 handle=handle,
                 contest_id=contest_id,
@@ -118,7 +112,6 @@ def judge_node(state: CoachState) -> dict[str, Any]:
                 "history": history
             }
 
-        # 2. Run against each test case
         for tc in test_cases:
             t_idx = tc.get("test_index", len(detailed_results) + 1)
             inp = tc.get("input_data", "")
@@ -163,7 +156,7 @@ def judge_node(state: CoachState) -> dict[str, Any]:
 
     passed_count = sum(1 for r in detailed_results if r.verdict == "AC")
     verdict = JudgeVerdict(
-        status=overall_status,  # type: ignore
+        status=overall_status,
         passed_count=passed_count,
         total_count=len(detailed_results),
         time_consumed_ms=round(total_time_ms, 2),
@@ -173,7 +166,6 @@ def judge_node(state: CoachState) -> dict[str, Any]:
         detailed_results=detailed_results
     )
 
-    # Map status to Codeforces DB verdict string
     cf_verdict_map = {
         "AC": "OK",
         "WA": "WRONG_ANSWER",
@@ -194,7 +186,6 @@ def judge_node(state: CoachState) -> dict[str, Any]:
         db_path=DEFAULT_DB_PATH
     )
 
-    # Create user-facing feedback message
     if overall_status == "AC":
         msg_content = f"**Sandbox Judge Verdict**: Accepted! ({passed_count}/{len(detailed_results)} tests passed in {total_time_ms:.1f}ms)"
     else:

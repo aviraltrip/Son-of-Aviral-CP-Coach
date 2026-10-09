@@ -110,7 +110,6 @@ def keeper_node(state: CoachState) -> dict[str, Any]:
         "revisions": new_revisions
     }
     
-    # 3-revision cap fallback
     if not verdict.approved and new_revisions >= 3:
         draft.text = SAFE_FALLBACK_HINT
         verdict.approved = True
@@ -118,7 +117,6 @@ def keeper_node(state: CoachState) -> dict[str, Any]:
         updates["draft"] = draft
         updates["verdict"] = verdict
 
-    # Cache approved hints for instant zero-latency future retrieval
     if verdict.approved and draft and draft.text:
         try:
             save_cached_hint(cid, idx, level, draft.text, db_path=db_path)

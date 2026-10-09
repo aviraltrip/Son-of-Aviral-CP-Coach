@@ -76,7 +76,6 @@ def tutor_node(state: CoachState) -> dict[str, Any]:
     history = state.get("history", [])
     db_path = os.getenv("DATABASE_PATH", "cp_coach.db")
 
-    # Instant Zero-Latency Cache Lookup for Initial Requests
     if revisions == 0 and not (last_sub and last_sub not in ("OK", "AC") and user_action in ("submitted", "submit_code", "judge")):
         if problem:
             cached_text = get_cached_hint(problem.contest_id, problem.index, level, db_path=db_path)

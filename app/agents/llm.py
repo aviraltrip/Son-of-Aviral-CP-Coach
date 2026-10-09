@@ -23,7 +23,6 @@ class MockLLM:
             prompt_str = str(messages)
             user_content = prompt_str
         
-        # 1. Keeper Audit Prompts
         if "Audit the draft strictly" in prompt_str or "Private Reference Solution" in prompt_str or "Zero-Shot Heuristic Rubric Audit" in prompt_str:
             draft_part = ""
             if "Tutor's Draft Hint to Audit:" in prompt_str:
@@ -49,7 +48,6 @@ class MockLLM:
                     "leak_severity": "none"
                 })
                 
-        # 2. Targeted Diagnostics on WA / TLE
         elif "TIME_LIMIT_EXCEEDED" in prompt_str or "TIME_LIMIT_EXCEEDED" in user_content:
             content = "Diagnostic Hint: Your solution might be recomputing values. Aim for a single tree traversal in O(N) time."
         elif "WRONG_ANSWER" in prompt_str or "WRONG_ANSWER" in user_content:
@@ -57,7 +55,6 @@ class MockLLM:
         elif "Submission Verdict" in prompt_str or "Submission Verdict" in user_content:
             content = "Diagnostic Hint: Verify base conditions and handle single-child or edge-case constraints carefully."
             
-        # 3. Tutor Hint Generation
         elif "Previous Draft Rejected by Keeper" in user_content:
             content = "[Revision 1] Think about problem constraints and what each choice represents."
         elif "Level 3" in user_content:
@@ -83,7 +80,7 @@ def get_llm(model_type: str = "tutor") -> Any:
     
     if openrouter_key:
         try:
-            from langchain_openai import ChatOpenAI  # type: ignore
+            from langchain_openai import ChatOpenAI
             if model_type == "tutor":
                 model_name = os.getenv("TUTOR_MODEL_NAME", "anthropic/claude-3.5-sonnet")
             elif model_type == "analyst":
@@ -102,7 +99,7 @@ def get_llm(model_type: str = "tutor") -> Any:
 
     if google_key:
         try:
-            from langchain_google_genai import ChatGoogleGenerativeAI  # type: ignore
+            from langchain_google_genai import ChatGoogleGenerativeAI
             if model_type == "tutor":
                 model_name = os.getenv("TUTOR_MODEL_NAME", "gemini-1.5-flash")
             elif model_type == "analyst":
@@ -115,7 +112,7 @@ def get_llm(model_type: str = "tutor") -> Any:
 
     if openai_key:
         try:
-            from langchain_openai import ChatOpenAI  # type: ignore
+            from langchain_openai import ChatOpenAI
             if model_type == "tutor":
                 model_name = os.getenv("TUTOR_MODEL_NAME", "gpt-4o")
             elif model_type == "analyst":
@@ -128,7 +125,7 @@ def get_llm(model_type: str = "tutor") -> Any:
 
     if anthropic_key:
         try:
-            from langchain_anthropic import ChatAnthropic  # type: ignore
+            from langchain_anthropic import ChatAnthropic
             model_name = os.getenv("TUTOR_MODEL_NAME", "claude-3-5-sonnet-20240620") if model_type == "tutor" else os.getenv("KEEPER_MODEL_NAME", "claude-3-haiku-20240307")
             return ChatAnthropic(model=model_name, api_key=anthropic_key, temperature=0.2)
         except ImportError:
