@@ -99,3 +99,21 @@ def test_session_lifecycle(temp_db):
     upsert_problems([{"contestId": 1900, "index": "C", "name": "Tree", "rating": 1500, "tags": []}], db_path=temp_db)
     create_session("sess_123", "tourist", 1900, "C", db_path=temp_db)
     update_session_outcome("sess_123", "SOLVED", hints_requested=2, keeper_rejections=0, db_path=temp_db)
+
+def test_test_cases_crud(temp_db):
+    from app.data.db import upsert_test_case, upsert_test_cases_batch, get_problem_test_cases
+    upsert_problems([{"contestId": 1900, "index": "A", "name": "Problem A", "rating": 1000, "tags": []}], db_path=temp_db)
+    
+    upsert_test_case(1900, "A", 1, "5\n1 2 3 4 5\n", "15\n", is_sample=True, db_path=temp_db)
+    upsert_test_case(1900, "A", 2, "2\n10 20\n", "30\n", is_sample=False, db_path=temp_db)
+    
+    all_tests = get_problem_test_cases(1900, "A", samples_only=False, db_path=temp_db)
+    assert len(all_tests) == 2
+    assert all_tests[0]["test_index"] == 1
+    assert all_tests[0]["is_sample"] == 1
+    assert all_tests[0]["expected_output"] == "15\n"
+    
+    samples = get_problem_test_cases(1900, "A", samples_only=True, db_path=temp_db)
+    assert len(samples) == 1
+    assert samples[0]["test_index"] == 1
+

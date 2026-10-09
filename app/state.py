@@ -36,6 +36,14 @@ class UserMessage(BaseModel):
     content: str = Field(...)
     timestamp: float = Field(...)
 
+class TestCase(BaseModel):
+    contest_id: int = Field(..., description="Codeforces contest ID")
+    idx: str = Field(..., description="Problem index")
+    test_index: int = Field(1, description="1-indexed test case number")
+    input_data: str = Field(..., description="Test case standard input")
+    expected_output: str = Field(..., description="Expected standard output")
+    is_sample: bool = Field(False, description="Whether this is an official sample test case")
+
 class CoachState(TypedDict):
     handle: str
     diagnosis: Diagnosis | None

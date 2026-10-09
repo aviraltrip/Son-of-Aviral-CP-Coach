@@ -99,6 +99,18 @@ def init_db(db_path: str = DEFAULT_DB_PATH) -> None:
                 FOREIGN KEY (contest_id, idx) REFERENCES problems(contest_id, idx) ON DELETE CASCADE
             );
         """)
+        conn.execute("""
+            CREATE TABLE IF NOT EXISTS test_cases (
+                contest_id INTEGER NOT NULL,
+                idx TEXT NOT NULL,
+                test_index INTEGER NOT NULL,
+                input_data TEXT NOT NULL,
+                expected_output TEXT NOT NULL,
+                is_sample BOOLEAN DEFAULT 0,
+                PRIMARY KEY (contest_id, idx, test_index),
+                FOREIGN KEY (contest_id, idx) REFERENCES problems(contest_id, idx) ON DELETE CASCADE
+            );
+        """)
 
 def upsert_user(handle: str, current_rating: int | None, max_rating: int | None, db_path: str = DEFAULT_DB_PATH) -> None:
     """Insert or update a Codeforces user record."""
@@ -393,3 +405,108 @@ def record_problem_submission(
             memory_consumed_bytes, ts
         ))
     return actual_sub_id
+
+def upsert_test_case(
+    contest_id: int,
+    idx: str,
+    test_index: int,
+    input_data: str,
+    expected_output: str,
+    is_sample: bool = False,
+    db_path: str = DEFAULT_DB_PATH
+) -> None:
+    """Insert or update a test case for a problem."""
+    init_db(db_path)
+    with get_db_connection(db_path) as conn:
+        conn.execute("""
+            INSERT INTO test_cases (contest_id, idx, test_index, input_data, expected_output, is_sample)
+            VALUES (?, ?, ?, ?, ?, ?)
+            ON CONFLICT(contest_id, idx, test_index) DO UPDATE SET
+                input_data = excluded.input_data,
+                expected_output = excluded.expected_output,
+                is_sample = excluded.is_sample;
+        """, (contest_id, idx.upper(), test_index, input_data, expected_output, int(is_sample)))
+
+def upsert_test_cases_batch(
+    test_cases: list[dict[str, Any]],
+    db_path: str = DEFAULT_DB_PATH
+) -> int:
+    """Batch insert or update test cases. Returns count of processed items."""
+    init_db(db_path)
+    count = 0
+    with get_db_connection(db_path) as conn:
+        for tc in test_cases:
+            contest_id = tc.get("contest_id") or tc.get("contestId")
+            idx = tc.get("idx") or tc.get("index")
+            test_index = tc.get("test_index", 1)
+            input_data = tc.get("input_data", "")
+            expected_output = tc.get("expected_output", "")
+            is_sample = bool(tc.get("is_sample", False))
+            if contest_id and idx:
+                conn.execute("""
+                    INSERT INTO test_cases (contest_id, idx, test_index, input_data, expected_output, is_sample)
+                    VALUES (?, ?, ?, ?, ?, ?)
+                    ON CONFLICT(contest_id, idx, test_index) DO UPDATE SET
+                        input_data = excluded.input_data,
+                        expected_output = excluded.expected_output,
+                        is_sample = excluded.is_sample;
+                """, (contest_id, str(idx).upper(), test_index, input_data, expected_output, int(is_sample)))
+                count += 1
+    return count
+
+def get_problem_test_cases(
+    contest_id: int,
+    idx: str,
+    samples_only: bool = False,
+    db_path: str = DEFAULT_DB_PATH
+) -> list[dict[str, Any]]:
+    """Retrieve test cases for a specific problem ordered by test_index."""
+    init_db(db_path)
+    with get_db_connection(db_path) as conn:
+        if samples_only:
+            cursor = conn.execute("""
+                SELECT * FROM test_cases
+                WHERE contest_id = ? AND idx = ? AND is_sample = 1
+                ORDER BY test_index ASC;
+            """, (contest_id, idx.upper()))
+        else:
+            cursor = conn.execute("""
+                SELECT * FROM test_cases
+                WHERE contest_id = ? AND idx = ?
+                ORDER BY test_index ASC;
+            """, (contest_id, idx.upper()))
+        return [dict(row) for row in cursor.fetchall()]
+
+def seed_dataset_test_cases(
+    dataset_path: str | None = None,
+    db_path: str = DEFAULT_DB_PATH
+) -> int:
+    """Seed test cases from the curated dataset.json into SQLite."""
+    if not dataset_path:
+        base_dir = os.path.dirname(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
+        dataset_path = os.path.join(base_dir, "evals", "dataset.json")
+
+    if not os.path.exists(dataset_path):
+        return 0
+
+    with open(dataset_path, "r", encoding="utf-8") as f:
+        data = json.load(f)
+
+    test_case_list = []
+    for item in data:
+        cid = item.get("contest_id")
+        idx = item.get("index")
+        sample_in = item.get("sample_input")
+        sample_out = item.get("sample_output")
+        if cid and idx and sample_in and sample_out:
+            test_case_list.append({
+                "contest_id": cid,
+                "idx": idx,
+                "test_index": 1,
+                "input_data": sample_in,
+                "expected_output": sample_out,
+                "is_sample": True
+            })
+
+    return upsert_test_cases_batch(test_case_list, db_path=db_path)
+
