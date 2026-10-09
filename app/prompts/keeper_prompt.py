@@ -36,3 +36,20 @@ def build_keeper_prompt(
         f"### Tutor's Draft Hint to Audit:\n'''\n{draft_text}\n'''\n\n"
         "Audit the draft strictly against the rubric and reference solution. Respond with the JSON object:"
     )
+
+def build_heuristic_keeper_prompt(
+    problem_statement: str,
+    hint_level: int,
+    draft_text: str
+) -> str:
+    """Build a zero-shot heuristic audit prompt when reference solution is absent."""
+    return (
+        f"### Problem Statement:\n{problem_statement}\n\n"
+        f"### Mode: Zero-Shot Heuristic Rubric Audit (No reference code available)\n\n"
+        f"### Requested Hint Level: Level {hint_level}\n\n"
+        f"### Tutor's Draft Hint to Audit:\n'''\n{draft_text}\n'''\n\n"
+        "Audit the draft strictly against the requested hint level rubric rules. "
+        "Ensure no language-specific code snippets, variable declarations, or premature algorithm leaks are present for this tier. "
+        "Respond with the exact JSON object:"
+    )
+
