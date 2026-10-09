@@ -52,3 +52,10 @@ def test_sync_user_data_pipeline(mock_req, tmp_path):
     assert u["current_rating"] == 3800
     subs = get_user_submissions("tourist_mock_test", db_path=db_file)
     assert len(subs) == 1
+
+def test_normalize_tags():
+    from app.data.cf_client import normalize_tags
+    raw = [" dp ", "  trees", "", "  ", "graphs"]
+    cleaned = normalize_tags(raw)
+    assert cleaned == ["dp", "trees", "graphs"]
+    assert normalize_tags([]) == []
