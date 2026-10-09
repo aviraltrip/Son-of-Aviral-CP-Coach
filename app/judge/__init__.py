@@ -7,6 +7,12 @@ from app.judge.runner import (
     normalize_output,
     ExecutionConfig
 )
+from app.judge.fuzzer import (
+    FuzzResult,
+    InputGenerators,
+    find_counterexample,
+    stress_test_problem_submission
+)
 
 __all__ = [
     "ExecutionResult",
@@ -14,5 +20,9 @@ __all__ = [
     "run_isolated",
     "evaluate_test_case",
     "normalize_output",
-    "ExecutionConfig"
+    "ExecutionConfig",
+    "FuzzResult",
+    "InputGenerators",
+    "find_counterexample",
+    "stress_test_problem_submission"
 ]
