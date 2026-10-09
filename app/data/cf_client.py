@@ -37,6 +37,16 @@ rate_limiter = PoliteRateLimiter(min_interval_seconds=2.0)
 CACHE_DIR = os.path.join(os.path.expanduser("~"), ".cache", "cp_coach")
 os.makedirs(CACHE_DIR, exist_ok=True)
 
+def normalize_tags(tags: list[str]) -> list[str]:
+    """Sanitize and normalize problem tags, stripping whitespace and discarding empty values."""
+    if not tags:
+        return []
+    cleaned: list[str] = []
+    for t in tags:
+        if isinstance(t, str) and t.strip():
+            cleaned.append(t.strip())
+    return cleaned
+
 def get_cached_response(cache_key: str, ttl_seconds: int = 300) -> Any | None:
     """Retrieve response from local disk cache if still fresh."""
     cache_path = os.path.join(CACHE_DIR, f"{cache_key}.json")
