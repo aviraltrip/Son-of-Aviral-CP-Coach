@@ -78,8 +78,14 @@ def get_llm(model_type: str = "tutor") -> Any:
     
     if openrouter_key:
         try:
-            from langchain_openai import ChatOpenAI
-            model_name = os.getenv("TUTOR_MODEL_NAME", "anthropic/claude-3.5-sonnet") if model_type == "tutor" else os.getenv("KEEPER_MODEL_NAME", "openai/gpt-4o-mini")
+            from langchain_openai import ChatOpenAI  # type: ignore
+            if model_type == "tutor":
+                model_name = os.getenv("TUTOR_MODEL_NAME", "anthropic/claude-3.5-sonnet")
+            elif model_type == "analyst":
+                model_name = os.getenv("ANALYST_MODEL_NAME", "openai/gpt-4o-mini")
+            else:
+                model_name = os.getenv("KEEPER_MODEL_NAME", "openai/gpt-4o-mini")
+
             return ChatOpenAI(
                 model=model_name,
                 api_key=openrouter_key,
@@ -91,24 +97,35 @@ def get_llm(model_type: str = "tutor") -> Any:
 
     if google_key:
         try:
-            from langchain_google_genai import ChatGoogleGenerativeAI
-            model_name = os.getenv("TUTOR_MODEL_NAME", "gemini-1.5-flash") if model_type == "tutor" else os.getenv("KEEPER_MODEL_NAME", "gemini-1.5-flash")
+            from langchain_google_genai import ChatGoogleGenerativeAI  # type: ignore
+            if model_type == "tutor":
+                model_name = os.getenv("TUTOR_MODEL_NAME", "gemini-1.5-flash")
+            elif model_type == "analyst":
+                model_name = os.getenv("ANALYST_MODEL_NAME", "gemini-1.5-flash")
+            else:
+                model_name = os.getenv("KEEPER_MODEL_NAME", "gemini-1.5-flash")
             return ChatGoogleGenerativeAI(model=model_name, google_api_key=google_key, temperature=0.2)
         except ImportError:
             pass
 
     if openai_key:
         try:
-            from langchain_openai import ChatOpenAI
-            model_name = "gpt-4o" if model_type == "tutor" else "gpt-4o-mini"
+            from langchain_openai import ChatOpenAI  # type: ignore
+            if model_type == "tutor":
+                model_name = os.getenv("TUTOR_MODEL_NAME", "gpt-4o")
+            elif model_type == "analyst":
+                model_name = os.getenv("ANALYST_MODEL_NAME", "gpt-4o-mini")
+            else:
+                model_name = os.getenv("KEEPER_MODEL_NAME", "gpt-4o-mini")
             return ChatOpenAI(model=model_name, api_key=openai_key, temperature=0.2)
         except ImportError:
             pass
 
     if anthropic_key:
         try:
-            from langchain_anthropic import ChatAnthropic
-            return ChatAnthropic(model="claude-3-5-sonnet-20240620", api_key=anthropic_key, temperature=0.2)
+            from langchain_anthropic import ChatAnthropic  # type: ignore
+            model_name = os.getenv("TUTOR_MODEL_NAME", "claude-3-5-sonnet-20240620") if model_type == "tutor" else os.getenv("KEEPER_MODEL_NAME", "claude-3-haiku-20240307")
+            return ChatAnthropic(model=model_name, api_key=anthropic_key, temperature=0.2)
         except ImportError:
             pass
 
