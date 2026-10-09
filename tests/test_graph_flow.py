@@ -40,7 +40,6 @@ def test_hint_request_flow():
     graph = create_coach_graph()
     config = {"configurable": {"thread_id": "test_thread_2"}}
     
-    # 1. Initialize
     graph.invoke({
         "handle": "tourist",
         "diagnosis": None,
@@ -54,7 +53,6 @@ def test_hint_request_flow():
         "user_action": None,
     }, config=config)
     
-    # 2. User requests Hint Level 1
     graph.update_state(config, {"user_action": "request_hint", "hint_level": 1}, as_node="wait_for_user")
     graph.invoke(None, config=config)
     
@@ -74,7 +72,7 @@ def test_keeper_rejection_and_fallback():
         "hint_level": 1,
         "draft": HintDraft(level=1, text="Use dp[i][j] = min(...) to solve it"),
         "verdict": None,
-        "revisions": 2, # 2 previous rejections, this is 3rd
+        "revisions": 2,
         "history": [],
         "user_action": None,
     }

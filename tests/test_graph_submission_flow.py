@@ -19,7 +19,6 @@ def test_e2e_wrong_answer_triggers_targeted_hint(test_graph):
     """Verify that a Wrong Answer submission transitions to Tutor for a targeted diagnostic hint."""
     graph, config = test_graph
     
-    # 1. Start Session
     initial_state: CoachState = {
         "handle": "tourist",
         "diagnosis": None,
@@ -39,7 +38,6 @@ def test_e2e_wrong_answer_triggers_targeted_hint(test_graph):
     assert state.values.get("problem") is not None
     initial_problem = state.values["problem"]
     
-    # 2. Submit Wrong Answer
     graph.update_state(config, {
         "user_action": "submitted",
         "last_submission_verdict": "WRONG_ANSWER"
@@ -56,7 +54,6 @@ def test_e2e_accepted_submission_advances_to_next_problem(test_graph):
     """Verify that an Accepted submission updates state and Analyst presents the next problem."""
     graph, config = test_graph
     
-    # 1. Start Session
     initial_state: CoachState = {
         "handle": "tourist",
         "diagnosis": None,
@@ -75,7 +72,6 @@ def test_e2e_accepted_submission_advances_to_next_problem(test_graph):
     state = graph.get_state(config)
     assert state.values.get("problem") is not None
     
-    # 2. Submit AC
     graph.update_state(config, {
         "user_action": "submitted",
         "last_submission_verdict": "OK"
@@ -83,7 +79,6 @@ def test_e2e_accepted_submission_advances_to_next_problem(test_graph):
     graph.invoke(None, config=config)
     
     state_after_ac = graph.get_state(config)
-    # Analyst should have picked a problem and updated diagnosis
     assert state_after_ac.values.get("problem") is not None
     assert state_after_ac.values.get("diagnosis") is not None
     assert state_after_ac.values.get("draft") is None

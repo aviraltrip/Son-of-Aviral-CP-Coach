@@ -5,7 +5,6 @@ from app.state import CoachState, ProblemChoice, CodeSubmission
 from app.data.db import init_db, upsert_user, upsert_problems, upsert_test_case
 from app.agents.judge import judge_node
 
-
 @pytest.fixture
 def judge_graph_setup(tmp_path, monkeypatch):
     db_file = str(tmp_path / "test_judge_graph.db")
@@ -19,7 +18,6 @@ def judge_graph_setup(tmp_path, monkeypatch):
     graph = create_coach_graph(checkpointer=checkpointer)
     config = {"configurable": {"thread_id": "test_judge_flow_thread"}}
     return graph, config, db_file
-
 
 def test_judge_node_accepted_python(tmp_path, monkeypatch):
     db_file = str(tmp_path / "test_judge_ac.db")
@@ -54,7 +52,6 @@ def test_judge_node_accepted_python(tmp_path, monkeypatch):
     assert res["judge_verdict"].passed_count == 2
     assert res["last_submission_verdict"] == "AC"
 
-
 def test_judge_node_wrong_answer_python(tmp_path, monkeypatch):
     db_file = str(tmp_path / "test_judge_wa.db")
     monkeypatch.setenv("DATABASE_PATH", db_file)
@@ -87,18 +84,15 @@ def test_judge_node_wrong_answer_python(tmp_path, monkeypatch):
     assert res["judge_verdict"].failing_test_index == 1
     assert res["last_submission_verdict"] == "WA"
 
-
 def test_graph_flow_judge_wrong_answer_to_tutor(judge_graph_setup):
     """Verify that submitting WA code via graph routes to Judge -> Tutor targeted hint -> Keeper."""
     graph, config, db_file = judge_graph_setup
 
-    # 1. Start session -> Analyst initializes and stops at wait_for_user
     graph.invoke({"handle": "tourist", "history": []}, config=config)
 
     state = graph.get_state(config)
     assert state.values.get("problem") is not None
 
-    # 2. Submit wrong answer code to sandbox judge
     bad_code = CodeSubmission(language="python3", source_code="print(999999999)\n")
     graph.update_state(
         config,
@@ -112,7 +106,6 @@ def test_graph_flow_judge_wrong_answer_to_tutor(judge_graph_setup):
     graph.invoke(None, config=config)
     after_sub = graph.get_state(config)
 
-    # State should contain judge verdict WA and an approved targeted hint from Tutor audited by Keeper
     assert after_sub.values.get("judge_verdict") is not None
     assert after_sub.values["judge_verdict"].status == "WA"
     assert after_sub.values.get("draft") is not None
