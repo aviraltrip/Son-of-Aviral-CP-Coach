@@ -138,7 +138,93 @@ def main() -> None:
             render_weak_topics_summary(saved_stats)
 
     with tab_coach:
-        st.info("Coaching workspace initialized.")
+        problem = values.get("problem")
+        stmt = values.get("problem_statement", "")
+        
+        # 1. Problem Viewer Card
+        from app.ui.components import render_problem_card, render_hint_box, render_agent_trace
+        render_problem_card(problem, stmt)
+
+        st.markdown("### 💡 Progressive Hint Requests")
+        st.markdown(
+            "Request graded hints without fear of spoilers. The solution-blind **Tutor Agent** drafts hints, and the **Keeper Agent** verifies safety."
+        )
+
+        col_h1, col_h2, col_h3 = st.columns(3)
+        h1_clicked = col_h1.button("💡 Level 1 (Nudge)", use_container_width=True, help="High-level invariant or monotonic observation.")
+        h2_clicked = col_h2.button("🧭 Level 2 (Approach)", use_container_width=True, help="Algorithmic strategy & data structures in plain English.")
+        h3_clicked = col_h3.button("📝 Level 3 (Pseudocode)", use_container_width=True, help="Structured recurrence & pseudocode transitions.")
+
+        if h1_clicked or h2_clicked or h3_clicked:
+            lvl = 1 if h1_clicked else (2 if h2_clicked else 3)
+            with st.spinner(f"Tutor & Keeper agents collaborating on Level {lvl} hint..."):
+                st.session_state.graph.update_state(st.session_state.config, {
+                    "user_action": "request_hint",
+                    "hint_level": lvl,
+                    "last_submission_verdict": None
+                }, as_node="wait_for_user")
+                st.session_state.graph.invoke(None, config=st.session_state.config)
+            st.rerun()
+
+        # 2. Render Approved Hint Display
+        draft = values.get("draft")
+        verdict = values.get("verdict")
+        if draft and verdict and verdict.approved:
+            render_hint_box(draft, verdict)
+
+        st.markdown("---")
+        st.markdown("### 🚀 Submission & Verification")
+        st.markdown("Check your Codeforces submission to update your proficiency stats or receive targeted failure diagnostics.")
+
+        col_poll, col_ac, col_wa, col_tle, col_skip = st.columns([1.2, 1, 1, 1, 1])
+        poll_clicked = col_poll.button("🔄 Poll Codeforces", use_container_width=True, help="Poll live Codeforces API for latest submission.")
+        ac_clicked = col_ac.button("✅ Submit (AC)", use_container_width=True, help="Simulate Accepted solution.")
+        wa_clicked = col_wa.button("❌ Submit (WA)", use_container_width=True, help="Simulate Wrong Answer.")
+        tle_clicked = col_tle.button("⏱️ Submit (TLE)", use_container_width=True, help="Simulate Time Limit Exceeded.")
+        skip_clicked = col_skip.button("⏭️ Skip", use_container_width=True, help="Skip problem and pick another.")
+
+        if poll_clicked:
+            with st.spinner("Polling live submission on Codeforces API..."):
+                st.session_state.graph.update_state(st.session_state.config, {
+                    "user_action": "submitted",
+                    "last_submission_verdict": None
+                }, as_node="wait_for_user")
+                st.session_state.graph.invoke(None, config=st.session_state.config)
+            st.rerun()
+
+        if ac_clicked:
+            with st.spinner("Processing Accepted verdict & updating topic proficiencies..."):
+                st.session_state.graph.update_state(st.session_state.config, {
+                    "user_action": "submitted",
+                    "last_submission_verdict": "OK"
+                }, as_node="wait_for_user")
+                st.session_state.graph.invoke(None, config=st.session_state.config)
+            st.balloons()
+            st.success("🎉 Problem solved! Loading next tailored practice problem...")
+            st.rerun()
+
+        if wa_clicked or tle_clicked:
+            v_type = "WRONG_ANSWER" if wa_clicked else "TIME_LIMIT_EXCEEDED"
+            with st.spinner(f"Analyzing {v_type} failure & drafting targeted diagnostic guidance..."):
+                st.session_state.graph.update_state(st.session_state.config, {
+                    "user_action": "submitted",
+                    "last_submission_verdict": v_type
+                }, as_node="wait_for_user")
+                st.session_state.graph.invoke(None, config=st.session_state.config)
+            st.rerun()
+
+        if skip_clicked:
+            with st.spinner("Skipping problem and selecting alternative recommendation..."):
+                st.session_state.graph.update_state(st.session_state.config, {
+                    "user_action": "skip",
+                    "last_submission_verdict": None
+                }, as_node="wait_for_user")
+                st.session_state.graph.invoke(None, config=st.session_state.config)
+            st.rerun()
+
+        # 3. Agent Inspection Trace
+        with st.expander("🔍 Multi-Agent Reasoning Trace (Tutor ⇄ Keeper Dialogue)", expanded=False):
+            render_agent_trace(values.get("history", []))
 
 if __name__ == "__main__":
     main()

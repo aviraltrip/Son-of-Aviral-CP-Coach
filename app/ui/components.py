@@ -153,11 +153,11 @@ def render_weak_topics_summary(weak_topics: list[Any]) -> None:
     data = []
     for t in weak_topics:
         data.append({
-            "Topic": getattr(t, "tag", t.get("tag", "")),
-            "Failure Score": getattr(t, "weighted_failure_score", t.get("weighted_failure_score", 0.0)),
-            "Solve Ratio": f"{int(getattr(t, 'solved_ratio', t.get('solved_ratio', 0.0)) * 100)}%",
-            "Attempts": getattr(t, "n_attempts", t.get("n_attempts", t.get("total_attempts", 0))),
-            "Avg Solved Rating": getattr(t, "avg_rating", t.get("avg_rating_solved", "-")) or "-"
+            "Topic": getattr(t, "tag", t.get("tag", "") if isinstance(t, dict) else ""),
+            "Failure Score": getattr(t, "weighted_failure_score", t.get("weighted_failure_score", 0.0) if isinstance(t, dict) else 0.0),
+            "Solve Ratio": f"{int(getattr(t, 'solved_ratio', t.get('solved_ratio', 0.0) if isinstance(t, dict) else 0.0) * 100)}%",
+            "Attempts": getattr(t, "n_attempts", t.get("n_attempts", t.get("total_attempts", 0)) if isinstance(t, dict) else 0),
+            "Avg Solved Rating": getattr(t, "avg_rating", t.get("avg_rating_solved", "-") if isinstance(t, dict) else "-") or "-"
         })
     df = pd.DataFrame(data)
     
@@ -178,3 +178,109 @@ def render_weak_topics_summary(weak_topics: list[Any]) -> None:
             ),
         }
     )
+
+def render_problem_card(problem: Any, statement: str) -> None:
+    """Render active problem details, rating, tags, and problem statement."""
+    if not problem:
+        st.info("No active problem selected. Click 'Sync CF' to recommend a problem.")
+        return
+
+    cid = getattr(problem, "contest_id", "")
+    idx = getattr(problem, "index", "")
+    name = getattr(problem, "name", f"Problem {cid}{idx}")
+    rating = getattr(problem, "rating", None)
+    tags = getattr(problem, "tags", [])
+    reason = getattr(problem, "reason", "Tailored practice problem based on algorithmic weakness.")
+    cf_url = f"https://codeforces.com/problemset/problem/{cid}/{idx}"
+
+    rating_html = f'<span class="badge-rating">{rating}</span>' if rating else ''
+    tags_html = render_tag_chips(tags)
+
+    st.markdown(
+        f"""
+        <div class="card">
+            <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 0.5rem;">
+                <div style="font-size: 1.3rem; font-weight: 700; color: #f8fafc;">
+                    {cid}{idx} &bull; {name}
+                </div>
+                <div>{rating_html}</div>
+            </div>
+            <div style="margin-bottom: 0.75rem;">{tags_html}</div>
+            <div style="font-size: 0.85rem; color: #94a3b8; margin-bottom: 0.5rem;">
+                💡 <strong>Why Selected:</strong> {reason}
+            </div>
+            <div style="font-size: 0.85rem;">
+                🔗 <a href="{cf_url}" target="_blank" style="color: #3b82f6; text-decoration: none;">View on Codeforces &rarr;</a>
+            </div>
+        </div>
+        """,
+        unsafe_allow_html=True
+    )
+
+    with st.expander("📜 View Problem Statement", expanded=True):
+        if statement:
+            st.markdown(statement)
+        else:
+            st.markdown(f"Visit the [Codeforces Problem Page]({cf_url}) to read the full description and submit.")
+
+def render_hint_box(draft: Any, verdict: Any) -> None:
+    """Render the current approved hint and Keeper audit verification badge."""
+    if not draft:
+        return
+
+    level_names = {1: "Level 1: Nudge", 2: "Level 2: Approach", 3: "Level 3: Pseudocode"}
+    lvl_str = level_names.get(draft.level, f"Level {draft.level}")
+    audit_text = verdict.reason if verdict else "Verified by Keeper Agent."
+    
+    st.markdown(
+        f"""
+        <div class="hint-box">
+            <div style="font-size: 0.85rem; font-weight: 600; text-transform: uppercase; letter-spacing: 0.05em; color: #3b82f6; margin-bottom: 0.4rem;">
+                💬 Coach Hint ({lvl_str})
+            </div>
+            <div style="font-size: 1rem; color: #f8fafc; line-height: 1.5; margin-bottom: 0.6rem;">
+                {draft.text}
+            </div>
+            <div class="audit-box">
+                🛡️ <strong>Safety Audit:</strong> {audit_text}
+            </div>
+        </div>
+        """,
+        unsafe_allow_html=True
+    )
+
+def render_agent_trace(history: list[dict[str, Any]]) -> None:
+    """Render chronological reasoning trace of the Tutor ⇄ Keeper exchange."""
+    if not history:
+        st.caption("No multi-agent interactions yet.")
+        return
+
+    for item in history:
+        role = item.get("role", "system")
+        item_type = item.get("type", "")
+        
+        if item_type == "draft":
+            rev = item.get("revision", 0)
+            lvl = item.get("level", 1)
+            st.markdown(
+                f"""
+                <div class="agent-bubble-tutor">
+                    <div style="font-size: 0.8rem; font-weight: 600; color: #60a5fa; margin-bottom: 0.2rem;">
+                        🤖 Tutor Agent (Draft Level {lvl} | Revision {rev})
+                    </div>
+                    <div style="font-size: 0.9rem; color: #e2e8f0;">{item.get('text', '')}</div>
+                </div>
+                """,
+                unsafe_allow_html=True
+            )
+        elif item_type == "submission_check":
+            v = item.get("verdict", "OK")
+            icon = "✅" if v == "OK" else "❌"
+            st.markdown(
+                f"""
+                <div class="card" style="padding: 0.75rem 1rem; margin-bottom: 0.5rem;">
+                    <strong>{icon} Submission Event:</strong> Verdict received: <code>{v}</code>
+                </div>
+                """,
+                unsafe_allow_html=True
+            )
