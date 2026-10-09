@@ -125,3 +125,31 @@ def test_multi_round_revision_safety():
     assert r3["verdict"].approved is True
     assert "Safe Generic Fallback" in r3["verdict"].reason
     assert r3["draft"].text == SAFE_FALLBACK_HINT
+
+def test_keeper_dual_mode_heuristic_audit():
+    """Verify Keeper operates in zero-shot heuristic mode when problem has no reference solution."""
+    from app.state import ProblemChoice
+    from app.prompts.keeper_prompt import build_heuristic_keeper_prompt
+    
+    prompt = build_heuristic_keeper_prompt("Sample Statement", 1, "Consider binary search on the answer range.")
+    assert "Zero-Shot Heuristic Rubric Audit" in prompt
+    assert "Level 1" in prompt
+    
+    # State with an unseen problem that has no reference in DB
+    state: CoachState = {
+        "handle": "tourist",
+        "diagnosis": None,
+        "problem": ProblemChoice(contest_id=9999, index="Z", name="Unseen Problem", rating=1600, tags=["binary search"], reason="Targeted practice"),
+        "problem_statement": "An unseen problem statement without database editorial.",
+        "hint_level": 1,
+        "draft": HintDraft(level=1, text="Consider whether the check function is monotonic across the search space."),
+        "verdict": None,
+        "revisions": 0,
+        "history": [],
+        "user_action": "request_hint",
+        "last_submission_verdict": None,
+    }
+    
+    res = keeper_node(state)
+    assert res["verdict"].approved is True
+    assert res["verdict"].leak_severity == "none"
