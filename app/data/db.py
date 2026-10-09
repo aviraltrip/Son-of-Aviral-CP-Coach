@@ -111,6 +111,17 @@ def init_db(db_path: str = DEFAULT_DB_PATH) -> None:
                 FOREIGN KEY (contest_id, idx) REFERENCES problems(contest_id, idx) ON DELETE CASCADE
             );
         """)
+        conn.execute("""
+            CREATE TABLE IF NOT EXISTS cached_hints (
+                contest_id INTEGER NOT NULL,
+                idx TEXT NOT NULL,
+                hint_level INTEGER NOT NULL,
+                hint_text TEXT NOT NULL,
+                created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+                PRIMARY KEY (contest_id, idx, hint_level),
+                FOREIGN KEY (contest_id, idx) REFERENCES problems(contest_id, idx) ON DELETE CASCADE
+            );
+        """)
 
 def upsert_user(handle: str, current_rating: int | None, max_rating: int | None, db_path: str = DEFAULT_DB_PATH) -> None:
     """Insert or update a Codeforces user record."""
@@ -528,4 +539,32 @@ def seed_dataset_test_cases(
             })
 
     return upsert_test_cases_batch(test_case_list, db_path=db_path)
+    
+
+def get_cached_hint(contest_id: int, idx: str, hint_level: int, db_path: str = DEFAULT_DB_PATH) -> str | None:
+    """Retrieve an approved cached hint for a problem and level."""
+    init_db(db_path)
+    with get_db_connection(db_path) as conn:
+        cursor = conn.execute(
+            "SELECT hint_text FROM cached_hints WHERE contest_id = ? AND idx = ? AND hint_level = ?;",
+            (contest_id, idx.upper(), hint_level)
+        )
+        row = cursor.fetchone()
+        return row["hint_text"] if row else None
+
+
+def save_cached_hint(contest_id: int, idx: str, hint_level: int, hint_text: str, db_path: str = DEFAULT_DB_PATH) -> None:
+    """Save an approved hint into the cache for instant zero-latency retrieval."""
+    if not hint_text or not hint_text.strip():
+        return
+    init_db(db_path)
+    with get_db_connection(db_path) as conn:
+        conn.execute("""
+            INSERT INTO cached_hints (contest_id, idx, hint_level, hint_text)
+            VALUES (?, ?, ?, ?)
+            ON CONFLICT(contest_id, idx, hint_level) DO UPDATE SET
+                hint_text = excluded.hint_text,
+                created_at = CURRENT_TIMESTAMP;
+        """, (contest_id, idx.upper(), hint_level, hint_text.strip()))
+
 
