@@ -155,12 +155,13 @@ def render_weak_topics_summary(weak_topics: list[Any]) -> None:
     import pandas as pd
     data = []
     for t in weak_topics:
+        avg_r = getattr(t, "avg_rating", t.get("avg_rating_solved", None) if isinstance(t, dict) else None)
         data.append({
             "Topic": getattr(t, "tag", t.get("tag", "") if isinstance(t, dict) else ""),
             "Failure Score": getattr(t, "weighted_failure_score", t.get("weighted_failure_score", 0.0) if isinstance(t, dict) else 0.0),
             "Solve Ratio": f"{int(getattr(t, 'solved_ratio', t.get('solved_ratio', 0.0) if isinstance(t, dict) else 0.0) * 100)}%",
             "Attempts": getattr(t, "n_attempts", t.get("n_attempts", t.get("total_attempts", 0)) if isinstance(t, dict) else 0),
-            "Avg Solved Rating": getattr(t, "avg_rating", t.get("avg_rating_solved", "-") if isinstance(t, dict) else "-") or "-"
+            "Avg Solved Rating": str(int(avg_r)) if avg_r and avg_r != "-" else "-"
         })
     df = pd.DataFrame(data)
     
