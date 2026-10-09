@@ -8,6 +8,24 @@ HALF_LIFE_DAYS = 30.0
 HALF_LIFE_SECONDS = HALF_LIFE_DAYS * 86400.0
 LN_2 = math.log(2)
 
+# Non-algorithmic or administrative Codeforces tags that should not be evaluated as weak topics
+NON_ALGORITHMIC_TAGS: set[str] = {
+    "*special",
+    "special problem",
+    "special problems",
+    "interactive",
+    "combine tags by or",
+    "submit fail",
+    "expression parsing",
+}
+
+def is_valid_algorithmic_tag(tag: str) -> bool:
+    """Return True if the tag is a meaningful algorithmic concept, False for meta/administrative tags."""
+    if not tag or not isinstance(tag, str):
+        return False
+    cleaned = tag.strip().lower()
+    return cleaned not in NON_ALGORITHMIC_TAGS and not cleaned.startswith("*")
+
 def compute_recency_decay(submission_ts: int, current_ts: int | None = None) -> float:
     """Compute exponential decay weight with a 30-day half-life: r_i = exp(-delta_t * ln(2) / T_half)."""
     if current_ts is None:
