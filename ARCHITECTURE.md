@@ -216,3 +216,12 @@ erDiagram
 To preserve high pedagogical value, the deterministic stats engine and recommendation router explicitly filter out non-algorithmic and administrative Codeforces tags:
 - **Filtered Meta-Tags**: `*special`, `special problem`, `special problems`, `interactive`, `combine tags by or`, `submit fail`.
 - **Core Algorithmic Focus**: Only genuine algorithmic topics (`dp`, `graphs`, `trees`, `math`, `greedy`, `data structures`, `binary search`, `strings`, `geometry`, `number theory`, `bitmasks`, etc.) are scored in topic aggregates and recommended to users.
+
+---
+
+## 7. Sandbox Security & Pre-Flight Execution Guard
+
+To safely run user and candidate code locally, the sandbox execution runner implements a multi-layer security boundary:
+1. **Python AST Pre-Flight Scanner**: Parses source code into an Abstract Syntax Tree before execution, disallowing dangerous module imports (`os`, `subprocess`, `shutil`, `socket`, `pty`, `multiprocessing`, `threading`, `ctypes`) and built-ins (`eval`, `exec`, `open`, `__import__`).
+2. **C++ & Java Regex Guards**: Rejects forbidden header inclusions (`<cstdlib>`, `<sys/*>`, `<unistd.h>`, `<windows.h>`) and hazardous system invocations (`system(`, `fork(`, `popen(`, `Runtime.getRuntime()`, `ProcessBuilder`).
+3. **Containerized Resource Capping**: Docker compose enforces strict CPU and memory limits (`cpus: 2.0`, `memory: 2048M`) with isolated temporary working directories.
