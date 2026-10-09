@@ -204,7 +204,9 @@ erDiagram
 
 ### Why this structure prevents hallucination & leakage:
 1. **Zero Exposure for Tutor**: The prompt to the Tutor never contains the solution. Even if the Tutor model hallucinates or over-explains, it can only speculate based on the problem statement.
-2. **Strict Verification for Keeper**: The Keeper acts as an independent adversarial auditor whose sole job is to protect the user from spoilers.
+2. **Dual-Mode Keeper Verification**:
+   - **Mode A (Solution-Aware)**: When a reference solution is available in SQLite `references`, Keeper performs a strict comparative diff to ensure no implementation code or variables are leaked.
+   - **Mode B (Heuristic Rubric Mode)**: When practicing unseen or ad-hoc problems without database editorials, Keeper automatically engages zero-shot rubric verification to audit structural constraints (blocking code blocks, variable declarations, and premature algorithmic disclosures).
 3. **Graceful Degeneracy Handling**: If the Tutor drafts 3 consecutive invalid hints, the system replaces the output with a pre-vetted generic heuristic (e.g., "Review problem constraints and try writing out small examples by hand").
 
 ---
