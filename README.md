@@ -23,31 +23,6 @@ CP Coach solves this through **Multi-Agent Information Asymmetry**:
 
 ---
 
-## Architecture & State Machine
-
-```mermaid
-flowchart TD
-    START([Start]) --> Analyst[Analyst: Select Problem]
-    Analyst --> UserAction{User Action}
-
-    subgraph HintLoop ["Hint Safety Loop"]
-        Tutor[Tutor: Draft Hint] --> Keeper{Keeper: Audit Draft}
-        Keeper -- "Leak detected (rev < 3)" --> Tutor
-    end
-
-    UserAction -- "Request Hint" --> Tutor
-    Keeper -- "Approved" --> UserAction
-
-    UserAction -- "Submit Sandbox / Remote" --> Judge{Judge & Submission Node}
-    Judge -- "Accepted (AC)" --> Analyst
-    Judge -- "WA / TLE / CE" --> Tutor
-
-    UserAction -- "Skip" --> Analyst
-    UserAction -- "Exit" --> END([End Session])
-```
-
----
-
 ## Running with Docker
 
 You can run CP Coach using Docker and Docker Compose:
