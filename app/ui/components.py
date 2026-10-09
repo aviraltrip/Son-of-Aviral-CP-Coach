@@ -115,6 +115,66 @@ def inject_custom_css() -> None:
     """Inject custom CSS rules into Streamlit page."""
     st.markdown(CUSTOM_CSS, unsafe_allow_html=True)
 
+def get_rank_badge(rating: int | None) -> tuple[str, str]:
+    """Return rank title and color according to Codeforces rating divisions."""
+    if not rating:
+        return "Unrated", "#94a3b8"
+    if rating >= 3000:
+        return "Legendary Grandmaster", "#ff0000"
+    if rating >= 2600:
+        return "International Grandmaster", "#ff0000"
+    if rating >= 2400:
+        return "Grandmaster", "#ff0000"
+    if rating >= 2300:
+        return "International Master", "#ff8c00"
+    if rating >= 2100:
+        return "Master", "#ff8c00"
+    if rating >= 1900:
+        return "Candidate Master", "#aa00aa"
+    if rating >= 1600:
+        return "Expert", "#0000ff"
+    if rating >= 1400:
+        return "Specialist", "#03a89e"
+    if rating >= 1200:
+        return "Pupil", "#008000"
+    return "Newbie", "#808080"
+
 def render_tag_chips(tags: list[str]) -> str:
     """Generate HTML string of tag chips."""
     return "".join(f'<span class="badge-tag">{t}</span>' for t in tags)
+
+def render_weak_topics_summary(weak_topics: list[Any]) -> None:
+    """Render weak topics in a clean bar chart and structured summary table."""
+    if not weak_topics:
+        st.info("No weak topics identified yet. Sync submission history to compute statistics.")
+        return
+
+    import pandas as pd
+    data = []
+    for t in weak_topics:
+        data.append({
+            "Topic": getattr(t, "tag", t.get("tag", "")),
+            "Failure Score": getattr(t, "weighted_failure_score", t.get("weighted_failure_score", 0.0)),
+            "Solve Ratio": f"{int(getattr(t, 'solved_ratio', t.get('solved_ratio', 0.0)) * 100)}%",
+            "Attempts": getattr(t, "n_attempts", t.get("n_attempts", t.get("total_attempts", 0))),
+            "Avg Solved Rating": getattr(t, "avg_rating", t.get("avg_rating_solved", "-")) or "-"
+        })
+    df = pd.DataFrame(data)
+    
+    chart_df = df.set_index("Topic")[["Failure Score"]]
+    st.bar_chart(chart_df, color="#3b82f6")
+    
+    st.dataframe(
+        df,
+        use_container_width=True,
+        hide_index=True,
+        column_config={
+            "Failure Score": st.column_config.ProgressColumn(
+                "Failure Score (Decay + Bayes)",
+                help="Higher score indicates high failure rate weighted by difficulty and recency.",
+                format="%.3f",
+                min_value=0.0,
+                max_value=1.0,
+            ),
+        }
+    )
