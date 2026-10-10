@@ -110,6 +110,53 @@ code, pre {
     padding: 0.75rem 1rem;
     margin-bottom: 0.5rem;
 }
+
+/* Primary Action Buttons (Submit to Sandbox Judge) */
+button[kind="primary"],
+button[data-testid="stBaseButton-primary"],
+button[data-testid="baseButton-primary"],
+div[data-testid="stButton"] button[kind="primary"],
+.stButton button[kind="primary"] {
+    background-color: #2563eb !important;
+    background-image: linear-gradient(135deg, #2563eb, #1d4ed8) !important;
+    border: 1px solid #3b82f6 !important;
+    color: #ffffff !important;
+    font-weight: 500 !important;
+    box-shadow: 0 2px 4px rgba(37, 99, 235, 0.25) !important;
+    transition: all 0.2s ease-in-out !important;
+}
+
+button[kind="primary"]:hover,
+button[data-testid="stBaseButton-primary"]:hover,
+button[data-testid="baseButton-primary"]:hover,
+div[data-testid="stButton"] button[kind="primary"]:hover,
+.stButton button[kind="primary"]:hover {
+    background-color: #1d4ed8 !important;
+    background-image: linear-gradient(135deg, #1d4ed8, #1e40af) !important;
+    border-color: #60a5fa !important;
+    color: #ffffff !important;
+    box-shadow: 0 4px 12px rgba(37, 99, 235, 0.4) !important;
+    transform: translateY(-1px);
+}
+
+button[kind="primary"]:active,
+button[data-testid="stBaseButton-primary"]:active,
+button[data-testid="baseButton-primary"]:active,
+div[data-testid="stButton"] button[kind="primary"]:active,
+.stButton button[kind="primary"]:active {
+    background-color: #1e40af !important;
+    background-image: linear-gradient(135deg, #1e40af, #1e3a8a) !important;
+    border-color: #1e3a8a !important;
+    box-shadow: none !important;
+    transform: translateY(0);
+}
+
+button[kind="primary"]:focus:not(:active),
+button[data-testid="stBaseButton-primary"]:focus:not(:active),
+button[data-testid="baseButton-primary"]:focus:not(:active) {
+    border-color: #93c5fd !important;
+    box-shadow: 0 0 0 0.2rem rgba(59, 130, 246, 0.4) !important;
+}
 </style>
 """
 
