@@ -2,6 +2,7 @@
 
 Multi-Agent Competitive Programming Coach with live Codeforces history sync,
 deterministic algorithmic diagnostics, tailored recommendations, and verified 3-tier hints.
+Clean UI without icons or emojis.
 """
 import os
 import sys
