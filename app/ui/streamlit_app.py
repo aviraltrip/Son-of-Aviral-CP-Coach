@@ -129,8 +129,6 @@ def render_sidebar() -> str:
             unsafe_allow_html=True
         )
         
-        st.markdown("---")
-        st.markdown(f"**Session Thread**: `{st.session_state.thread_id[:8]}`")
         return st.session_state.handle
 
 def main() -> None:
