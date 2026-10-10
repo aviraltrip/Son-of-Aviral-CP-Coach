@@ -211,17 +211,17 @@ def render_problem_card(problem: Any, statement: str) -> None:
             </div>
             <div style="margin-bottom: 0.75rem;">{tags_html}</div>
             <div style="font-size: 0.85rem; color: #94a3b8; margin-bottom: 0.5rem;">
-                💡 <strong>Why Selected:</strong> {reason}
+                <strong>Why Selected:</strong> {reason}
             </div>
             <div style="font-size: 0.85rem;">
-                🔗 <a href="{cf_url}" target="_blank" style="color: #3b82f6; text-decoration: none;">View on Codeforces &rarr;</a>
+                <a href="{cf_url}" target="_blank" style="color: #3b82f6; text-decoration: none;">View on Codeforces &rarr;</a>
             </div>
         </div>
         """,
         unsafe_allow_html=True
     )
 
-    with st.expander("📜 View Problem Statement", expanded=True):
+    with st.expander("View Problem Statement", expanded=True):
         if statement:
             st.markdown(statement)
         else:
@@ -240,13 +240,13 @@ def render_hint_box(draft: Any, verdict: Any) -> None:
         f"""
         <div class="hint-box">
             <div style="font-size: 0.85rem; font-weight: 600; text-transform: uppercase; letter-spacing: 0.05em; color: #3b82f6; margin-bottom: 0.4rem;">
-                💬 Coach Hint ({lvl_str})
+                Coach Hint ({lvl_str})
             </div>
             <div style="font-size: 1rem; color: #f8fafc; line-height: 1.5; margin-bottom: 0.6rem;">
                 {draft.text}
             </div>
             <div class="audit-box">
-                🛡️ <strong>Keeper Safety Audit:</strong> {audit_text}
+                <strong>Keeper Safety Audit:</strong> {audit_text}
             </div>
         </div>
         """,
@@ -254,7 +254,7 @@ def render_hint_box(draft: Any, verdict: Any) -> None:
     )
 
 def render_agent_trace(history: list[dict[str, Any]]) -> None:
-    """Render chronological reasoning trace of the Tutor ⇄ Keeper exchange."""
+    """Render chronological reasoning trace of the Tutor and Keeper exchange."""
     if not history:
         st.caption("No multi-agent interactions yet.")
         return
@@ -270,7 +270,7 @@ def render_agent_trace(history: list[dict[str, Any]]) -> None:
                 f"""
                 <div class="agent-bubble-tutor">
                     <div style="font-size: 0.8rem; font-weight: 600; color: #60a5fa; margin-bottom: 0.2rem;">
-                        🤖 Tutor Agent (Draft Level {lvl} | Revision {rev})
+                        Tutor Agent (Draft Level {lvl} | Revision {rev})
                     </div>
                     <div style="font-size: 0.9rem; color: #e2e8f0;">{item.get('text', '')}</div>
                 </div>
@@ -279,11 +279,10 @@ def render_agent_trace(history: list[dict[str, Any]]) -> None:
             )
         elif item_type == "submission_check":
             v = item.get("verdict", "OK")
-            icon = "✅" if v == "OK" else "❌"
             st.markdown(
                 f"""
                 <div class="card" style="padding: 0.75rem 1rem; margin-bottom: 0.5rem;">
-                    <strong>{icon} Submission Event:</strong> Verdict received: <code>{v}</code>
+                    <strong>Submission Event:</strong> Verdict received: <code>{v}</code>
                 </div>
                 """,
                 unsafe_allow_html=True
@@ -353,13 +352,13 @@ def render_judge_verdict_banner(judge_verdict: Any) -> None:
     mem_kb = round(mem_bytes / 1024, 1)
 
     color_map = {
-        "AC": ("#10b981", "rgba(16, 185, 129, 0.12)", "✅ Accepted"),
-        "WA": ("#ef4444", "rgba(239, 68, 68, 0.12)", "❌ Wrong Answer"),
-        "TLE": ("#f59e0b", "rgba(245, 158, 11, 0.12)", "⏱️ Time Limit Exceeded"),
-        "MLE": ("#f59e0b", "rgba(245, 158, 11, 0.12)", "💾 Memory Limit Exceeded"),
-        "CE": ("#a855f7", "rgba(168, 85, 247, 0.12)", "⚠️ Compilation Error"),
-        "RE": ("#ef4444", "rgba(239, 68, 68, 0.12)", "💥 Runtime Error"),
-        "UNKNOWN": ("#94a3b8", "rgba(148, 163, 184, 0.12)", "❓ Unknown")
+        "AC": ("#10b981", "rgba(16, 185, 129, 0.12)", "Accepted"),
+        "WA": ("#ef4444", "rgba(239, 68, 68, 0.12)", "Wrong Answer"),
+        "TLE": ("#f59e0b", "rgba(245, 158, 11, 0.12)", "Time Limit Exceeded"),
+        "MLE": ("#f59e0b", "rgba(245, 158, 11, 0.12)", "Memory Limit Exceeded"),
+        "CE": ("#a855f7", "rgba(168, 85, 247, 0.12)", "Compilation Error"),
+        "RE": ("#ef4444", "rgba(239, 68, 68, 0.12)", "Runtime Error"),
+        "UNKNOWN": ("#94a3b8", "rgba(148, 163, 184, 0.12)", "Unknown")
     }
 
     border_color, bg_color, title_text = color_map.get(status, color_map["UNKNOWN"])
@@ -375,10 +374,10 @@ def render_judge_verdict_banner(judge_verdict: Any) -> None:
                 </div>
                 <div style="font-size: 0.85rem; color: #cbd5e1;">
                     <span style="background: rgba(255,255,255,0.08); padding: 0.2rem 0.6rem; border-radius: 6px; margin-right: 0.4rem;">
-                        ⚡ {time_ms:.1f} ms
+                        {time_ms:.1f} ms
                     </span>
                     <span style="background: rgba(255,255,255,0.08); padding: 0.2rem 0.6rem; border-radius: 6px; margin-right: 0.4rem;">
-                        💾 {mem_kb} KB
+                        {mem_kb} KB
                     </span>
                     <span style="background: rgba(255,255,255,0.08); padding: 0.2rem 0.6rem; border-radius: 6px;">
                         Passed: {passed}/{total}
@@ -391,21 +390,21 @@ def render_judge_verdict_banner(judge_verdict: Any) -> None:
     )
 
     if status == "CE" and getattr(judge_verdict, "compiler_output", ""):
-        with st.expander("🔍 View Compiler Diagnostic Logs", expanded=True):
+        with st.expander("View Compiler Diagnostic Logs", expanded=True):
             st.code(judge_verdict.compiler_output, language="text")
 
     failing_res = getattr(judge_verdict, "failing_test_result", None)
     if failing_res:
-        with st.expander(f"⚠️ Inspect Failing Test Case #{failing_res.test_index}", expanded=True):
+        with st.expander(f"Inspect Failing Test Case #{failing_res.test_index}", expanded=True):
             col_in, col_out, col_exp = st.columns(3)
             with col_in:
-                st.caption("📥 Standard Input")
+                st.caption("Standard Input")
                 st.code(failing_res.input_snippet or "[Empty]", language="text")
             with col_out:
-                st.caption("📤 Your Output")
+                st.caption("Your Output")
                 st.code(failing_res.user_output or "[No Output]", language="text")
             with col_exp:
-                st.caption("🎯 Expected Output")
+                st.caption("Expected Output")
                 st.code(failing_res.expected_output or "[Empty]", language="text")
 
 def render_fuzz_result_banner(fuzz_result: Any) -> None:
@@ -418,7 +417,7 @@ def render_fuzz_result_banner(fuzz_result: Any) -> None:
             f"""
             <div style="background: rgba(239, 68, 68, 0.12); border: 1px solid #ef4444; border-radius: 10px; padding: 1rem 1.25rem; margin-top: 1rem;">
                 <div style="font-size: 1.1rem; font-weight: 700; color: #ef4444; margin-bottom: 0.4rem;">
-                    💥 Counterexample Discovered (Trial {fuzz_result.trials_run})
+                    Counterexample Discovered (Trial {fuzz_result.trials_run})
                 </div>
                 <div style="font-size: 0.9rem; color: #cbd5e1; margin-bottom: 0.6rem;">
                     The differential fuzzer caught a mismatch against the reference solution!
@@ -429,14 +428,14 @@ def render_fuzz_result_banner(fuzz_result: Any) -> None:
         )
         col_in, col_usr, col_ref = st.columns(3)
         with col_in:
-            st.caption("📥 Fuzzer Input")
+            st.caption("Fuzzer Input")
             st.code(fuzz_result.failing_input or "", language="text")
         with col_usr:
-            st.caption(f"❌ Your Output ({fuzz_result.user_verdict})")
+            st.caption(f"Your Output ({fuzz_result.user_verdict})")
             st.code(fuzz_result.user_output or "", language="text")
         with col_ref:
-            st.caption("✅ Ground Truth Reference Output")
+            st.caption("Ground Truth Reference Output")
             st.code(fuzz_result.expected_output or "", language="text")
     else:
-        st.success(f"🎉 Stress testing passed! No counterexamples found across {fuzz_result.trials_run} randomized trials.")
+        st.success(f"Stress testing passed! No counterexamples found across {fuzz_result.trials_run} randomized trials.")
 

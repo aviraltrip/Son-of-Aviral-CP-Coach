@@ -64,12 +64,12 @@ def init_session_state() -> None:
 def render_sidebar() -> str:
     """Render sidebar with user handle settings, sync actions, and profile stats."""
     with st.sidebar:
-        st.markdown("### 👤 User Profile")
+        st.markdown("### User Profile")
         handle_input = st.text_input("Codeforces Handle", value=st.session_state.handle, help="Enter your Codeforces username.")
         
         col_sync, col_reset = st.columns(2)
-        sync_clicked = col_sync.button("🔄 Sync CF", use_container_width=True)
-        reset_clicked = col_reset.button("⚡ Reset", use_container_width=True)
+        sync_clicked = col_sync.button("Sync CF", use_container_width=True)
+        reset_clicked = col_reset.button("Reset", use_container_width=True)
         
         if reset_clicked:
             st.session_state.thread_id = str(uuid.uuid4())
@@ -84,7 +84,7 @@ def render_sidebar() -> str:
                 try:
                     uinfo, count = sync_user_data(st.session_state.handle, max_submissions=300, ttl_seconds=0)
                     st.session_state.user_info = uinfo
-                    st.toast(f"Synced {count} submissions from Codeforces!", icon="✅")
+                    st.toast(f"Synced {count} submissions from Codeforces!")
                 except Exception as e:
                     st.warning(f"Could not reach CF API ({e}). Using local database cache.")
                     st.session_state.user_info = get_user(st.session_state.handle) or {"handle": st.session_state.handle, "current_rating": 1400}
@@ -131,7 +131,6 @@ def render_sidebar() -> str:
 def main() -> None:
     st.set_page_config(
         page_title="CP Coach | Multi-Agent CP Mentorship",
-        page_icon="🎯",
         layout="wide",
         initial_sidebar_state="expanded"
     )
@@ -149,7 +148,7 @@ def main() -> None:
     state = st.session_state.graph.get_state(st.session_state.config)
     values = state.values
 
-    tab_coach, tab_diag = st.tabs(["🎯 Active Coaching", "📊 Weak Topics & Diagnostics"])
+    tab_coach, tab_diag = st.tabs(["Active Coaching", "Weak Topics & Diagnostics"])
 
     with tab_diag:
         st.markdown("### Algorithmic Weakness Analysis")
@@ -167,15 +166,15 @@ def main() -> None:
         
         render_problem_card(problem, stmt)
 
-        st.markdown("### 💡 Progressive Hint Requests")
+        st.markdown("### Progressive Hint Requests")
         st.markdown(
             "Request graded hints without fear of spoilers. The solution-blind **Tutor Agent** drafts hints, and the **Keeper Agent** verifies safety."
         )
 
         col_h1, col_h2, col_h3 = st.columns(3)
-        h1_clicked = col_h1.button("💡 Level 1 (Nudge)", use_container_width=True, help="High-level invariant or monotonic observation.")
-        h2_clicked = col_h2.button("🧭 Level 2 (Approach)", use_container_width=True, help="Algorithmic strategy & data structures in plain English.")
-        h3_clicked = col_h3.button("📝 Level 3 (Pseudocode)", use_container_width=True, help="Structured recurrence & pseudocode transitions.")
+        h1_clicked = col_h1.button("Level 1 (Nudge)", use_container_width=True, help="High-level invariant or monotonic observation.")
+        h2_clicked = col_h2.button("Level 2 (Approach)", use_container_width=True, help="Algorithmic strategy & data structures in plain English.")
+        h3_clicked = col_h3.button("Level 3 (Pseudocode)", use_container_width=True, help="Structured recurrence & pseudocode transitions.")
 
         if h1_clicked or h2_clicked or h3_clicked:
             lvl = 1 if h1_clicked else (2 if h2_clicked else 3)
@@ -194,7 +193,7 @@ def main() -> None:
             render_hint_box(draft, verdict)
 
         st.markdown("---")
-        st.markdown("### 💻 Solution Code Editor & Local Sandbox Judge")
+        st.markdown("### Solution Code Editor & Local Sandbox Judge")
         st.markdown("Write and test your solution locally with CPU timeouts, memory constraints, and differential fuzzing.")
 
         col_lang, col_space = st.columns([1, 3])
@@ -219,9 +218,9 @@ def main() -> None:
         st.session_state.user_code = code_input
 
         col_run_judge, col_fuzz, col_skip = st.columns([1.5, 1.5, 1])
-        judge_submit_clicked = col_run_judge.button("⚡ Submit to Sandbox Judge", use_container_width=True, type="primary")
-        fuzz_clicked = col_fuzz.button("🧪 Run Differential Fuzzer", use_container_width=True, help="Stress test against reference solution to find counterexamples.")
-        skip_clicked = col_skip.button("⏭️ Skip Problem", use_container_width=True)
+        judge_submit_clicked = col_run_judge.button("Submit to Sandbox Judge", use_container_width=True, type="primary")
+        fuzz_clicked = col_fuzz.button("Run Differential Fuzzer", use_container_width=True, help="Stress test against reference solution to find counterexamples.")
+        skip_clicked = col_skip.button("Skip Problem", use_container_width=True)
 
         if judge_submit_clicked:
             cid = getattr(problem, "contest_id", None) if problem else None
@@ -266,14 +265,14 @@ def main() -> None:
             render_judge_verdict_banner(judge_verdict)
 
         st.markdown("---")
-        st.markdown("### 🌐 Remote Codeforces Synchronization")
+        st.markdown("### Remote Codeforces Synchronization")
         st.markdown("Poll live Codeforces submission verdict or manually simulate outcomes.")
 
         col_poll, col_ac, col_wa, col_tle = st.columns(4)
-        poll_clicked = col_poll.button("🔄 Poll Codeforces", use_container_width=True, help="Poll live Codeforces API for latest submission.")
-        ac_clicked = col_ac.button("✅ Force Accepted", use_container_width=True, help="Simulate Accepted solution.")
-        wa_clicked = col_wa.button("❌ Force Wrong Answer", use_container_width=True, help="Simulate Wrong Answer.")
-        tle_clicked = col_tle.button("⏱️ Force Time Limit", use_container_width=True, help="Simulate Time Limit Exceeded.")
+        poll_clicked = col_poll.button("Poll Codeforces", use_container_width=True, help="Poll live Codeforces API for latest submission.")
+        ac_clicked = col_ac.button("Force Accepted", use_container_width=True, help="Simulate Accepted solution.")
+        wa_clicked = col_wa.button("Force Wrong Answer", use_container_width=True, help="Simulate Wrong Answer.")
+        tle_clicked = col_tle.button("Force Time Limit", use_container_width=True, help="Simulate Time Limit Exceeded.")
 
         if poll_clicked:
             with st.spinner("Polling live submission on Codeforces API..."):
@@ -292,7 +291,7 @@ def main() -> None:
                 }, as_node="wait_for_user")
                 st.session_state.graph.invoke(None, config=st.session_state.config)
             st.balloons()
-            st.success("🎉 Problem solved! Loading next tailored practice problem...")
+            st.success("Problem solved! Loading next tailored practice problem...")
             st.rerun()
 
         if wa_clicked or tle_clicked:
@@ -314,7 +313,7 @@ def main() -> None:
                 st.session_state.graph.invoke(None, config=st.session_state.config)
             st.rerun()
 
-        with st.expander("🔍 Multi-Agent Reasoning Trace (Tutor ⇄ Keeper Dialogue)", expanded=False):
+        with st.expander("Multi-Agent Reasoning Trace (Tutor / Keeper Dialogue)", expanded=False):
             render_agent_trace(values.get("history", []))
 
 if __name__ == "__main__":

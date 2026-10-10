@@ -235,11 +235,11 @@ def run_cli_session(handle: str = "tourist") -> None:
     graph = create_coach_graph()
     
     print(f"\n{'='*60}")
-    print(f"         🏆 CP COACH: MULTI-AGENT CP TUTORING")
+    print(f"         CP COACH: MULTI-AGENT CP TUTORING")
     print(f"         Session Thread: {thread_id[:8]}... | User: {handle}")
     print(f"{'='*60}")
     print(f"Analyzing Codeforces profile history for '{handle}'...")
-    print("⚡ Live sync & deterministic stats engine active (Rate limit: 1req/2s)...")
+    print("Live sync & deterministic stats engine active (Rate limit: 1req/2s)...")
     
     graph.invoke({
         "handle": handle,
@@ -266,19 +266,19 @@ def run_cli_session(handle: str = "tourist") -> None:
         print(f"\n{'-'*60}")
         if values.get("diagnosis"):
             d = values["diagnosis"]
-            print(f"📊 Diagnosis: {d.summary}")
+            print(f"Diagnosis: {d.summary}")
             
         if values.get("problem"):
             p = values["problem"]
-            print(f"\n🎯 Active Problem: {p.contest_id}{p.index} - {p.name} (Rating: {p.rating})")
-            print(f"🏷️  Tags: {', '.join(p.tags)}")
-            print(f"💡 Why Selected: {p.reason}")
-            print(f"\n📜 Statement:\n{values.get('problem_statement')}")
+            print(f"\nActive Problem: {p.contest_id}{p.index} - {p.name} (Rating: {p.rating})")
+            print(f"Tags: {', '.join(p.tags)}")
+            print(f"Why Selected: {p.reason}")
+            print(f"\nStatement:\n{values.get('problem_statement')}")
             
         if values.get("draft") and values.get("verdict") and values["verdict"].approved:
             draft = values["draft"]
             v = values["verdict"]
-            print(f"\n💬 [Coach Hint - Level {draft.level}]:")
+            print(f"\n[Coach Hint - Level {draft.level}]:")
             print(f"   {draft.text}")
             print(f"   (Audit: {v.reason})")
             
@@ -287,7 +287,7 @@ def run_cli_session(handle: str = "tourist") -> None:
         print("  1. Request Hint Level 1 (Nudge)")
         print("  2. Request Hint Level 2 (Approach)")
         print("  3. Request Hint Level 3 (Pseudocode)")
-        print("  4. 🔄 Poll live Codeforces submission (CF API)")
+        print("  4. Poll live Codeforces submission (CF API)")
         print("  5. Simulate Submission -> Accepted (AC)")
         print("  6. Simulate Submission -> Wrong Answer (WA)")
         print("  7. Simulate Submission -> Time Limit Exceeded (TLE)")
@@ -304,7 +304,7 @@ def run_cli_session(handle: str = "tourist") -> None:
             }, as_node="wait_for_user")
             graph.invoke(None, config=config)
         elif choice == "4":
-            print("\n📡 Polling latest submission on Codeforces...")
+            print("\nPolling latest submission on Codeforces...")
             graph.update_state(config, {
                 "user_action": "submitted",
                 "last_submission_verdict": None
@@ -316,28 +316,28 @@ def run_cli_session(handle: str = "tourist") -> None:
                 "last_submission_verdict": "OK"
             }, as_node="wait_for_user")
             graph.invoke(None, config=config)
-            print("\n✅ Submission Accepted! Loading next targeted problem...")
+            print("\nSubmission Accepted! Loading next targeted problem...")
         elif choice == "6":
             graph.update_state(config, {
                 "user_action": "submitted",
                 "last_submission_verdict": "WRONG_ANSWER"
             }, as_node="wait_for_user")
             graph.invoke(None, config=config)
-            print("\n❌ Verdict: Wrong Answer. Coach is preparing a targeted diagnostic hint...")
+            print("\nVerdict: Wrong Answer. Coach is preparing a targeted diagnostic hint...")
         elif choice == "7":
             graph.update_state(config, {
                 "user_action": "submitted",
                 "last_submission_verdict": "TIME_LIMIT_EXCEEDED"
             }, as_node="wait_for_user")
             graph.invoke(None, config=config)
-            print("\n⏱️ Verdict: Time Limit Exceeded. Coach is analyzing asymptotic complexity...")
+            print("\nVerdict: Time Limit Exceeded. Coach is analyzing asymptotic complexity...")
         elif choice == "8":
             graph.update_state(config, {
                 "user_action": "skip",
                 "last_submission_verdict": None
             }, as_node="wait_for_user")
             graph.invoke(None, config=config)
-            print("\n⏭️ Problem skipped. Selecting alternative problem...")
+            print("\nProblem skipped. Selecting alternative problem...")
         elif choice == "9":
             graph.update_state(config, {"user_action": "done"}, as_node="wait_for_user")
             graph.invoke(None, config=config)

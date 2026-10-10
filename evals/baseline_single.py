@@ -177,9 +177,9 @@ def main() -> None:
 
     if args.from_db:
         problems = load_problems_from_db(limit=args.limit)
-        print(f"\n⚡ Loaded {len(problems)} problems from SQLite database. Running baseline batch...")
+        print(f"\nLoaded {len(problems)} problems from SQLite database. Running baseline batch...")
         results = run_baseline_batch(problems, output_file=args.output)
-        print(f"✅ Generated {len(results)} baseline hint evaluations.")
+        print(f"Generated {len(results)} baseline hint evaluations.")
         return
 
     if args.all_levels:
