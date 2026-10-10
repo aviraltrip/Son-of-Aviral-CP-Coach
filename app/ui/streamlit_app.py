@@ -133,7 +133,7 @@ def render_sidebar() -> str:
 
 def main() -> None:
     st.set_page_config(
-        page_title="CP Coach | Multi-Agent CP Mentorship",
+        page_title="Son of Aviral | Multi-Agent CP Mentorship",
         layout="wide",
         initial_sidebar_state="expanded"
     )
@@ -142,7 +142,7 @@ def main() -> None:
     init_session_state()
     handle = render_sidebar()
 
-    st.markdown('<div class="main-header">CP Coach</div>', unsafe_allow_html=True)
+    st.markdown('<div class="main-header">Son of Aviral</div>', unsafe_allow_html=True)
     st.markdown(
         '<div class="sub-header">Multi-Agent Competitive Programming Coach &bull; Solution-Blind Hints &bull; Data-Driven Diagnostics</div>',
         unsafe_allow_html=True
