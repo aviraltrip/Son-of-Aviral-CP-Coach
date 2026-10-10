@@ -15,6 +15,10 @@ if str(ROOT_DIR) not in sys.path:
 
 import streamlit as st
 
+import importlib
+import app.ui.components
+importlib.reload(app.ui.components)
+
 from app.graph import create_coach_graph
 from app.state import CodeSubmission
 from app.ui.components import (
