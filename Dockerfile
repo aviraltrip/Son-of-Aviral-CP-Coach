@@ -30,8 +30,17 @@ COPY tests/ ./tests/
 COPY pyproject.toml .
 COPY README.md .
 
-# Create volume mount point for database persistence
-RUN mkdir -p /app/data
+# Create unprivileged system group and user
+RUN groupadd -r -g 1001 appgroup && \
+    useradd -r -u 1001 -g appgroup -d /home/appuser -m -s /bin/bash appuser
+
+ENV HOME=/home/appuser
+
+# Create volume mount points and set permissions
+RUN mkdir -p /app/data /home/appuser/.cache && \
+    chown -R appuser:appgroup /app /home/appuser
+
+USER appuser
 
 EXPOSE 8501
 
