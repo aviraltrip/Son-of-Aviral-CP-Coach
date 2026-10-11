@@ -36,7 +36,6 @@ def setup_logging(level: str | None = None) -> None:
     root_logger = logging.getLogger()
     root_logger.setLevel(log_level)
 
-    # Avoid duplicate handlers on reload
     if root_logger.handlers:
         for handler in root_logger.handlers[:]:
             root_logger.removeHandler(handler)
