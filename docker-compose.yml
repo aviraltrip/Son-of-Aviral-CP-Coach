@@ -10,11 +10,24 @@ services:
       - cp_coach_data:/app/data
     environment:
       - DATABASE_PATH=/app/data/cp_coach.db
+      - CHECKPOINTS_DB_PATH=/app/data/checkpoints.db
+      - CHECKPOINTS_PERSIST=true
+      - JUDGE_BACKEND=${JUDGE_BACKEND:-isolated_subprocess}
       - OPENROUTER_API_KEY=${OPENROUTER_API_KEY:-}
       - OPENAI_API_KEY=${OPENAI_API_KEY:-}
       - ANTHROPIC_API_KEY=${ANTHROPIC_API_KEY:-}
       - GOOGLE_API_KEY=${GOOGLE_API_KEY:-}
       - GEMINI_API_KEY=${GEMINI_API_KEY:-}
+    security_opt:
+      - no-new-privileges:true
+    cap_drop:
+      - ALL
+    cap_add:
+      - CHOWN
+      - SETUID
+      - SETGID
+    tmpfs:
+      - /tmp:size=128M,mode=1777
     restart: unless-stopped
     deploy:
       resources:
