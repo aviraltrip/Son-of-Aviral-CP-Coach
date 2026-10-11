@@ -29,6 +29,7 @@ COPY evals/ ./evals/
 COPY tests/ ./tests/
 COPY pyproject.toml .
 COPY README.md .
+COPY healthcheck.py .
 
 # Create unprivileged system group and user
 RUN groupadd -r -g 1001 appgroup && \
@@ -44,7 +45,7 @@ USER appuser
 
 EXPOSE 8501
 
-HEALTHCHECK --interval=30s --timeout=10s --start-period=5s --retries=3 \
-    CMD curl -f http://localhost:8501/_stcore/health || exit 1
+HEALTHCHECK --interval=30s --timeout=10s --start-period=10s --retries=3 \
+    CMD python healthcheck.py || exit 1
 
 ENTRYPOINT ["streamlit", "run", "app/ui/streamlit_app.py", "--server.port=8501", "--server.address=0.0.0.0"]
