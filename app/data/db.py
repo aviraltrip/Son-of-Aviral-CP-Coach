@@ -21,7 +21,13 @@ def reset_db_initialization_cache() -> None:
 def _create_raw_connection(db_path: str) -> sqlite3.Connection:
     conn = sqlite3.connect(db_path, timeout=10.0)
     conn.row_factory = sqlite3.Row
-    conn.execute("PRAGMA foreign_keys = ON;")
+    try:
+        conn.execute("PRAGMA journal_mode = WAL;")
+        conn.execute("PRAGMA synchronous = NORMAL;")
+        conn.execute("PRAGMA busy_timeout = 5000;")
+        conn.execute("PRAGMA foreign_keys = ON;")
+    except sqlite3.Error as e:
+        logger.warning(f"Could not apply PRAGMA settings for {db_path}: {e}")
     return conn
 
 def init_db(db_path: str = DEFAULT_DB_PATH, force: bool = False) -> None:
