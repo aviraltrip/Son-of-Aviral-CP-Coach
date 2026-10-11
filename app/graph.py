@@ -1,6 +1,7 @@
 import os
 import sys
 import logging
+import sqlite3
 from typing import Literal, Any
 from langgraph.graph import StateGraph, START, END
 from langgraph.checkpoint.memory import MemorySaver
@@ -30,10 +31,37 @@ ALLOWED_MSGPACK_MODULES = [
     ("app.state", "UserMessage")
 ]
 
-def get_checkpointer(persisted: bool = False) -> Any:
-    """Return memory or persistent checkpointer instance with registered Pydantic types."""
+DEFAULT_CHECKPOINTS_DB = os.getenv("CHECKPOINTS_DB_PATH", "checkpoints.db")
+
+def get_checkpointer(persisted: bool = False, db_path: str = DEFAULT_CHECKPOINTS_DB) -> Any:
+    """Return memory or persistent SqliteSaver checkpointer instance with registered Pydantic types."""
     serde = JsonPlusSerializer(allowed_msgpack_modules=ALLOWED_MSGPACK_MODULES)
-    return MemorySaver(serde=serde)
+    should_persist = persisted or os.getenv("CHECKPOINTS_PERSIST", "false").lower() in ("true", "1", "yes")
+
+    if not should_persist:
+        return MemorySaver(serde=serde)
+
+    try:
+        from langgraph.checkpoint.sqlite import SqliteSaver
+        abs_path = os.path.abspath(db_path)
+        parent_dir = os.path.dirname(abs_path)
+        if parent_dir:
+            os.makedirs(parent_dir, exist_ok=True)
+
+        conn = sqlite3.connect(abs_path, check_same_thread=False, timeout=10.0)
+        try:
+            conn.execute("PRAGMA journal_mode = WAL;")
+            conn.execute("PRAGMA synchronous = NORMAL;")
+            conn.execute("PRAGMA busy_timeout = 5000;")
+        except Exception as e:
+            logger.warning(f"Failed to set PRAGMA for checkpoints db: {e}")
+
+        saver = SqliteSaver(conn, serde=serde)
+        saver.setup()
+        return saver
+    except Exception as e:
+        logger.warning(f"Could not initialize persistent SqliteSaver ({e}). Falling back to MemorySaver.")
+        return MemorySaver(serde=serde)
 
 def route_user_action(state: CoachState) -> Literal["tutor", "check_submission", "judge", "analyst", "__end__"]:
     """Route based on user action taken at the wait_for_user interrupt."""
@@ -163,7 +191,7 @@ def wait_for_user_node(state: CoachState) -> dict[str, Any]:
     """Interrupt/checkpoint node waiting for human user input."""
     return {}
 
-def create_coach_graph(checkpointer: Any = None) -> Any:
+def create_coach_graph(checkpointer: Any = None, persisted: bool = False) -> Any:
     """Build and compile the CP Coach LangGraph state machine."""
     workflow = StateGraph(CoachState)
     
@@ -220,7 +248,7 @@ def create_coach_graph(checkpointer: Any = None) -> Any:
     )
     
     if checkpointer is None:
-        checkpointer = get_checkpointer()
+        checkpointer = get_checkpointer(persisted=persisted)
         
     return workflow.compile(
         checkpointer=checkpointer,

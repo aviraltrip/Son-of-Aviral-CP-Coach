@@ -23,6 +23,7 @@ plotly>=5.22.0
 
 # Persistence & Checkpointing
 aiosqlite>=0.20.0
+langgraph-checkpoint-sqlite>=3.0.0
 
 # Testing & Evaluation
 pytest>=8.0.0
