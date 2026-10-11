@@ -37,6 +37,7 @@ from app.judge.fuzzer import stress_test_problem_submission
 from app.judge.runner import get_active_judge_backend
 from app.data.db import get_user, get_user_topic_stats
 from app.data.cf_client import sync_user_data
+from app.data.rate_limiter import rate_limiter
 
 def init_session_state() -> None:
     """Initialize LangGraph state machine and UI session values with persistent checkpointing."""
@@ -186,14 +187,19 @@ def main() -> None:
 
         if h1_clicked or h2_clicked or h3_clicked:
             lvl = 1 if h1_clicked else (2 if h2_clicked else 3)
-            with st.spinner(f"Tutor & Keeper agents collaborating on Level {lvl} hint..."):
-                st.session_state.graph.update_state(st.session_state.config, {
-                    "user_action": "request_hint",
-                    "hint_level": lvl,
-                    "last_submission_verdict": None
-                }, as_node="wait_for_user")
-                st.session_state.graph.invoke(None, config=st.session_state.config)
-            st.rerun()
+            client_id = st.session_state.get("handle", "anonymous")
+            allowed, wait_sec = rate_limiter.consume("hint", client_id)
+            if not allowed:
+                st.warning(f"Hint rate limit reached. Please wait {int(wait_sec)}s before requesting another hint.")
+            else:
+                with st.spinner(f"Tutor & Keeper agents collaborating on Level {lvl} hint..."):
+                    st.session_state.graph.update_state(st.session_state.config, {
+                        "user_action": "request_hint",
+                        "hint_level": lvl,
+                        "last_submission_verdict": None
+                    }, as_node="wait_for_user")
+                    st.session_state.graph.invoke(None, config=st.session_state.config)
+                st.rerun()
 
         draft = values.get("draft")
         verdict = values.get("verdict")
@@ -250,18 +256,23 @@ def main() -> None:
             if not problem or not cid or not idx:
                 st.warning("No active problem selected.")
             else:
-                submission_obj = CodeSubmission(
-                    language=st.session_state.code_lang,
-                    source_code=code_input
-                )
-                with st.spinner("Compiling and executing test cases in sandbox..."):
-                    st.session_state.graph.update_state(st.session_state.config, {
-                        "user_action": "submit_code",
-                        "submission_code": submission_obj,
-                        "last_submission_verdict": None
-                    }, as_node="wait_for_user")
-                    st.session_state.graph.invoke(None, config=st.session_state.config)
-                st.rerun()
+                client_id = st.session_state.get("handle", "anonymous")
+                allowed, wait_sec = rate_limiter.consume("judge", client_id)
+                if not allowed:
+                    st.warning(f"Submission rate limit reached. Please wait {int(wait_sec)}s before submitting code again.")
+                else:
+                    submission_obj = CodeSubmission(
+                        language=st.session_state.code_lang,
+                        source_code=code_input
+                    )
+                    with st.spinner("Compiling and executing test cases in sandbox..."):
+                        st.session_state.graph.update_state(st.session_state.config, {
+                            "user_action": "submit_code",
+                            "submission_code": submission_obj,
+                            "last_submission_verdict": None
+                        }, as_node="wait_for_user")
+                        st.session_state.graph.invoke(None, config=st.session_state.config)
+                    st.rerun()
 
         if fuzz_clicked:
             cid = getattr(problem, "contest_id", None) if problem else None
@@ -269,15 +280,20 @@ def main() -> None:
             if not problem or not cid or not idx:
                 st.warning("No active problem selected.")
             else:
-                with st.spinner("Differential fuzzer generating randomized test inputs against reference solution..."):
-                    st.session_state.fuzz_result = stress_test_problem_submission(
-                        contest_id=cid,
-                        idx=idx,
-                        user_code=code_input,
-                        user_lang=st.session_state.code_lang,
-                        max_trials=30
-                    )
-                st.rerun()
+                client_id = st.session_state.get("handle", "anonymous")
+                allowed, wait_sec = rate_limiter.consume("fuzzer", client_id)
+                if not allowed:
+                    st.warning(f"Differential fuzzer rate limit reached. Please wait {int(wait_sec)}s before running fuzzer again.")
+                else:
+                    with st.spinner("Differential fuzzer generating randomized test inputs against reference solution..."):
+                        st.session_state.fuzz_result = stress_test_problem_submission(
+                            contest_id=cid,
+                            idx=idx,
+                            user_code=code_input,
+                            user_lang=st.session_state.code_lang,
+                            max_trials=30
+                        )
+                    st.rerun()
 
         if st.session_state.fuzz_result:
             render_fuzz_result_banner(st.session_state.fuzz_result)
