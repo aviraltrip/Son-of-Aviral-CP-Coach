@@ -34,6 +34,7 @@ from app.ui.components import (
     STARTER_TEMPLATES
 )
 from app.judge.fuzzer import stress_test_problem_submission
+from app.judge.runner import get_active_judge_backend
 from app.data.db import get_user, get_user_topic_stats
 from app.data.cf_client import sync_user_data
 
@@ -200,8 +201,22 @@ def main() -> None:
             render_hint_box(draft, verdict)
 
         st.markdown("---")
-        st.markdown("### Solution Code Editor & Local Sandbox Judge")
-        st.markdown("Write and test your solution locally with CPU timeouts, memory constraints, and differential fuzzing.")
+        backend_name = get_active_judge_backend()
+        backend_labels = {
+            "isolated_subprocess": "Isolated Subprocess (Hardened)",
+            "judge0": "Remote Judge0 Sandbox",
+            "disabled": "Disabled (Remote CF Polling Only)"
+        }
+        badge_label = backend_labels.get(backend_name, backend_name.capitalize())
+        badge_color = "#38bdf8" if backend_name != "disabled" else "#f59e0b"
+        st.markdown(
+            f"### Solution Code Editor & Sandbox Judge "
+            f"<span style='font-size: 0.78rem; font-weight: 500; padding: 2px 8px; border-radius: 4px; "
+            f"background: rgba(30, 41, 59, 0.8); border: 1px solid rgba(148, 163, 184, 0.2); color: {badge_color}; margin-left: 8px;'>"
+            f"Backend: {badge_label}</span>",
+            unsafe_allow_html=True
+        )
+        st.markdown("Write and test your solution with CPU timeouts, memory constraints, and differential fuzzing.")
 
         col_lang, col_space = st.columns([1, 3])
         with col_lang:
