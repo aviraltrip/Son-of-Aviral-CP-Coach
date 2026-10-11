@@ -580,3 +580,41 @@ def save_cached_hint(contest_id: int, idx: str, hint_level: int, hint_text: str,
                 created_at = CURRENT_TIMESTAMP;
         """, (contest_id, idx.upper(), hint_level, hint_text.strip()))
 
+def ensure_db_initialized(db_path: str = DEFAULT_DB_PATH) -> None:
+    """Explicitly verify that database schema is initialized."""
+    abs_path = os.path.abspath(db_path)
+    if abs_path not in _INITIALIZED_DBS:
+        init_db(db_path)
+
+def check_db_health(db_path: str = DEFAULT_DB_PATH) -> dict[str, Any]:
+    """Verify database connection, WAL journal mode, and schema integrity."""
+    try:
+        ensure_db_initialized(db_path)
+        with get_db_connection(db_path) as conn:
+            cursor = conn.execute("PRAGMA integrity_check;")
+            integrity_row = cursor.fetchone()
+            integrity_status = integrity_row[0] if integrity_row else "unknown"
+
+            cursor = conn.execute("PRAGMA journal_mode;")
+            journal_row = cursor.fetchone()
+            journal_mode = journal_row[0] if journal_row else "unknown"
+
+            cursor = conn.execute("SELECT COUNT(*) as problem_count FROM problems;")
+            problem_count = cursor.fetchone()["problem_count"]
+
+            return {
+                "healthy": integrity_status.lower() == "ok",
+                "integrity": integrity_status,
+                "journal_mode": journal_mode,
+                "problem_count": problem_count,
+                "path": os.path.abspath(db_path)
+            }
+    except Exception as e:
+        logger.error(f"DB health check failed for {db_path}: {e}")
+        return {
+            "healthy": False,
+            "error": str(e),
+            "path": os.path.abspath(db_path)
+        }
+
+
