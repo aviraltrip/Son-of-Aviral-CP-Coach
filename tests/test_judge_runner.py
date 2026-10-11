@@ -149,3 +149,42 @@ def test_sandbox_security_guard_blocks_malicious_code():
     res = evaluate_test_case(bad_py_os, language="python3", input_data="", expected_output="")
     assert res.verdict == "CE"
     assert "Security Violation" in res.error_message
+
+def test_subclasses_introspection_blocked():
+    """Verify that dynamic introspection payloads attempting to access builtins are blocked."""
+    from app.judge.runner import validate_source_code_safety
+    payload = "s = [c for c in ().__class__.__base__.__subclasses__() if c.__name__ == 'BuiltinImporter']"
+    is_safe, err = validate_source_code_safety(payload, "python")
+    assert is_safe is False
+    assert "Forbidden" in err
+
+def test_environment_sanitization_in_execution(monkeypatch):
+    """Verify that execution subprocesses cannot read secrets from parent process environment."""
+    from app.judge.runner import evaluate_test_case
+    monkeypatch.setenv("LEAK_TEST_SECRET_API_KEY", "top_secret_token_12345")
+    
+    code = """
+import os
+val = os.environ.get('LEAK_TEST_SECRET_API_KEY', 'NOT_FOUND')
+print(val)
+"""
+    # Note: 'import os' is blocked by static guard, but let's test via direct execution env verification
+    from app.judge.runner import get_sanitized_execution_env
+    clean_env = get_sanitized_execution_env()
+    assert "LEAK_TEST_SECRET_API_KEY" not in clean_env
+    assert "OPENROUTER_API_KEY" not in clean_env
+
+def test_disabled_judge_backend_routing():
+    """Verify that when backend is disabled, evaluate_test_case returns a safe UNKNOWN verdict."""
+    from app.judge.runner import evaluate_test_case
+    res = evaluate_test_case("print(1)", language="python3", input_data="", expected_output="", backend="disabled")
+    assert res.verdict == "UNKNOWN"
+    assert "disabled" in res.error_message.lower()
+
+def test_judge0_backend_routing_fallback(monkeypatch):
+    """Verify Judge0 routing gracefully handles network connection failures."""
+    from app.judge.runner import evaluate_test_case
+    monkeypatch.setenv("JUDGE0_URL", "http://127.0.0.1:59999")
+    res = evaluate_test_case("print(1)", language="python3", input_data="", expected_output="", backend="judge0")
+    assert res.verdict == "UNKNOWN"
+    assert "Failed to communicate with Judge0" in res.error_message
