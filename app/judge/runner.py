@@ -17,6 +17,13 @@ from pydantic import BaseModel, Field
 
 VerdictType = Literal["AC", "WA", "TLE", "MLE", "CE", "RE", "UNKNOWN"]
 LanguageType = Literal["cpp", "cpp17", "cpp20", "python", "python3", "java"]
+JudgeBackendType = Literal["isolated_subprocess", "judge0", "disabled"]
+
+DEFAULT_JUDGE_BACKEND: str = os.getenv("JUDGE_BACKEND", "isolated_subprocess")
+
+def get_active_judge_backend() -> str:
+    """Return currently active judge execution backend identifier."""
+    return os.getenv("JUDGE_BACKEND", DEFAULT_JUDGE_BACKEND).lower().strip()
 
 MAX_OUTPUT_BYTES = 64 * 1024
 
@@ -285,9 +292,17 @@ def evaluate_test_case(
     language: LanguageType,
     input_data: str,
     expected_output: str,
-    config: ExecutionConfig | None = None
+    config: ExecutionConfig | None = None,
+    backend: str | None = None
 ) -> ExecutionResult:
-    """End-to-end compilation and execution of a single test case."""
+    """End-to-end compilation and execution of a single test case across configured backends."""
+    active_backend = (backend or get_active_judge_backend()).lower().strip()
+    if active_backend == "disabled":
+        return ExecutionResult(
+            verdict="UNKNOWN",
+            error_message="Sandbox code execution is disabled in this environment. Please submit your solution directly to Codeforces and click 'Poll Codeforces'."
+        )
+
     cfg = config or ExecutionConfig()
     
     with tempfile.TemporaryDirectory(prefix="cp_judge_") as temp_dir_str:
