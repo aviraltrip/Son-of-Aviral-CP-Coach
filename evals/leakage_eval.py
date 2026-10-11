@@ -101,7 +101,7 @@ def evaluate_hint_leakage(
 ) -> dict[str, Any]:
     """Audit a single candidate hint with the independent LLM Judge."""
     stmt = problem.get("statement", problem.get("name", ""))
-    ref = problem.get("reference_solution", "// No reference provided")
+    ref = problem.get("reference_solution", "No reference provided")
     insight = problem.get("key_insight", "")
     
     prompt = build_judge_prompt(stmt, ref, hint_level, hint_text, key_insight=insight)

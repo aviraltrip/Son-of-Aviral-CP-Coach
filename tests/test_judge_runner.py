@@ -168,7 +168,6 @@ import os
 val = os.environ.get('LEAK_TEST_SECRET_API_KEY', 'NOT_FOUND')
 print(val)
 """
-    # Note: 'import os' is blocked by static guard, but let's test via direct execution env verification
     from app.judge.runner import get_sanitized_execution_env
     clean_env = get_sanitized_execution_env()
     assert "LEAK_TEST_SECRET_API_KEY" not in clean_env

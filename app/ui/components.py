@@ -342,7 +342,6 @@ STARTER_TEMPLATES = {
 using namespace std;
 
 void solve() {
-    // Write your solution logic here
     int n;
     if (!(cin >> n)) return;
     cout << n << "\\n";
@@ -364,7 +363,6 @@ def solve():
     input_data = sys.stdin.read().split()
     if not input_data:
         return
-    # Process test cases
     print("Solution output")
 
 if __name__ == '__main__':
@@ -378,7 +376,6 @@ public class Solution {
         if (sc.hasNext()) {
             int t = sc.nextInt();
             while (t-- > 0) {
-                // Solution logic
             }
         }
     }

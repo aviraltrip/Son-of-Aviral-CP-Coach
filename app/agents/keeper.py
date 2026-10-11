@@ -16,7 +16,6 @@ SAFE_FALLBACK_HINT = (
 )
 
 DEFAULT_REFERENCE_SOLUTION = """
-// Reference Solution for Problem
 #include <bits/stdc++.h>
 using namespace std;
 

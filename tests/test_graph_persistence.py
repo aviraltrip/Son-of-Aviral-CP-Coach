@@ -9,7 +9,6 @@ def test_graph_session_state_survives_restart(tmp_path):
     thread_id = "persistent_user_session_42"
     config = {"configurable": {"thread_id": thread_id}}
 
-    # 1. First lifecycle: Run initial analyst node
     checkpointer_1 = get_checkpointer(persisted=True, db_path=checkpoints_db)
     graph_1 = create_coach_graph(checkpointer=checkpointer_1)
 
@@ -34,21 +33,17 @@ def test_graph_session_state_survives_restart(tmp_path):
     saved_problem = state_1.values["problem"]
     assert saved_problem is not None
 
-    # Verify checkpoint file exists on disk
     assert os.path.exists(checkpoints_db)
 
-    # 2. Simulated process restart: Create a brand new checkpointer and graph instance
     checkpointer_2 = get_checkpointer(persisted=True, db_path=checkpoints_db)
     graph_2 = create_coach_graph(checkpointer=checkpointer_2)
 
-    # Retrieve state from the second independent graph
     state_2 = graph_2.get_state(config)
     assert state_2.next == ("wait_for_user",)
     assert state_2.values["diagnosis"].summary == state_1.values["diagnosis"].summary
     assert state_2.values["problem"].contest_id == saved_problem.contest_id
     assert state_2.values["problem"].index == saved_problem.index
 
-    # 3. Resume interaction on restarted engine
     graph_2.update_state(config, {
         "user_action": "request_hint",
         "hint_level": 1

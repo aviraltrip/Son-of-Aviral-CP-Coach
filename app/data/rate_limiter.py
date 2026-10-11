@@ -21,7 +21,6 @@ class RateLimiterBucket:
         self.update()
         if self.tokens >= cost:
             return True, 0.0
-        # Calculate time needed to replenish enough tokens
         needed = cost - self.tokens
         wait_seconds = max(0.0, needed * self.refill_interval)
         return False, wait_seconds
@@ -33,11 +32,10 @@ class RateLimiterBucket:
             return True
         return False
 
-# Action-specific bucket parameters (capacity, seconds_per_token)
 DEFAULT_LIMITS: Dict[str, Tuple[int, float]] = {
-    "hint": (5, 90.0),       # Max 5 burst hints, 1 hint refilled every 90 seconds
-    "judge": (4, 25.0),      # Max 4 code submissions, 1 refilled every 25 seconds
-    "fuzzer": (2, 180.0),    # Max 2 stress fuzz runs, 1 refilled every 180 seconds
+    "hint": (5, 90.0),
+    "judge": (4, 25.0),
+    "fuzzer": (2, 180.0),
 }
 
 class ActionRateLimiter:
@@ -77,5 +75,4 @@ class ActionRateLimiter:
             bucket.update()
             return max(0, int(bucket.tokens))
 
-# Global rate limiter singleton
 rate_limiter = ActionRateLimiter()

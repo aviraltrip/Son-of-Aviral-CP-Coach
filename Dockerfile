@@ -1,14 +1,11 @@
-# Multi-Stage / Multi-Language Environment for CP Coach
 FROM python:3.11-slim
 
-# Prevent python from writing pyc files and buffering stdout/stderr
 ENV PYTHONDONTWRITEBYTECODE=1 \
     PYTHONUNBUFFERED=1 \
     DATABASE_PATH=/app/data/cp_coach.db \
     STREAMLIT_SERVER_PORT=8501 \
     STREAMLIT_SERVER_ADDRESS=0.0.0.0
 
-# Install build tools, C++ compilers (g++/gcc), Java SDK (javac/java), and curl for healthcheck
 RUN apt-get update && apt-get install -y --no-install-recommends \
     build-essential \
     g++ \
@@ -19,11 +16,9 @@ RUN apt-get update && apt-get install -y --no-install-recommends \
 
 WORKDIR /app
 
-# Install Python dependencies first for caching efficiency
 COPY requirements.txt .
 RUN pip install --no-cache-dir -r requirements.txt
 
-# Copy source code and evaluations
 COPY app/ ./app/
 COPY evals/ ./evals/
 COPY tests/ ./tests/
@@ -31,13 +26,11 @@ COPY pyproject.toml .
 COPY README.md .
 COPY healthcheck.py .
 
-# Create unprivileged system group and user
 RUN groupadd -r -g 1001 appgroup && \
     useradd -r -u 1001 -g appgroup -d /home/appuser -m -s /bin/bash appuser
 
 ENV HOME=/home/appuser
 
-# Create volume mount points and set permissions
 RUN mkdir -p /app/data /home/appuser/.cache && \
     chown -R appuser:appgroup /app /home/appuser
 

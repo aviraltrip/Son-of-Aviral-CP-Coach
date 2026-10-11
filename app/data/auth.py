@@ -37,7 +37,6 @@ def verify_or_register_handle(handle: str, passkey: str, db_path: str = DEFAULT_
     if not clean_handle:
         return False, "Handle cannot be empty."
 
-    # Global passkey bypass if configured
     if GLOBAL_PASSKEY and passkey == GLOBAL_PASSKEY:
         return True, "Global admin passkey accepted."
 
@@ -50,7 +49,6 @@ def verify_or_register_handle(handle: str, passkey: str, db_path: str = DEFAULT_
         row = cursor.fetchone()
 
         if row is None:
-            # Register passkey for this handle
             salt_hex, hash_hex = _hash_passkey(passkey)
             conn.execute(
                 "INSERT INTO user_auth (handle, salt, hashed_passkey) VALUES (?, ?, ?);",
@@ -58,7 +56,6 @@ def verify_or_register_handle(handle: str, passkey: str, db_path: str = DEFAULT_
             )
             return True, f"Handle '{clean_handle}' claimed and passkey registered."
 
-        # Existing user: verify passkey
         salt_bytes = bytes.fromhex(row["salt"])
         _, check_hash = _hash_passkey(passkey, salt=salt_bytes)
 
