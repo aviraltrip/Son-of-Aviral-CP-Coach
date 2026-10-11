@@ -34,12 +34,23 @@ BLOCKED_PYTHON_MODULES = {
     "threading", "signal", "tempfile", "importlib"
 }
 
+BLOCKED_PYTHON_ATTRIBUTES = {
+    "__subclasses__", "__bases__", "__class__", "__builtins__",
+    "__globals__", "__code__", "__loader__", "__spec__", "load_module", "_getframe"
+}
+
+BLOCKED_PYTHON_BUILTINS = {
+    "eval", "exec", "__import__", "open", "compile", "breakpoint"
+}
+
 BLOCKED_CPP_PATTERNS = [
     r'#\s*include\s*<cstdlib>',
     r'#\s*include\s*<sys/',
     r'#\s*include\s*<unistd\.h>',
     r'#\s*include\s*<windows\.h>',
     r'#\s*include\s*<process\.h>',
+    r'#\s*include\s*<fstream>',
+    r'#\s*include\s*<filesystem>',
     r'\bsystem\s*\(',
     r'\bfork\s*\(',
     r'\bpopen\s*\(',
@@ -47,13 +58,20 @@ BLOCKED_CPP_PATTERNS = [
     r'\bkill\s*\(',
     r'\bremove\s*\(',
     r'\b_wsystem\s*\(',
+    r'\bfopen\s*\(',
+    r'\bfreopen\s*\(',
+    r'\b(std::)?(ifstream|ofstream|fstream)\b',
+    r'\b(__asm__|asm)\b',
+    r'\bsyscall\s*\(',
 ]
 
 BLOCKED_JAVA_PATTERNS = [
     r'Runtime\.getRuntime\s*\(',
     r'ProcessBuilder',
     r'System\.exit\s*\(',
-    r'java\.io\.File\.delete',
+    r'java\.io\.File',
+    r'java\.io\.FileInputStream',
+    r'java\.io\.FileOutputStream',
     r'java\.net\.',
     r'java\.lang\.reflect',
 ]
@@ -63,6 +81,10 @@ def validate_source_code_safety(source_code: str, language: str) -> tuple[bool, 
     lang = language.lower()
     
     if lang in ("python", "python3"):
+        for blocked_token in ("__subclasses__", "__builtins__", "__globals__", "BuiltinImporter"):
+            if blocked_token in source_code:
+                return False, f"Forbidden dynamic introspection token '{blocked_token}' detected."
+
         try:
             tree = ast.parse(source_code)
             for node in ast.walk(tree):
@@ -78,19 +100,22 @@ def validate_source_code_safety(source_code: str, language: str) -> tuple[bool, 
                             return False, f"Forbidden import from '{node.module}' detected."
                 elif isinstance(node, ast.Call):
                     if isinstance(node.func, ast.Name):
-                        if node.func.id in ("eval", "exec", "__import__", "open"):
+                        if node.func.id in BLOCKED_PYTHON_BUILTINS:
                             return False, f"Forbidden built-in function '{node.func.id}' detected."
+                elif isinstance(node, ast.Attribute):
+                    if node.attr in BLOCKED_PYTHON_ATTRIBUTES:
+                        return False, f"Forbidden introspection attribute '{node.attr}' detected."
         except SyntaxError:
             pass
             
     elif lang in ("cpp", "cpp17", "cpp20"):
         for pattern in BLOCKED_CPP_PATTERNS:
-            if re.search(pattern, source_code):
+            if re.search(pattern, source_code, flags=re.IGNORECASE):
                 return False, f"Forbidden C++ system operation or header matching '{pattern}' detected."
                 
     elif lang == "java":
         for pattern in BLOCKED_JAVA_PATTERNS:
-            if re.search(pattern, source_code):
+            if re.search(pattern, source_code, flags=re.IGNORECASE):
                 return False, f"Forbidden Java system operation matching '{pattern}' detected."
                 
     return True, None
