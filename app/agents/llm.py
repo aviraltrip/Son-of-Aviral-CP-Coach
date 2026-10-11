@@ -136,5 +136,20 @@ def get_llm(model_type: str = "tutor") -> Any:
         except (ImportError, AttributeError):
             pass
 
+    env = os.getenv("ENVIRONMENT", "development").lower()
+    strict_llm = os.getenv("STRICT_LLM", "false").lower() in ("true", "1")
+    
+    if env == "production" or strict_llm:
+        err_msg = (
+            f"Production LLM failure: No valid LLM provider could be instantiated for '{model_type}'. "
+            f"Ensure OPENROUTER_API_KEY, OPENAI_API_KEY, ANTHROPIC_API_KEY, or GOOGLE_API_KEY is set."
+        )
+        logger.error(err_msg)
+        raise RuntimeError(err_msg)
+
+    logger.warning(
+        f"No LLM provider credentials configured in {env} mode. "
+        f"Falling back to deterministic MockLLM for '{model_type}'."
+    )
     return MockLLM(model_name=f"mock-{model_type}")
 
