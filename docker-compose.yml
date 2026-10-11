@@ -38,6 +38,26 @@ services:
           cpus: "0.5"
           memory: 512M
 
+  nginx:
+    image: nginx:alpine
+    container_name: cp-coach-nginx
+    restart: unless-stopped
+    ports:
+      - "80:80"
+    volumes:
+      - ./nginx/nginx.conf:/etc/nginx/nginx.conf:ro
+    depends_on:
+      - cp-coach
+    security_opt:
+      - no-new-privileges:true
+    cap_drop:
+      - ALL
+    cap_add:
+      - CHOWN
+      - SETUID
+      - SETGID
+      - NET_BIND_SERVICE
+
 volumes:
   cp_coach_data:
     name: cp_coach_data
