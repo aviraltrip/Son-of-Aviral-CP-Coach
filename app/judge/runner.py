@@ -118,6 +118,21 @@ def normalize_output(text: str) -> str:
         lines.pop()
     return "\n".join(lines)
 
+def get_sanitized_execution_env() -> dict[str, str]:
+    """Construct minimal execution environment stripping all API keys and credentials."""
+    safe_env = {
+        "PATH": os.environ.get("PATH", "/usr/local/bin:/usr/bin:/bin"),
+        "LANG": "C.UTF-8",
+        "LC_ALL": "C.UTF-8",
+        "PYTHONIOENCODING": "utf-8",
+        "PYTHONUNBUFFERED": "1",
+    }
+    if os.name == "nt":
+        for var in ("SYSTEMROOT", "WINDIR", "COMSPEC", "TEMP", "TMP", "PATHEXT"):
+            if var in os.environ:
+                safe_env[var] = os.environ[var]
+    return safe_env
+
 def compile_code(
     source_code: str,
     language: LanguageType,
@@ -134,6 +149,8 @@ def compile_code(
     if not is_safe and sec_err:
         return False, [], f"Security Violation: {sec_err}"
 
+    env = get_sanitized_execution_env()
+
     if lang in ("python", "python3"):
         script_path = work_dir / "solution.py"
         script_path.write_text(source_code, encoding="utf-8")
@@ -143,7 +160,8 @@ def compile_code(
                 [sys.executable, "-m", "py_compile", str(script_path)],
                 capture_output=True,
                 text=True,
-                timeout=10
+                timeout=10,
+                env=env
             )
             if compile_res.returncode != 0:
                 return False, [], compile_res.stderr or compile_res.stdout
@@ -177,7 +195,8 @@ def compile_code(
                 capture_output=True,
                 text=True,
                 timeout=20,
-                cwd=str(work_dir)
+                cwd=str(work_dir),
+                env=env
             )
             if comp_res.returncode != 0:
                 return False, [], comp_res.stderr or comp_res.stdout
@@ -203,7 +222,8 @@ def compile_code(
                 capture_output=True,
                 text=True,
                 timeout=20,
-                cwd=str(work_dir)
+                cwd=str(work_dir),
+                env=env
             )
             if comp_res.returncode != 0:
                 return False, [], comp_res.stderr or comp_res.stdout
@@ -226,6 +246,7 @@ def run_isolated(
     """Execute command in a sandboxed subprocess with strict time and output limits."""
     cfg = config or ExecutionConfig()
     timeout_sec = cfg.time_limit_ms / 1000.0
+    safe_env = get_sanitized_execution_env()
 
     start_time = time.perf_counter()
     try:
@@ -235,7 +256,8 @@ def run_isolated(
             stdout=subprocess.PIPE,
             stderr=subprocess.PIPE,
             text=True,
-            cwd=str(cwd) if cwd else None
+            cwd=str(cwd) if cwd else None,
+            env=safe_env
         )
 
         try:
