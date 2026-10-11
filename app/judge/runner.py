@@ -334,6 +334,78 @@ def run_isolated(
             error_message=f"Execution failed to start: {str(e)}"
         )
 
+JUDGE0_LANGUAGE_IDS = {
+    "cpp": 54,
+    "cpp17": 54,
+    "cpp20": 54,
+    "python": 71,
+    "python3": 71,
+    "java": 62,
+}
+
+def execute_via_judge0(
+    source_code: str,
+    language: LanguageType,
+    input_data: str,
+    expected_output: str,
+    config: ExecutionConfig | None = None,
+    api_url: str | None = None,
+    api_key: str | None = None
+) -> ExecutionResult:
+    """Execute code remotely using an external Judge0 sandbox instance."""
+    import requests
+    base_url = (api_url or os.getenv("JUDGE0_URL", "https://judge0-ce.p.rapidapi.com")).rstrip("/")
+    key = api_key or os.getenv("JUDGE0_API_KEY", "")
+    cfg = config or ExecutionConfig()
+    lang_id = JUDGE0_LANGUAGE_IDS.get(language.lower(), 71)
+
+    headers = {"Content-Type": "application/json"}
+    if key:
+        headers["X-RapidAPI-Key"] = key
+        headers["X-RapidAPI-Host"] = base_url.replace("https://", "").replace("http://", "").split("/")[0]
+
+    payload = {
+        "source_code": source_code,
+        "language_id": lang_id,
+        "stdin": input_data,
+        "expected_output": expected_output,
+        "cpu_time_limit": cfg.time_limit_ms / 1000.0,
+        "memory_limit": cfg.memory_limit_mb * 1024,
+    }
+
+    try:
+        url = f"{base_url}/submissions?base64_encoded=false&wait=true"
+        resp = requests.post(url, json=payload, headers=headers, timeout=15)
+        if resp.status_code not in (200, 201):
+            return ExecutionResult(
+                verdict="UNKNOWN",
+                error_message=f"Judge0 API returned HTTP {resp.status_code}: {resp.text[:200]}"
+            )
+
+        data = resp.json()
+        status_id = data.get("status", {}).get("id", 0)
+        time_sec = float(data.get("time") or 0.0)
+        memory_kb = float(data.get("memory") or 0.0)
+        stdout = data.get("stdout") or ""
+        stderr = data.get("stderr") or ""
+        comp_out = data.get("compile_output") or ""
+
+        if status_id == 3:
+            return ExecutionResult(verdict="AC", time_ms=round(time_sec * 1000, 2), memory_kb=memory_kb, stdout=stdout)
+        elif status_id == 4:
+            return ExecutionResult(verdict="WA", time_ms=round(time_sec * 1000, 2), memory_kb=memory_kb, stdout=stdout, error_message=f"Wrong Answer.\nExpected:\n{expected_output[:200]}\nGot:\n{stdout[:200]}")
+        elif status_id == 5:
+            return ExecutionResult(verdict="TLE", time_ms=round(time_sec * 1000, 2), memory_kb=memory_kb, error_message="Time Limit Exceeded.")
+        elif status_id == 6:
+            return ExecutionResult(verdict="CE", stderr=comp_out, error_message=f"Compilation Error:\n{comp_out}")
+        else:
+            return ExecutionResult(verdict="RE", stderr=stderr, time_ms=round(time_sec * 1000, 2), error_message=stderr or f"Runtime error with status {status_id}")
+    except Exception as e:
+        return ExecutionResult(
+            verdict="UNKNOWN",
+            error_message=f"Failed to communicate with Judge0 instance ({base_url}): {str(e)}"
+        )
+
 def evaluate_test_case(
     source_code: str,
     language: LanguageType,
@@ -351,6 +423,9 @@ def evaluate_test_case(
         )
 
     cfg = config or ExecutionConfig()
+
+    if active_backend == "judge0":
+        return execute_via_judge0(source_code, language, input_data, expected_output, config=cfg)
     
     with tempfile.TemporaryDirectory(prefix="cp_judge_") as temp_dir_str:
         work_dir = Path(temp_dir_str)
