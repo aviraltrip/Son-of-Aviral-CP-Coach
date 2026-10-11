@@ -38,12 +38,14 @@ from app.data.db import get_user, get_user_topic_stats
 from app.data.cf_client import sync_user_data
 
 def init_session_state() -> None:
-    """Initialize LangGraph state machine and UI session values."""
+    """Initialize LangGraph state machine and UI session values with persistent checkpointing."""
+    query_thread = st.query_params.get("thread_id")
     if "thread_id" not in st.session_state:
-        st.session_state.thread_id = str(uuid.uuid4())
+        st.session_state.thread_id = query_thread if query_thread else str(uuid.uuid4())
+        st.query_params["thread_id"] = st.session_state.thread_id
         
     if "graph" not in st.session_state:
-        st.session_state.graph = create_coach_graph()
+        st.session_state.graph = create_coach_graph(persisted=True)
         
     if "config" not in st.session_state:
         st.session_state.config = {"configurable": {"thread_id": st.session_state.thread_id}}
@@ -77,10 +79,12 @@ def render_sidebar() -> str:
         reset_clicked = col_reset.button("Reset", use_container_width=True)
         
         if reset_clicked:
-            st.session_state.thread_id = str(uuid.uuid4())
-            st.session_state.config = {"configurable": {"thread_id": st.session_state.thread_id}}
+            new_thread = str(uuid.uuid4())
+            st.session_state.thread_id = new_thread
+            st.query_params["thread_id"] = new_thread
+            st.session_state.config = {"configurable": {"thread_id": new_thread}}
             st.session_state.initialized = False
-            st.session_state.graph = create_coach_graph()
+            st.session_state.graph = create_coach_graph(persisted=True)
             st.rerun()
 
         if sync_clicked or not st.session_state.initialized:
