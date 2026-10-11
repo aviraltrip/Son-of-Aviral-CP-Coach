@@ -6,26 +6,35 @@ import time
 from typing import Any, Generator
 from contextlib import contextmanager
 
+import logging
+
+logger = logging.getLogger(__name__)
+
 DEFAULT_DB_PATH = os.getenv("DATABASE_PATH", "cp_coach.db")
 
-@contextmanager
-def get_db_connection(db_path: str = DEFAULT_DB_PATH) -> Generator[sqlite3.Connection, None, None]:
-    """Context manager for SQLite database connection with row factory enabled."""
-    conn = sqlite3.connect(db_path)
+_INITIALIZED_DBS: set[str] = set()
+
+def reset_db_initialization_cache() -> None:
+    """Clear in-memory cache of initialized databases (used for testing)."""
+    _INITIALIZED_DBS.clear()
+
+def _create_raw_connection(db_path: str) -> sqlite3.Connection:
+    conn = sqlite3.connect(db_path, timeout=10.0)
     conn.row_factory = sqlite3.Row
     conn.execute("PRAGMA foreign_keys = ON;")
-    try:
-        yield conn
-        conn.commit()
-    except Exception:
-        conn.rollback()
-        raise
-    finally:
-        conn.close()
+    return conn
 
-def init_db(db_path: str = DEFAULT_DB_PATH) -> None:
+def init_db(db_path: str = DEFAULT_DB_PATH, force: bool = False) -> None:
+    """Initialize SQLite tables idempotently with one-time execution caching."""
+    abs_path = os.path.abspath(db_path)
+    if not force and abs_path in _INITIALIZED_DBS:
+        return
+    parent_dir = os.path.dirname(abs_path)
+    if parent_dir:
+        os.makedirs(parent_dir, exist_ok=True)
     """Initialize SQLite tables idempotently."""
-    with get_db_connection(db_path) as conn:
+    conn = _create_raw_connection(db_path)
+    try:
         conn.execute("""
             CREATE TABLE IF NOT EXISTS users (
                 handle TEXT PRIMARY KEY,
@@ -122,10 +131,32 @@ def init_db(db_path: str = DEFAULT_DB_PATH) -> None:
                 FOREIGN KEY (contest_id, idx) REFERENCES problems(contest_id, idx) ON DELETE CASCADE
             );
         """)
+        conn.commit()
+    except Exception:
+        conn.rollback()
+        raise
+    finally:
+        conn.close()
+    _INITIALIZED_DBS.add(abs_path)
+
+@contextmanager
+def get_db_connection(db_path: str = DEFAULT_DB_PATH) -> Generator[sqlite3.Connection, None, None]:
+    """Context manager for SQLite database connection with row factory enabled."""
+    abs_path = os.path.abspath(db_path)
+    if abs_path not in _INITIALIZED_DBS:
+        init_db(db_path)
+    conn = _create_raw_connection(db_path)
+    try:
+        yield conn
+        conn.commit()
+    except Exception:
+        conn.rollback()
+        raise
+    finally:
+        conn.close()
 
 def upsert_user(handle: str, current_rating: int | None, max_rating: int | None, db_path: str = DEFAULT_DB_PATH) -> None:
     """Insert or update a Codeforces user record."""
-    init_db(db_path)
     with get_db_connection(db_path) as conn:
         conn.execute("""
             INSERT INTO users (handle, current_rating, max_rating, last_synced_at)
@@ -138,7 +169,6 @@ def upsert_user(handle: str, current_rating: int | None, max_rating: int | None,
 
 def get_user(handle: str, db_path: str = DEFAULT_DB_PATH) -> dict[str, Any] | None:
     """Retrieve user record by handle."""
-    init_db(db_path)
     with get_db_connection(db_path) as conn:
         cursor = conn.execute("SELECT * FROM users WHERE handle = ?;", (handle.lower(),))
         row = cursor.fetchone()
@@ -146,7 +176,6 @@ def get_user(handle: str, db_path: str = DEFAULT_DB_PATH) -> dict[str, Any] | No
 
 def upsert_problems(problems_data: list[dict[str, Any]], db_path: str = DEFAULT_DB_PATH) -> int:
     """Batch insert or update problems in the catalog."""
-    init_db(db_path)
     inserted = 0
     with get_db_connection(db_path) as conn:
         for p in problems_data:
@@ -170,7 +199,6 @@ def upsert_problems(problems_data: list[dict[str, Any]], db_path: str = DEFAULT_
 
 def get_problem(contest_id: int, idx: str, db_path: str = DEFAULT_DB_PATH) -> dict[str, Any] | None:
     """Retrieve a single problem by contest ID and index."""
-    init_db(db_path)
     with get_db_connection(db_path) as conn:
         cursor = conn.execute("SELECT * FROM problems WHERE contest_id = ? AND idx = ?;", (contest_id, idx))
         row = cursor.fetchone()
@@ -182,7 +210,6 @@ def get_problem(contest_id: int, idx: str, db_path: str = DEFAULT_DB_PATH) -> di
 
 def get_candidate_problems(min_rating: int, max_rating: int, tags: list[str] | None = None, limit: int = 100, db_path: str = DEFAULT_DB_PATH) -> list[dict[str, Any]]:
     """Retrieve candidate practice problems within rating boundaries."""
-    init_db(db_path)
     with get_db_connection(db_path) as conn:
         cursor = conn.execute("""
             SELECT * FROM problems
@@ -203,7 +230,6 @@ def get_candidate_problems(min_rating: int, max_rating: int, tags: list[str] | N
 
 def upsert_submissions(user_handle: str, submissions_data: list[dict[str, Any]], db_path: str = DEFAULT_DB_PATH) -> int:
     """Batch upsert user submissions."""
-    init_db(db_path)
     inserted = 0
     handle = user_handle.lower()
     with get_db_connection(db_path) as conn:
@@ -243,7 +269,6 @@ def upsert_submissions(user_handle: str, submissions_data: list[dict[str, Any]],
 
 def get_user_submissions(handle: str, limit: int = 1000, db_path: str = DEFAULT_DB_PATH) -> list[dict[str, Any]]:
     """Retrieve submissions for a user ordered by creation time descending."""
-    init_db(db_path)
     with get_db_connection(db_path) as conn:
         cursor = conn.execute("""
             SELECT s.*, p.name as problem_name, p.rating as problem_rating, p.tags_json
@@ -262,7 +287,6 @@ def get_user_submissions(handle: str, limit: int = 1000, db_path: str = DEFAULT_
 
 def get_attempted_problem_keys(handle: str, db_path: str = DEFAULT_DB_PATH) -> set[tuple[int, str]]:
     """Get all (contest_id, idx) pairs attempted by the user."""
-    init_db(db_path)
     with get_db_connection(db_path) as conn:
         cursor = conn.execute("""
             SELECT DISTINCT contest_id, idx FROM submissions
@@ -272,7 +296,6 @@ def get_attempted_problem_keys(handle: str, db_path: str = DEFAULT_DB_PATH) -> s
 
 def save_topic_stats(handle: str, topic_stats_list: list[dict[str, Any]], db_path: str = DEFAULT_DB_PATH) -> None:
     """Save computed topic statistics for a user."""
-    init_db(db_path)
     handle_clean = handle.lower()
     with get_db_connection(db_path) as conn:
         for stat in topic_stats_list:
@@ -297,7 +320,6 @@ def save_topic_stats(handle: str, topic_stats_list: list[dict[str, Any]], db_pat
 
 def get_user_topic_stats(handle: str, db_path: str = DEFAULT_DB_PATH) -> list[dict[str, Any]]:
     """Retrieve saved topic statistics for a user ordered by failure score descending."""
-    init_db(db_path)
     with get_db_connection(db_path) as conn:
         cursor = conn.execute("""
             SELECT * FROM topic_stats
@@ -308,7 +330,6 @@ def get_user_topic_stats(handle: str, db_path: str = DEFAULT_DB_PATH) -> list[di
 
 def save_reference_solution(contest_id: int, idx: str, solution_code: str, solution_editorial: str = "", source: str = "manual", db_path: str = DEFAULT_DB_PATH) -> None:
     """Save private reference solution for the Keeper agent."""
-    init_db(db_path)
     with get_db_connection(db_path) as conn:
         conn.execute("""
             INSERT INTO problems (contest_id, idx, name, rating, tags_json)
@@ -326,7 +347,6 @@ def save_reference_solution(contest_id: int, idx: str, solution_code: str, solut
 
 def get_reference_solution(contest_id: int, idx: str, db_path: str = DEFAULT_DB_PATH) -> dict[str, Any] | None:
     """Retrieve private reference solution. Strictly for Keeper Agent use only."""
-    init_db(db_path)
     with get_db_connection(db_path) as conn:
         cursor = conn.execute('SELECT * FROM "references" WHERE contest_id = ? AND idx = ?;', (contest_id, idx))
         row = cursor.fetchone()
@@ -334,7 +354,6 @@ def get_reference_solution(contest_id: int, idx: str, db_path: str = DEFAULT_DB_
 
 def create_session(session_id: str, handle: str, contest_id: int, idx: str, db_path: str = DEFAULT_DB_PATH) -> None:
     """Create a new coaching session record."""
-    init_db(db_path)
     with get_db_connection(db_path) as conn:
         conn.execute("""
             INSERT INTO sessions (session_id, user_handle, contest_id, idx, hints_requested, keeper_rejections, started_at)
@@ -344,7 +363,6 @@ def create_session(session_id: str, handle: str, contest_id: int, idx: str, db_p
 
 def update_session_outcome(session_id: str, final_outcome: str, hints_requested: int = 0, keeper_rejections: int = 0, db_path: str = DEFAULT_DB_PATH) -> None:
     """Update coaching session outcome ('SOLVED', 'SKIPPED', 'ABANDONED')."""
-    init_db(db_path)
     with get_db_connection(db_path) as conn:
         conn.execute("""
             UPDATE sessions
@@ -357,7 +375,6 @@ def update_session_outcome(session_id: str, final_outcome: str, hints_requested:
 
 def get_session(session_id: str, db_path: str = DEFAULT_DB_PATH) -> dict[str, Any] | None:
     """Retrieve session record by session_id."""
-    init_db(db_path)
     with get_db_connection(db_path) as conn:
         cursor = conn.execute("SELECT * FROM sessions WHERE session_id = ?;", (session_id,))
         row = cursor.fetchone()
@@ -380,7 +397,6 @@ def record_problem_submission(
     db_path: str = DEFAULT_DB_PATH
 ) -> int:
     """Insert or update a single submission and ensure problem metadata is recorded."""
-    init_db(db_path)
     clean_handle = handle.lower()
     ts = creation_time_seconds or int(time.time())
     actual_sub_id = sub_id or int(time.time() * 1000) % 2147483647
@@ -431,7 +447,6 @@ def upsert_test_case(
     db_path: str = DEFAULT_DB_PATH
 ) -> None:
     """Insert or update a test case for a problem."""
-    init_db(db_path)
     clean_idx = idx.upper()
     with get_db_connection(db_path) as conn:
         conn.execute("""
@@ -453,7 +468,6 @@ def upsert_test_cases_batch(
     db_path: str = DEFAULT_DB_PATH
 ) -> int:
     """Batch insert or update test cases. Returns count of processed items."""
-    init_db(db_path)
     count = 0
     with get_db_connection(db_path) as conn:
         for tc in test_cases:
@@ -488,7 +502,6 @@ def get_problem_test_cases(
     db_path: str = DEFAULT_DB_PATH
 ) -> list[dict[str, Any]]:
     """Retrieve test cases for a specific problem ordered by test_index."""
-    init_db(db_path)
     with get_db_connection(db_path) as conn:
         if samples_only:
             cursor = conn.execute("""
@@ -540,7 +553,6 @@ def seed_dataset_test_cases(
 
 def get_cached_hint(contest_id: int, idx: str, hint_level: int, db_path: str = DEFAULT_DB_PATH) -> str | None:
     """Retrieve an approved cached hint for a problem and level."""
-    init_db(db_path)
     with get_db_connection(db_path) as conn:
         cursor = conn.execute(
             "SELECT hint_text FROM cached_hints WHERE contest_id = ? AND idx = ? AND hint_level = ?;",
@@ -553,7 +565,6 @@ def save_cached_hint(contest_id: int, idx: str, hint_level: int, hint_text: str,
     """Save an approved hint into the cache for instant zero-latency retrieval."""
     if not hint_text or not hint_text.strip():
         return
-    init_db(db_path)
     with get_db_connection(db_path) as conn:
         conn.execute("""
             INSERT INTO cached_hints (contest_id, idx, hint_level, hint_text)
