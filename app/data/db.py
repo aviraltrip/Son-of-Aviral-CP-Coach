@@ -147,7 +147,7 @@ def init_db(db_path: str = DEFAULT_DB_PATH, force: bool = False) -> None:
 
 @contextmanager
 def get_db_connection(db_path: str = DEFAULT_DB_PATH) -> Generator[sqlite3.Connection, None, None]:
-    """Context manager for SQLite database connection with row factory enabled."""
+    """Context manager for SQLite database connection with row factory, WAL, and transaction management."""
     abs_path = os.path.abspath(db_path)
     if abs_path not in _INITIALIZED_DBS:
         init_db(db_path)
@@ -155,8 +155,13 @@ def get_db_connection(db_path: str = DEFAULT_DB_PATH) -> Generator[sqlite3.Conne
     try:
         yield conn
         conn.commit()
-    except Exception:
+    except sqlite3.OperationalError as e:
         conn.rollback()
+        logger.error(f"SQLite operational error on {db_path}: {e}")
+        raise
+    except Exception as e:
+        conn.rollback()
+        logger.error(f"Database transaction failed on {db_path}: {e}")
         raise
     finally:
         conn.close()
