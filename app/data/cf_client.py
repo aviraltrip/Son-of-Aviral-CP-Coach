@@ -146,6 +146,9 @@ def get_problemset_problems(ttl_seconds: int = 86400) -> list[dict[str, Any]]:
     result = _make_api_request("problemset.problems")
     if isinstance(result, dict) and "problems" in result:
         problems = result["problems"]
+        for p in problems:
+            if "tags" in p and isinstance(p["tags"], list):
+                p["tags"] = normalize_tags(p["tags"])
         set_cached_response(cache_key, problems)
         return problems
     return []
@@ -179,6 +182,10 @@ def sync_user_data(handle: str, max_submissions: int = 500, ttl_seconds: int = 6
         upsert_user(handle, current_rating, max_rating)
         
     submissions = get_user_status(handle, count=max_submissions, ttl_seconds=ttl_seconds)
+    for s in submissions:
+        p = s.get("problem", {})
+        if "tags" in p and isinstance(p["tags"], list):
+            p["tags"] = normalize_tags(p["tags"])
     inserted_count = 0
     if submissions:
         if db_path:

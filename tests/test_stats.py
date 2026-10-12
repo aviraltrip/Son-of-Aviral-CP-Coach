@@ -77,3 +77,16 @@ def test_non_algorithmic_tags_are_filtered_from_weak_topics():
     assert "special problem" not in tags_in_weak
     assert "interactive" not in tags_in_weak
     assert "dp" in tags_in_weak
+
+def test_aggregate_tag_statistics_with_whitespace_tags():
+    from app.data.stats import aggregate_tag_statistics
+    submissions = [
+        {"tags": [" dp ", "  trees"], "verdict": "OK", "problem_rating": 1500, "creation_time_seconds": int(time.time())},
+        {"tags": ["dp", "trees "], "verdict": "WRONG_ANSWER", "problem_rating": 1500, "creation_time_seconds": int(time.time())}
+    ]
+    tag_data = aggregate_tag_statistics(submissions, user_rating=1400)
+    assert "dp" in tag_data
+    assert "trees" in tag_data
+    assert tag_data["dp"]["total_attempts"] == 2
+    assert tag_data["trees"]["total_attempts"] == 2
+

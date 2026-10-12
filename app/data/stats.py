@@ -72,14 +72,14 @@ def aggregate_tag_statistics(submissions: list[dict[str, Any]], user_rating: int
                     "weighted_failures": 0.0,
                     "solved_ratings": []
                 }
-            tag_data[t]["total_attempts"] += 1
-            tag_data[t]["weighted_attempts"] += weight
+            tag_data[normalized_tag]["total_attempts"] += 1
+            tag_data[normalized_tag]["weighted_attempts"] += weight
             if is_ac:
-                tag_data[t]["total_accepted"] += 1
+                tag_data[normalized_tag]["total_accepted"] += 1
                 if p_rating:
-                    tag_data[t]["solved_ratings"].append(p_rating)
+                    tag_data[normalized_tag]["solved_ratings"].append(p_rating)
             else:
-                tag_data[t]["weighted_failures"] += weight
+                tag_data[normalized_tag]["weighted_failures"] += weight
                 
     return tag_data
 
