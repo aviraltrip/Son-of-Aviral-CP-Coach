@@ -260,6 +260,9 @@ def create_coach_graph(checkpointer: Any = None, persisted: bool = False) -> Any
 def run_cli_session(handle: str = "tourist") -> None:
     """Run an interactive CLI coaching session."""
     import uuid
+    from app.logging_config import setup_logging
+    setup_logging()
+
     thread_id = str(uuid.uuid4())
     config = {"configurable": {"thread_id": thread_id}}
     graph = create_coach_graph()

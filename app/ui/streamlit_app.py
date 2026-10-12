@@ -19,6 +19,9 @@ import importlib
 import app.ui.components
 importlib.reload(app.ui.components)
 
+from app.logging_config import setup_logging
+setup_logging()
+
 from app.graph import create_coach_graph
 from app.state import CodeSubmission
 from app.ui.components import (

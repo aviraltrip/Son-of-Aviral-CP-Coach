@@ -344,6 +344,9 @@ def run_comparative_benchmark(
 def main() -> None:
     """CLI entrypoint for running the comparative benchmark."""
     import argparse
+    from app.logging_config import setup_logging
+    setup_logging()
+
     parser = argparse.ArgumentParser(description="Run CP Coach vs. Baseline Leakage Evaluation.")
     parser.add_argument("--dataset", type=str, default="evals/dataset.json", help="Path to benchmark dataset.json")
     parser.add_argument("--output", type=str, default="evals/benchmark_results.json", help="Output JSON results path")
