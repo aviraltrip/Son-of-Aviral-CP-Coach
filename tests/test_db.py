@@ -132,3 +132,15 @@ def test_cached_hints_crud(temp_db):
     hint_updated = get_cached_hint(1900, "C", 1, db_path=temp_db)
     assert hint_updated == "Updated Level 1 hint text."
 
+def test_database_indexes_created(temp_db):
+    import sqlite3
+    conn = sqlite3.connect(temp_db)
+    cursor = conn.execute("SELECT name FROM sqlite_master WHERE type = 'index';")
+    indexes = {row[0] for row in cursor.fetchall()}
+    conn.close()
+    assert "idx_submissions_user_handle" in indexes
+    assert "idx_submissions_problem" in indexes
+    assert "idx_submissions_user_created" in indexes
+    assert "idx_problems_rating" in indexes
+
+

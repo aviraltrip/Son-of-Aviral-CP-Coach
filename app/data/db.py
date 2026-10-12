@@ -137,6 +137,10 @@ def init_db(db_path: str = DEFAULT_DB_PATH, force: bool = False) -> None:
                 FOREIGN KEY (contest_id, idx) REFERENCES problems(contest_id, idx) ON DELETE CASCADE
             );
         """)
+        conn.execute("CREATE INDEX IF NOT EXISTS idx_submissions_user_handle ON submissions(user_handle);")
+        conn.execute("CREATE INDEX IF NOT EXISTS idx_submissions_problem ON submissions(contest_id, idx);")
+        conn.execute("CREATE INDEX IF NOT EXISTS idx_submissions_user_created ON submissions(user_handle, creation_time_seconds DESC);")
+        conn.execute("CREATE INDEX IF NOT EXISTS idx_problems_rating ON problems(rating);")
         conn.commit()
     except Exception:
         conn.rollback()
