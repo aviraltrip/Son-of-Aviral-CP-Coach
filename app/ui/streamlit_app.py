@@ -92,7 +92,7 @@ def render_sidebar() -> str:
             st.session_state.graph = create_coach_graph(persisted=True)
             st.rerun()
 
-        if sync_clicked or not st.session_state.initialized:
+        if sync_clicked:
             st.session_state.handle = handle_input.strip()
             with st.spinner(f"Syncing profile & submissions for '{st.session_state.handle}'..."):
                 try:
@@ -116,6 +116,27 @@ def render_sidebar() -> str:
                 "user_action": None,
                 "last_submission_verdict": None,
             }, config=st.session_state.config)
+            st.session_state.initialized = True
+            st.rerun()
+
+        elif not st.session_state.initialized:
+            st.session_state.handle = handle_input.strip()
+            cached_user = get_user(st.session_state.handle)
+            st.session_state.user_info = cached_user or {"handle": st.session_state.handle, "current_rating": 1400}
+            with st.spinner(f"Initializing coach profile for '{st.session_state.handle}'..."):
+                st.session_state.graph.invoke({
+                    "handle": st.session_state.handle,
+                    "diagnosis": None,
+                    "problem": None,
+                    "problem_statement": "",
+                    "hint_level": 1,
+                    "draft": None,
+                    "verdict": None,
+                    "revisions": 0,
+                    "history": [],
+                    "user_action": None,
+                    "last_submission_verdict": None,
+                }, config=st.session_state.config)
             st.session_state.initialized = True
             st.rerun()
 
@@ -190,7 +211,7 @@ def main() -> None:
 
         if h1_clicked or h2_clicked or h3_clicked:
             lvl = 1 if h1_clicked else (2 if h2_clicked else 3)
-            client_id = st.session_state.get("handle", "anonymous")
+            client_id = st.session_state.get("thread_id", "session_default")
             allowed, wait_sec = rate_limiter.consume("hint", client_id)
             if not allowed:
                 st.warning(f"Hint rate limit reached. Please wait {int(wait_sec)}s before requesting another hint.")
@@ -259,7 +280,7 @@ def main() -> None:
             if not problem or not cid or not idx:
                 st.warning("No active problem selected.")
             else:
-                client_id = st.session_state.get("handle", "anonymous")
+                client_id = st.session_state.get("thread_id", "session_default")
                 allowed, wait_sec = rate_limiter.consume("judge", client_id)
                 if not allowed:
                     st.warning(f"Submission rate limit reached. Please wait {int(wait_sec)}s before submitting code again.")
@@ -283,7 +304,7 @@ def main() -> None:
             if not problem or not cid or not idx:
                 st.warning("No active problem selected.")
             else:
-                client_id = st.session_state.get("handle", "anonymous")
+                client_id = st.session_state.get("thread_id", "session_default")
                 allowed, wait_sec = rate_limiter.consume("fuzzer", client_id)
                 if not allowed:
                     st.warning(f"Differential fuzzer rate limit reached. Please wait {int(wait_sec)}s before running fuzzer again.")
