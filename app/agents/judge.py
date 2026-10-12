@@ -99,7 +99,7 @@ def judge_node(state: CoachState) -> dict[str, Any]:
                 idx=idx,
                 verdict="COMPILATION_ERROR",
                 programming_language=lang,
-                db_path=DEFAULT_DB_PATH
+                db_path=db_path
             )
             history.append({
                 "role": "assistant",
@@ -183,7 +183,7 @@ def judge_node(state: CoachState) -> dict[str, Any]:
         pass_count=passed_count,
         time_consumed_ms=int(total_time_ms),
         memory_consumed_bytes=max_memory_bytes,
-        db_path=DEFAULT_DB_PATH
+        db_path=db_path
     )
 
     if overall_status == "AC":

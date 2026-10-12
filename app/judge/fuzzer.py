@@ -174,7 +174,7 @@ def stress_test_problem_submission(
     db_path: str | None = None
 ) -> FuzzResult:
     """Fetch reference solution from DB and stress test user code."""
-    db = db_path or DEFAULT_DB_PATH
+    db = db_path or os.getenv("DATABASE_PATH", DEFAULT_DB_PATH)
     ref_row = get_reference_solution(contest_id, idx, db_path=db)
     if not ref_row or not ref_row.get("solution_code"):
         return FuzzResult(

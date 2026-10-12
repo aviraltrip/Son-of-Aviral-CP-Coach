@@ -52,6 +52,11 @@ def test_judge_node_accepted_python(tmp_path, monkeypatch):
     assert res["judge_verdict"].passed_count == 2
     assert res["last_submission_verdict"] == "AC"
 
+    from app.data.db import get_user_submissions
+    subs = get_user_submissions("tourist", db_path=db_file)
+    assert len(subs) == 1
+    assert subs[0]["verdict"] == "OK"
+
 def test_judge_node_wrong_answer_python(tmp_path, monkeypatch):
     db_file = str(tmp_path / "test_judge_wa.db")
     monkeypatch.setenv("DATABASE_PATH", db_file)
