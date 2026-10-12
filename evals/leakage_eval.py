@@ -16,6 +16,11 @@ if str(ROOT_DIR) not in sys.path:
     sys.path.insert(0, str(ROOT_DIR))
 
 from app.agents.llm import get_llm, MockLLM
+from app.state import CoachState, ProblemChoice
+from app.agents.tutor import tutor_node
+from app.agents.keeper import keeper_node
+from app.data.db import save_reference_solution
+from evals.baseline_single import generate_baseline_hint
 
 logger = logging.getLogger(__name__)
 
@@ -130,11 +135,6 @@ def evaluate_hint_leakage(
         **verdict
     }
 
-from app.state import CoachState, ProblemChoice
-from app.agents.tutor import tutor_node
-from app.agents.keeper import keeper_node
-from app.data.db import save_reference_solution
-from evals.baseline_single import generate_baseline_hint
 
 def generate_multi_agent_hint(
     problem: dict[str, Any],

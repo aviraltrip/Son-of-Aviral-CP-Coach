@@ -1,6 +1,6 @@
 """State definitions and Pydantic schemas for CP Coach."""
 import time
-from typing import Literal, TypedDict, Any
+from typing import Literal, TypedDict, Any, Annotated
 from pydantic import BaseModel, Field
 
 class TopicStat(BaseModel):
@@ -71,6 +71,16 @@ class JudgeVerdict(BaseModel):
     failing_test_result: TestCaseResult | None = Field(None, description="Detailed result of the failing test")
     detailed_results: list[TestCaseResult] = Field(default_factory=list, description="Per-test results")
 
+def merge_history(current: list[dict[str, Any]], update: list[dict[str, Any]]) -> list[dict[str, Any]]:
+    """Reducer for CoachState.history supporting incremental appends and full list resets."""
+    if not update:
+        return current or []
+    if not current:
+        return list(update)
+    if len(update) >= len(current) and update[:len(current)] == current:
+        return list(update)
+    return current + list(update)
+
 class CoachState(TypedDict):
     handle: str
     diagnosis: Diagnosis | None
@@ -80,7 +90,7 @@ class CoachState(TypedDict):
     draft: HintDraft | None
     verdict: HintVerdict | None
     revisions: int
-    history: list[dict[str, Any]]
+    history: Annotated[list[dict[str, Any]], merge_history]
     user_action: str | None
     last_submission_verdict: str | None
     submission_code: CodeSubmission | None

@@ -27,15 +27,6 @@ int main() {
 }
 """
 
-def load_or_create_reference(contest_id: int, idx: str, db_path: str = "cp_coach.db") -> str:
-    """Load private reference solution from SQLite references table, or generate placeholder."""
-    ref = get_reference_solution(contest_id, idx, db_path=db_path)
-    if ref and ref.get("solution_code"):
-        return ref["solution_code"]
-    
-    save_reference_solution(contest_id, idx, DEFAULT_REFERENCE_SOLUTION, source="synthetic_fallback", db_path=db_path)
-    return DEFAULT_REFERENCE_SOLUTION
-
 def parse_keeper_verdict(raw_content: str, level: int) -> HintVerdict:
     """Parse JSON verdict from Keeper LLM response with graceful fallback."""
     try:

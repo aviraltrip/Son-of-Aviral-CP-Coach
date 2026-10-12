@@ -15,10 +15,6 @@ if str(ROOT_DIR) not in sys.path:
 
 import streamlit as st
 
-import importlib
-import app.ui.components
-importlib.reload(app.ui.components)
-
 from app.logging_config import setup_logging
 setup_logging()
 

@@ -107,7 +107,10 @@ def tutor_node(state: CoachState) -> dict[str, Any]:
             text = resp.content.strip() if hasattr(resp, "content") else str(resp)
     except Exception as e:
         logger.warning(f"Tutor LLM invocation failed: {e}. Utilizing fallback rubric.")
-        text = FALLBACK_HINTS.get(level, FALLBACK_HINTS[1])
+        if last_sub and last_sub not in ("OK", "AC"):
+            text = draft_targeted_hint(last_sub).text
+        else:
+            text = FALLBACK_HINTS.get(level, FALLBACK_HINTS[1])
 
     draft = HintDraft(level=level, text=text)
     
