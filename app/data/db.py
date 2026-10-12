@@ -137,6 +137,14 @@ def init_db(db_path: str = DEFAULT_DB_PATH, force: bool = False) -> None:
                 FOREIGN KEY (contest_id, idx) REFERENCES problems(contest_id, idx) ON DELETE CASCADE
             );
         """)
+        conn.execute("""
+            CREATE TABLE IF NOT EXISTS user_auth (
+                handle TEXT PRIMARY KEY,
+                salt TEXT NOT NULL,
+                hashed_passkey TEXT NOT NULL,
+                created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+            );
+        """)
         conn.execute("CREATE INDEX IF NOT EXISTS idx_submissions_user_handle ON submissions(user_handle);")
         conn.execute("CREATE INDEX IF NOT EXISTS idx_submissions_problem ON submissions(contest_id, idx);")
         conn.execute("CREATE INDEX IF NOT EXISTS idx_submissions_user_created ON submissions(user_handle, creation_time_seconds DESC);")
@@ -588,6 +596,23 @@ def save_cached_hint(contest_id: int, idx: str, hint_level: int, hint_text: str,
                 hint_text = excluded.hint_text,
                 created_at = CURRENT_TIMESTAMP;
         """, (contest_id, idx.upper(), hint_level, hint_text.strip()))
+
+def get_user_auth(handle: str, db_path: str = DEFAULT_DB_PATH) -> dict[str, Any] | None:
+    """Retrieve user authentication credentials by handle."""
+    clean_handle = handle.lower().strip()
+    with get_db_connection(db_path) as conn:
+        cursor = conn.execute("SELECT salt, hashed_passkey FROM user_auth WHERE handle = ?;", (clean_handle,))
+        row = cursor.fetchone()
+        return dict(row) if row else None
+
+def save_user_auth(handle: str, salt: str, hashed_passkey: str, db_path: str = DEFAULT_DB_PATH) -> None:
+    """Register authentication credentials for a handle."""
+    clean_handle = handle.lower().strip()
+    with get_db_connection(db_path) as conn:
+        conn.execute(
+            "INSERT INTO user_auth (handle, salt, hashed_passkey) VALUES (?, ?, ?);",
+            (clean_handle, salt, hashed_passkey)
+        )
 
 def ensure_db_initialized(db_path: str = DEFAULT_DB_PATH) -> None:
     """Explicitly verify that database schema is initialized."""

@@ -4,22 +4,14 @@ import hashlib
 import hmac
 import secrets
 from typing import Tuple
-from app.data.db import get_db_connection, DEFAULT_DB_PATH
+from app.data.db import get_user_auth, save_user_auth, ensure_db_initialized, DEFAULT_DB_PATH
 
 AUTH_MODE = os.getenv("AUTH_MODE", "optional").lower()
 GLOBAL_PASSKEY = os.getenv("APP_PASSKEY", "")
 
 def init_auth_table(db_path: str = DEFAULT_DB_PATH) -> None:
-    """Idempotently create user_auth table."""
-    with get_db_connection(db_path) as conn:
-        conn.execute("""
-            CREATE TABLE IF NOT EXISTS user_auth (
-                handle TEXT PRIMARY KEY,
-                salt TEXT NOT NULL,
-                hashed_passkey TEXT NOT NULL,
-                created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
-            );
-        """)
+    """Ensure database tables including user_auth are initialized."""
+    ensure_db_initialized(db_path)
 
 def _hash_passkey(passkey: str, salt: bytes | None = None) -> Tuple[str, str]:
     """Generate PBKDF2 HMAC SHA-256 hash with cryptographic salt."""
@@ -43,26 +35,21 @@ def verify_or_register_handle(handle: str, passkey: str, db_path: str = DEFAULT_
     if not passkey:
         return False, "Passkey required."
 
-    init_auth_table(db_path)
-    with get_db_connection(db_path) as conn:
-        cursor = conn.execute("SELECT salt, hashed_passkey FROM user_auth WHERE handle = ?;", (clean_handle,))
-        row = cursor.fetchone()
+    ensure_db_initialized(db_path)
+    row = get_user_auth(clean_handle, db_path=db_path)
 
-        if row is None:
-            salt_hex, hash_hex = _hash_passkey(passkey)
-            conn.execute(
-                "INSERT INTO user_auth (handle, salt, hashed_passkey) VALUES (?, ?, ?);",
-                (clean_handle, salt_hex, hash_hex)
-            )
-            return True, f"Handle '{clean_handle}' claimed and passkey registered."
+    if row is None:
+        salt_hex, hash_hex = _hash_passkey(passkey)
+        save_user_auth(clean_handle, salt_hex, hash_hex, db_path=db_path)
+        return True, f"Handle '{clean_handle}' claimed and passkey registered."
 
-        salt_bytes = bytes.fromhex(row["salt"])
-        _, check_hash = _hash_passkey(passkey, salt=salt_bytes)
+    salt_bytes = bytes.fromhex(row["salt"])
+    _, check_hash = _hash_passkey(passkey, salt=salt_bytes)
 
-        if hmac.compare_digest(check_hash, row["hashed_passkey"]):
-            return True, "Authentication successful."
-        else:
-            return False, "Incorrect passkey for this handle."
+    if hmac.compare_digest(check_hash, row["hashed_passkey"]):
+        return True, "Authentication successful."
+    else:
+        return False, "Incorrect passkey for this handle."
 
 def is_auth_required() -> bool:
     """Return whether authentication is strictly enforced in current environment."""
