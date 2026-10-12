@@ -1,6 +1,6 @@
 """Centralized application settings and production configuration validator."""
 import os
-from typing import Literal, List
+from typing import Literal
 from pydantic import Field
 from pydantic_settings import BaseSettings, SettingsConfigDict
 
@@ -52,9 +52,9 @@ class AppConfig(BaseSettings):
             or self.google_api_key
         )
 
-    def validate_production_readiness(self) -> List[str]:
+    def validate_production_readiness(self) -> list[str]:
         """Verify configuration against production security standards."""
-        warnings: List[str] = []
+        warnings: list[str] = []
         if self.environment == "production":
             if not self.has_any_llm_key():
                 warnings.append("No real LLM provider API keys configured in production environment.")

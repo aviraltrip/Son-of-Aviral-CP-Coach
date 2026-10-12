@@ -3,7 +3,6 @@ import os
 import hashlib
 import hmac
 import secrets
-from typing import Tuple
 from app.data.db import get_user_auth, save_user_auth, ensure_db_initialized, DEFAULT_DB_PATH
 
 AUTH_MODE = os.getenv("AUTH_MODE", "optional").lower()
@@ -13,13 +12,13 @@ def init_auth_table(db_path: str = DEFAULT_DB_PATH) -> None:
     """Ensure database tables including user_auth are initialized."""
     ensure_db_initialized(db_path)
 
-def _hash_passkey(passkey: str, salt: bytes | None = None) -> Tuple[str, str]:
+def _hash_passkey(passkey: str, salt: bytes | None = None) -> tuple[str, str]:
     """Generate PBKDF2 HMAC SHA-256 hash with cryptographic salt."""
     salt_bytes = salt or secrets.token_bytes(16)
     key_hash = hashlib.pbkdf2_hmac("sha256", passkey.encode("utf-8"), salt_bytes, 100000)
     return salt_bytes.hex(), key_hash.hex()
 
-def verify_or_register_handle(handle: str, passkey: str, db_path: str = DEFAULT_DB_PATH) -> Tuple[bool, str]:
+def verify_or_register_handle(handle: str, passkey: str, db_path: str = DEFAULT_DB_PATH) -> tuple[bool, str]:
     """Verify handle credentials or register initial passkey on first use.
     
     Returns:

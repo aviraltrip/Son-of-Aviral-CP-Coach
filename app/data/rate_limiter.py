@@ -1,7 +1,6 @@
 """Token-bucket rate limiter for protecting LLM costs and server compute resources."""
 import time
 import threading
-from typing import Dict, Tuple
 
 class RateLimiterBucket:
     """Represents a token bucket with fixed capacity and replenishment rate."""
@@ -17,7 +16,7 @@ class RateLimiterBucket:
         self.tokens = min(float(self.capacity), self.tokens + (elapsed / self.refill_interval))
         self.last_update = now
 
-    def can_consume(self, cost: float = 1.0) -> Tuple[bool, float]:
+    def can_consume(self, cost: float = 1.0) -> tuple[bool, float]:
         self.update()
         if self.tokens >= cost:
             return True, 0.0
@@ -32,7 +31,7 @@ class RateLimiterBucket:
             return True
         return False
 
-DEFAULT_LIMITS: Dict[str, Tuple[int, float]] = {
+DEFAULT_LIMITS: dict[str, tuple[int, float]] = {
     "hint": (5, 90.0),
     "judge": (4, 25.0),
     "fuzzer": (2, 180.0),
@@ -40,9 +39,9 @@ DEFAULT_LIMITS: Dict[str, Tuple[int, float]] = {
 
 class ActionRateLimiter:
     """Thread-safe multi-client token-bucket rate limiter."""
-    def __init__(self, limits: Dict[str, Tuple[int, float]] | None = None):
+    def __init__(self, limits: dict[str, tuple[int, float]] | None = None):
         self.limits = limits or DEFAULT_LIMITS
-        self.buckets: Dict[Tuple[str, str], RateLimiterBucket] = {}
+        self.buckets: dict[tuple[str, str], RateLimiterBucket] = {}
         self.lock = threading.Lock()
 
     def _get_bucket(self, action: str, client_id: str) -> RateLimiterBucket:
@@ -52,13 +51,13 @@ class ActionRateLimiter:
             self.buckets[key] = RateLimiterBucket(cap, refill_sec)
         return self.buckets[key]
 
-    def check(self, action: str, client_id: str, cost: float = 1.0) -> Tuple[bool, float]:
+    def check(self, action: str, client_id: str, cost: float = 1.0) -> tuple[bool, float]:
         """Check if action is allowed without consuming token. Returns (allowed, wait_seconds)."""
         with self.lock:
             bucket = self._get_bucket(action, client_id)
             return bucket.can_consume(cost)
 
-    def consume(self, action: str, client_id: str, cost: float = 1.0) -> Tuple[bool, float]:
+    def consume(self, action: str, client_id: str, cost: float = 1.0) -> tuple[bool, float]:
         """Attempt to consume token for action. Returns (allowed, wait_seconds)."""
         with self.lock:
             bucket = self._get_bucket(action, client_id)
