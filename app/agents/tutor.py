@@ -8,6 +8,7 @@ from app.prompts.tutor_prompt import TUTOR_SYSTEM_PROMPT, build_tutor_prompt
 from app.prompts.targeted_hint_prompt import TARGETED_HINT_SYSTEM_PROMPT, build_targeted_hint_prompt
 from app.agents.llm import get_llm
 from app.data.db import get_cached_hint
+from app.config import settings
 
 logger = logging.getLogger(__name__)
 
@@ -74,7 +75,7 @@ def tutor_node(state: CoachState) -> dict[str, Any]:
     problem = state.get("problem")
     problem_stmt = state.get("problem_statement", "No problem statement provided.")
     history = state.get("history", [])
-    db_path = os.getenv("DATABASE_PATH", "cp_coach.db")
+    db_path = os.getenv("DATABASE_PATH", settings.database_path)
 
     if revisions == 0 and not (last_sub and last_sub not in ("OK", "AC") and user_action in ("submitted", "submit_code", "judge")):
         if problem:

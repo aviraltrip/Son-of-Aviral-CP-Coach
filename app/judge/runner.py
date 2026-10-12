@@ -14,12 +14,13 @@ import subprocess
 from pathlib import Path
 from typing import Literal, Any
 from pydantic import BaseModel, Field
+from app.config import settings
 
 VerdictType = Literal["AC", "WA", "TLE", "MLE", "CE", "RE", "UNKNOWN"]
 LanguageType = Literal["cpp", "cpp17", "cpp20", "python", "python3", "java"]
 JudgeBackendType = Literal["isolated_subprocess", "judge0", "disabled"]
 
-DEFAULT_JUDGE_BACKEND: str = os.getenv("JUDGE_BACKEND", "isolated_subprocess")
+DEFAULT_JUDGE_BACKEND: str = os.getenv("JUDGE_BACKEND", settings.judge_backend)
 
 def get_active_judge_backend() -> str:
     """Return currently active judge execution backend identifier."""
@@ -354,8 +355,8 @@ def execute_via_judge0(
 ) -> ExecutionResult:
     """Execute code remotely using an external Judge0 sandbox instance."""
     import requests
-    base_url = (api_url or os.getenv("JUDGE0_URL", "https://judge0-ce.p.rapidapi.com")).rstrip("/")
-    key = api_key or os.getenv("JUDGE0_API_KEY", "")
+    base_url = (api_url or os.getenv("JUDGE0_URL", settings.judge0_url)).rstrip("/")
+    key = api_key or os.getenv("JUDGE0_API_KEY", settings.judge0_api_key)
     cfg = config or ExecutionConfig()
     lang_id = JUDGE0_LANGUAGE_IDS.get(language.lower(), 71)
 

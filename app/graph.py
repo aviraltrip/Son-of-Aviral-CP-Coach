@@ -15,6 +15,7 @@ from app.agents.judge import judge_node
 from app.data.cf_client import get_latest_problem_submission
 from app.data.db import record_problem_submission
 from app.data.stats import recalculate_user_topic_stats
+from app.config import settings
 
 logger = logging.getLogger(__name__)
 
@@ -31,19 +32,20 @@ ALLOWED_MSGPACK_MODULES = [
     ("app.state", "UserMessage")
 ]
 
-DEFAULT_CHECKPOINTS_DB = os.getenv("CHECKPOINTS_DB_PATH", "checkpoints.db")
+DEFAULT_CHECKPOINTS_DB = os.getenv("CHECKPOINTS_DB_PATH", settings.checkpoints_db_path)
 
-def get_checkpointer(persisted: bool = False, db_path: str = DEFAULT_CHECKPOINTS_DB) -> Any:
+def get_checkpointer(persisted: bool = False, db_path: str | None = None) -> Any:
     """Return memory or persistent SqliteSaver checkpointer instance with registered Pydantic types."""
     serde = JsonPlusSerializer(allowed_msgpack_modules=ALLOWED_MSGPACK_MODULES)
-    should_persist = persisted or os.getenv("CHECKPOINTS_PERSIST", "false").lower() in ("true", "1", "yes")
+    target_db_path = db_path or os.getenv("CHECKPOINTS_DB_PATH", settings.checkpoints_db_path)
+    should_persist = persisted or (os.getenv("CHECKPOINTS_PERSIST") or str(settings.checkpoints_persist)).lower() in ("true", "1", "yes")
 
     if not should_persist:
         return MemorySaver(serde=serde)
 
     try:
         from langgraph.checkpoint.sqlite import SqliteSaver
-        abs_path = os.path.abspath(db_path)
+        abs_path = os.path.abspath(target_db_path)
         parent_dir = os.path.dirname(abs_path)
         if parent_dir:
             os.makedirs(parent_dir, exist_ok=True)
@@ -83,7 +85,7 @@ def route_judge_verdict(state: CoachState) -> Literal["analyst", "tutor", "wait_
     jv = state.get("judge_verdict")
     status = jv.status if jv else state.get("last_submission_verdict", "UNKNOWN")
     handle = state.get("handle")
-    db_path = os.getenv("DATABASE_PATH", "cp_coach.db")
+    db_path = os.getenv("DATABASE_PATH", settings.database_path)
     
     if status == "AC":
         if handle:
@@ -101,7 +103,7 @@ def check_submission_node(state: CoachState) -> dict[str, Any]:
     handle = state.get("handle")
     problem = state.get("problem")
     explicit_verdict = state.get("last_submission_verdict")
-    db_path = os.getenv("DATABASE_PATH", "cp_coach.db")
+    db_path = os.getenv("DATABASE_PATH", settings.database_path)
     
     verdict = explicit_verdict
     

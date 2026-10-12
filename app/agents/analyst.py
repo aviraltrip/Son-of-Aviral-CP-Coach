@@ -4,6 +4,7 @@ import logging
 from typing import Any
 
 from app.state import CoachState, Diagnosis, TopicStat, ProblemChoice
+from app.config import settings
 from app.data.db import (
     get_user,
     get_user_submissions,
@@ -37,7 +38,7 @@ def format_diagnostic_summary(handle: str, user_rating: int | None, weak_topics:
 def analyst_node(state: CoachState) -> dict[str, Any]:
     """Execute live data analysis, update SQLite cache, compute weak topics, and select next problem."""
     handle = state.get("handle", "tourist").strip()
-    db_path = os.getenv("DATABASE_PATH", "cp_coach.db")
+    db_path = os.getenv("DATABASE_PATH", settings.database_path)
     
     try:
         user_info, _ = sync_user_data(handle, max_submissions=300, db_path=db_path)

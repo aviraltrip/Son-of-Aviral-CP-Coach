@@ -8,6 +8,7 @@ from app.state import CoachState, HintVerdict
 from app.data.db import get_reference_solution, save_reference_solution, save_cached_hint
 from app.prompts.keeper_prompt import KEEPER_SYSTEM_PROMPT, build_keeper_prompt, build_heuristic_keeper_prompt
 from app.agents.llm import get_llm
+from app.config import settings
 
 logger = logging.getLogger(__name__)
 
@@ -65,7 +66,7 @@ def keeper_node(state: CoachState) -> dict[str, Any]:
     level = state.get("hint_level", 1)
     problem = state.get("problem")
     problem_stmt = state.get("problem_statement", "")
-    db_path = os.getenv("DATABASE_PATH", "cp_coach.db")
+    db_path = os.getenv("DATABASE_PATH", settings.database_path)
     
     if not draft:
         return {

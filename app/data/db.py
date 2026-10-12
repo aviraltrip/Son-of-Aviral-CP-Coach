@@ -7,10 +7,11 @@ from typing import Any, Generator
 from contextlib import contextmanager
 
 import logging
+from app.config import settings
 
 logger = logging.getLogger(__name__)
 
-DEFAULT_DB_PATH = os.getenv("DATABASE_PATH", "cp_coach.db")
+DEFAULT_DB_PATH = os.getenv("DATABASE_PATH", settings.database_path)
 
 _INITIALIZED_DBS: set[str] = set()
 

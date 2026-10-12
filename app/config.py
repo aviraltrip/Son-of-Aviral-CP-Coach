@@ -65,3 +65,8 @@ class AppConfig(BaseSettings):
         return warnings
 
 settings = AppConfig()
+
+def get_settings() -> AppConfig:
+    """Return singleton application settings instance."""
+    return settings
+

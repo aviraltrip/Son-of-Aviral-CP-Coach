@@ -4,6 +4,7 @@ import json
 import logging
 import os
 from typing import Any
+from app.config import settings
 
 logger = logging.getLogger(__name__)
 
@@ -74,21 +75,21 @@ class MockLLM:
 
 def get_llm(model_type: str = "tutor") -> Any:
     """Instantiate configured LLM provider or fallback to MockLLM."""
-    openrouter_key = os.getenv("OPENROUTER_API_KEY")
-    google_key = os.getenv("GOOGLE_API_KEY")
-    openai_key = os.getenv("OPENAI_API_KEY")
-    anthropic_key = os.getenv("ANTHROPIC_API_KEY")
+    openrouter_key = os.getenv("OPENROUTER_API_KEY", settings.openrouter_api_key)
+    google_key = os.getenv("GOOGLE_API_KEY", settings.google_api_key)
+    openai_key = os.getenv("OPENAI_API_KEY", settings.openai_api_key)
+    anthropic_key = os.getenv("ANTHROPIC_API_KEY", settings.anthropic_api_key)
     
     if openrouter_key:
         try:
             openai_mod = importlib.import_module("langchain_openai")
             ChatOpenAI = getattr(openai_mod, "ChatOpenAI")
             if model_type == "tutor":
-                model_name = os.getenv("TUTOR_MODEL_NAME", "anthropic/claude-3.5-sonnet")
+                model_name = os.getenv("TUTOR_MODEL_NAME", settings.tutor_model_name)
             elif model_type == "analyst":
-                model_name = os.getenv("ANALYST_MODEL_NAME", "openai/gpt-4o-mini")
+                model_name = os.getenv("ANALYST_MODEL_NAME", settings.analyst_model_name)
             else:
-                model_name = os.getenv("KEEPER_MODEL_NAME", "openai/gpt-4o-mini")
+                model_name = os.getenv("KEEPER_MODEL_NAME", settings.keeper_model_name)
 
             return ChatOpenAI(
                 model=model_name,
