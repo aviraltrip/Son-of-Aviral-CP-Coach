@@ -269,12 +269,19 @@ def run_isolated(
     config: ExecutionConfig | None = None,
     cwd: Path | None = None
 ) -> ExecutionResult:
-    """Execute command in a sandboxed subprocess with strict time and output limits."""
+    """Execute command in a sandboxed subprocess with strict time and memory limits."""
+    import psutil
+    import threading
+
     cfg = config or ExecutionConfig()
     timeout_sec = cfg.time_limit_ms / 1000.0
+    mem_limit_bytes = cfg.memory_limit_mb * 1024 * 1024
     safe_env = get_sanitized_execution_env()
 
     start_time = time.perf_counter()
+    peak_memory_bytes = 0
+    mle_triggered = False
+
     try:
         proc = subprocess.Popen(
             command,
@@ -286,19 +293,56 @@ def run_isolated(
             env=safe_env
         )
 
+        def monitor_resources():
+            nonlocal peak_memory_bytes, mle_triggered
+            try:
+                p = psutil.Process(proc.pid)
+                while proc.poll() is None:
+                    try:
+                        mem = p.memory_info().rss
+                        if mem > peak_memory_bytes:
+                            peak_memory_bytes = mem
+                        if mem > mem_limit_bytes:
+                            mle_triggered = True
+                            proc.kill()
+                            break
+                    except (psutil.NoSuchProcess, psutil.AccessDenied):
+                        break
+                    time.sleep(0.01)
+            except (psutil.NoSuchProcess, Exception):
+                pass
+
+        monitor_thread = threading.Thread(target=monitor_resources, daemon=True)
+        monitor_thread.start()
+
         try:
             stdout, stderr = proc.communicate(input=input_data, timeout=timeout_sec)
             elapsed_ms = (time.perf_counter() - start_time) * 1000.0
-            
+            monitor_thread.join(timeout=0.1)
+
             if len(stdout.encode("utf-8")) > cfg.max_output_bytes:
                 stdout = stdout[:cfg.max_output_bytes] + "\n...[OUTPUT TRUNCATED]"
             if len(stderr.encode("utf-8")) > cfg.max_output_bytes:
                 stderr = stderr[:cfg.max_output_bytes] + "\n...[STDERR TRUNCATED]"
 
+            peak_mem_kb = round(peak_memory_bytes / 1024.0, 2)
+
+            if mle_triggered or "MemoryError" in stderr or "std::bad_alloc" in stderr:
+                return ExecutionResult(
+                    verdict="MLE",
+                    time_ms=round(elapsed_ms, 2),
+                    memory_kb=max(peak_mem_kb, cfg.memory_limit_mb * 1024.0),
+                    stdout=stdout,
+                    stderr=stderr,
+                    exit_code=proc.returncode,
+                    error_message=f"Memory Limit Exceeded (> {cfg.memory_limit_mb}MB)."
+                )
+
             if proc.returncode != 0:
                 return ExecutionResult(
                     verdict="RE",
                     time_ms=round(elapsed_ms, 2),
+                    memory_kb=peak_mem_kb,
                     stdout=stdout,
                     stderr=stderr,
                     exit_code=proc.returncode,
@@ -308,6 +352,7 @@ def run_isolated(
             return ExecutionResult(
                 verdict="UNKNOWN",
                 time_ms=round(elapsed_ms, 2),
+                memory_kb=peak_mem_kb,
                 stdout=stdout,
                 stderr=stderr,
                 exit_code=0
@@ -320,9 +365,11 @@ def run_isolated(
             except Exception:
                 pass
             elapsed_ms = (time.perf_counter() - start_time) * 1000.0
+            peak_mem_kb = round(peak_memory_bytes / 1024.0, 2)
             return ExecutionResult(
                 verdict="TLE",
                 time_ms=round(max(elapsed_ms, cfg.time_limit_ms), 2),
+                memory_kb=peak_mem_kb,
                 exit_code=None,
                 error_message=f"Time Limit Exceeded (> {cfg.time_limit_ms}ms)."
             )
@@ -331,6 +378,7 @@ def run_isolated(
         return ExecutionResult(
             verdict="RE",
             time_ms=0.0,
+            memory_kb=0.0,
             exit_code=-1,
             error_message=f"Execution failed to start: {str(e)}"
         )

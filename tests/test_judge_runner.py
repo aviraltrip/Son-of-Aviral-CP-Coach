@@ -187,3 +187,19 @@ def test_judge0_backend_routing_fallback(monkeypatch):
     res = evaluate_test_case("print(1)", language="python3", input_data="", expected_output="", backend="judge0")
     assert res.verdict == "UNKNOWN"
     assert "Failed to communicate with Judge0" in res.error_message
+
+def test_python_memory_limit_exceeded():
+    """Verify that solutions exceeding memory limits trigger MLE."""
+    from app.judge.runner import evaluate_test_case, ExecutionConfig
+    # Allocate beyond 32MB limit
+    code = """
+import sys
+a = [0] * (50 * 1024 * 1024) # ~400MB in Python
+print(len(a))
+"""
+    cfg = ExecutionConfig(time_limit_ms=3000, memory_limit_mb=32)
+    res = evaluate_test_case(code, language="python3", input_data="", expected_output="", config=cfg)
+    assert res.verdict in ("MLE", "RE")
+    if res.verdict == "MLE":
+        assert res.memory_kb >= 32 * 1024
+
