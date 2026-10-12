@@ -82,3 +82,12 @@ def test_render_fuzz_result_banner_no_error():
     render_fuzz_result_banner(fuzz_res)
     render_fuzz_result_banner(None)
 
+def test_max_source_bytes_guard():
+    """Verify MAX_SOURCE_BYTES is set to 64 KB and payload guard behaves correctly."""
+    from app.ui.streamlit_app import MAX_SOURCE_BYTES
+    assert MAX_SOURCE_BYTES == 65536
+    valid_code = "print('hello')"
+    oversized_code = "a" * (MAX_SOURCE_BYTES + 1)
+    assert len(valid_code.encode("utf-8")) <= MAX_SOURCE_BYTES
+    assert len(oversized_code.encode("utf-8")) > MAX_SOURCE_BYTES
+

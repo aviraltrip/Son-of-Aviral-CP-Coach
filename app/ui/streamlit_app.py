@@ -38,6 +38,8 @@ from app.data.db import get_user, get_user_topic_stats
 from app.data.cf_client import sync_user_data
 from app.data.rate_limiter import rate_limiter
 
+MAX_SOURCE_BYTES: int = 64 * 1024  # 64 KB (standard competitive programming limit)
+
 def init_session_state() -> None:
     """Initialize LangGraph state machine and UI session values with persistent checkpointing."""
     query_thread = st.query_params.get("thread_id")
@@ -275,6 +277,8 @@ def main() -> None:
             idx = getattr(problem, "index", None) if problem else None
             if not problem or not cid or not idx:
                 st.warning("No active problem selected.")
+            elif len(code_input.encode("utf-8")) > MAX_SOURCE_BYTES:
+                st.error("Source code exceeds maximum allowed size (64 KB).")
             else:
                 client_id = st.session_state.get("thread_id", "session_default")
                 allowed, wait_sec = rate_limiter.consume("judge", client_id)
@@ -299,6 +303,8 @@ def main() -> None:
             idx = getattr(problem, "index", None) if problem else None
             if not problem or not cid or not idx:
                 st.warning("No active problem selected.")
+            elif len(code_input.encode("utf-8")) > MAX_SOURCE_BYTES:
+                st.error("Source code exceeds maximum allowed size (64 KB).")
             else:
                 client_id = st.session_state.get("thread_id", "session_default")
                 allowed, wait_sec = rate_limiter.consume("fuzzer", client_id)

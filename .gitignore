@@ -41,8 +41,8 @@ ENV/
 .ruff_cache/
 
 # Streamlit
-.streamlit/
-
+.streamlit/secrets.toml
+!.streamlit/config.toml
 # IDEs & System
 .vscode/
 .idea/
