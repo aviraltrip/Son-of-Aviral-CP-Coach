@@ -38,7 +38,7 @@ from app.data.db import get_user, get_user_topic_stats
 from app.data.cf_client import sync_user_data
 from app.data.rate_limiter import rate_limiter
 
-MAX_SOURCE_BYTES: int = 64 * 1024  # 64 KB (standard competitive programming limit)
+MAX_SOURCE_BYTES: int = 64 * 1024 
 
 def init_session_state() -> None:
     """Initialize LangGraph state machine and UI session values with persistent checkpointing."""
