@@ -264,7 +264,8 @@ def run_cli_session(handle: str = "tourist") -> None:
     setup_logging()
 
     thread_id = str(uuid.uuid4())
-    config = {"configurable": {"thread_id": thread_id}}
+    from app.observability import get_langsmith_config
+    config = get_langsmith_config(thread_id=thread_id, handle=handle, tags=["cli"])
     graph = create_coach_graph()
     
     print(f"\n{'='*60}")

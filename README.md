@@ -35,6 +35,7 @@ This system includes enterprise-grade security and reliability enhancements:
 - **Token-Bucket Rate Limiter**: User-tier limits protect against denial-of-service and LLM credit exhaustion.
 - **Fail-Fast Production LLM Guard**: Replaces silent mock fallbacks with explicit alerting in production mode.
 - **Health Checks & Telemetry**: Dual health monitoring script (`healthcheck.py`) testing HTTP web availability and SQLite schema integrity.
+- **LangSmith Distributed Tracing**: Native full-lifecycle execution tracing, latency/cost attribution, and human-in-the-loop feedback logging.
 
 ---
 
@@ -57,6 +58,9 @@ cp .env.example .env
 | `JUDGE0_URL` | - | Optional external Judge0 CE endpoint |
 | `AUTH_MODE` | `optional` | Authentication policy (`disabled`, `optional`, `required`) |
 | `APP_PASSKEY` | - | Optional administrative passkey |
+| `LANGCHAIN_TRACING_V2`| `false` | Enable LangSmith distributed tracing |
+| `LANGCHAIN_API_KEY` | - | LangSmith API Key |
+| `LANGCHAIN_PROJECT` | `cp-coach` | LangSmith project name for traces & evals |
 | `LOG_FORMAT` | `text` | Log format (`text` or `json`) |
 
 ---

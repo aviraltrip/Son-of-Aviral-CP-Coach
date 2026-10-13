@@ -37,6 +37,7 @@ from app.judge.runner import get_active_judge_backend
 from app.data.db import get_user, get_user_topic_stats
 from app.data.cf_client import sync_user_data
 from app.data.rate_limiter import rate_limiter
+from app.observability import get_langsmith_config, is_langsmith_enabled, record_langsmith_feedback
 
 MAX_SOURCE_BYTES: int = 64 * 1024 
 
@@ -50,11 +51,15 @@ def init_session_state() -> None:
     if "graph" not in st.session_state:
         st.session_state.graph = create_coach_graph(persisted=True)
         
-    if "config" not in st.session_state:
-        st.session_state.config = {"configurable": {"thread_id": st.session_state.thread_id}}
-        
     if "handle" not in st.session_state:
         st.session_state.handle = "tourist"
+
+    if "config" not in st.session_state:
+        st.session_state.config = get_langsmith_config(
+            thread_id=st.session_state.thread_id,
+            handle=st.session_state.handle,
+            tags=["streamlit", "ui"]
+        )
         
     if "user_info" not in st.session_state:
         st.session_state.user_info = None
@@ -85,13 +90,22 @@ def render_sidebar() -> str:
             new_thread = str(uuid.uuid4())
             st.session_state.thread_id = new_thread
             st.query_params["thread_id"] = new_thread
-            st.session_state.config = {"configurable": {"thread_id": new_thread}}
+            st.session_state.config = get_langsmith_config(
+                thread_id=new_thread,
+                handle=st.session_state.handle,
+                tags=["streamlit", "ui"]
+            )
             st.session_state.initialized = False
             st.session_state.graph = create_coach_graph(persisted=True)
             st.rerun()
 
         if sync_clicked:
             st.session_state.handle = handle_input.strip()
+            st.session_state.config = get_langsmith_config(
+                thread_id=st.session_state.thread_id,
+                handle=st.session_state.handle,
+                tags=["streamlit", "ui"]
+            )
             with st.spinner(f"Syncing profile & submissions for '{st.session_state.handle}'..."):
                 try:
                     uinfo, count = sync_user_data(st.session_state.handle, max_submissions=300, ttl_seconds=0)
@@ -108,6 +122,7 @@ def render_sidebar() -> str:
                 "problem_statement": "",
                 "hint_level": 1,
                 "draft": None,
+
                 "verdict": None,
                 "revisions": 0,
                 "history": [],
@@ -156,8 +171,24 @@ def render_sidebar() -> str:
             """,
             unsafe_allow_html=True
         )
+
+        st.markdown("---")
+        tracing_on = is_langsmith_enabled()
+        status_color = "#10b981" if tracing_on else "#94a3b8"
+        project_name = os.getenv("LANGCHAIN_PROJECT", "cp-coach")
+        status_text = f"LangSmith: Active ({project_name})" if tracing_on else "LangSmith: Off"
+        st.markdown(
+            f"""
+            <div style="font-size: 0.78rem; color: {status_color}; font-weight: 500; display: flex; align-items: center; gap: 8px; margin-top: 0.5rem;">
+                <span style="height: 8px; width: 8px; background-color: {status_color}; border-radius: 50%; display: inline-block;"></span>
+                {status_text}
+            </div>
+            """,
+            unsafe_allow_html=True
+        )
         
         return st.session_state.handle
+
 
 def main() -> None:
     st.set_page_config(
@@ -227,6 +258,30 @@ def main() -> None:
         verdict = values.get("verdict")
         if draft and verdict and verdict.approved:
             render_hint_box(draft, verdict)
+            if is_langsmith_enabled():
+                col_fb_help, col_fb_spoil, col_fb_space = st.columns([1.2, 1.2, 3.6])
+                hint_rev = values.get("revisions", 0)
+                btn_key_pos = f"btn_fb_help_lvl{draft.level}_rev{hint_rev}"
+                btn_key_neg = f"btn_fb_spoil_lvl{draft.level}_rev{hint_rev}"
+                
+                with col_fb_help:
+                    if st.button("Helpful Hint", key=btn_key_pos, use_container_width=True):
+                        record_langsmith_feedback(
+                            run_id=st.session_state.thread_id,
+                            key="pedagogical_utility",
+                            score=1.0,
+                            comment=f"Level {draft.level} hint approved and rated helpful"
+                        )
+                        st.toast("Feedback recorded to LangSmith trace!")
+                with col_fb_spoil:
+                    if st.button("Flag Spoiler", key=btn_key_neg, use_container_width=True):
+                        record_langsmith_feedback(
+                            run_id=st.session_state.thread_id,
+                            key="spoiler_leakage",
+                            score=0.0,
+                            comment=f"User reported Level {draft.level} hint leaked algorithmic solution"
+                        )
+                        st.toast("Spoiler flagged to LangSmith trace!")
 
         st.markdown("---")
         backend_name = get_active_judge_backend()

@@ -43,6 +43,12 @@ class AppConfig(BaseSettings):
     keeper_model_name: str = Field(default="openai/gpt-4o-mini")
     analyst_model_name: str = Field(default="openai/gpt-4o-mini")
 
+    # LangSmith Observability & Distributed Tracing
+    langchain_tracing_v2: bool = Field(default=False, description="Enable LangSmith distributed tracing")
+    langchain_api_key: str = Field(default="", description="LangSmith API Key")
+    langchain_project: str = Field(default="cp-coach", description="LangSmith project name")
+    langchain_endpoint: str = Field(default="https://api.smith.langchain.com", description="LangSmith API endpoint")
+
     def has_any_llm_key(self) -> bool:
         """Check if at least one valid LLM provider API key is configured."""
         return bool(
@@ -64,9 +70,32 @@ class AppConfig(BaseSettings):
                 warnings.append("Authentication is disabled in production environment.")
         return warnings
 
+def sync_langsmith_env(target_cfg: AppConfig | None = None) -> bool:
+    """Sync LangSmith configuration directly to process environment variables for LangGraph tracing."""
+    target = target_cfg or settings
+    api_key = target.langchain_api_key or os.getenv("LANGCHAIN_API_KEY", "")
+    explicit_tracing = (
+        target.langchain_tracing_v2
+        or os.getenv("LANGCHAIN_TRACING_V2", "").lower() in ("true", "1", "yes")
+    )
+    is_explicit_false = os.getenv("LANGCHAIN_TRACING_V2", "").lower() in ("false", "0", "no")
+    enabled = explicit_tracing or (bool(api_key) and not is_explicit_false)
+    if enabled:
+        os.environ["LANGCHAIN_TRACING_V2"] = "true"
+        if api_key:
+            os.environ["LANGCHAIN_API_KEY"] = api_key
+        project = target.langchain_project or os.getenv("LANGCHAIN_PROJECT", "cp-coach")
+        os.environ["LANGCHAIN_PROJECT"] = project
+        endpoint = target.langchain_endpoint or os.getenv("LANGCHAIN_ENDPOINT", "https://api.smith.langchain.com")
+        os.environ["LANGCHAIN_ENDPOINT"] = endpoint
+        return True
+    return False
+
 settings = AppConfig()
+sync_langsmith_env(settings)
 
 def get_settings() -> AppConfig:
     """Return singleton application settings instance."""
     return settings
+
 
