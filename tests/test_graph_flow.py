@@ -1,4 +1,4 @@
-"""Tests for the LangGraph state machine flow and routing."""
+import uuid
 import pytest
 from app.graph import create_coach_graph
 from app.state import HintDraft, HintVerdict
@@ -12,7 +12,7 @@ def test_graph_compilation():
 def test_initial_analyst_flow():
     """Verify that starting the graph runs Analyst and pauses at wait_for_user."""
     graph = create_coach_graph()
-    config = {"configurable": {"thread_id": "test_thread_1"}}
+    config = {"configurable": {"thread_id": f"test_thread_1_{uuid.uuid4().hex[:8]}"}}
     
     initial_state = {
         "handle": "tourist",
@@ -81,3 +81,34 @@ def test_keeper_rejection_and_fallback():
     assert res["verdict"].approved is True
     assert "Approved via Safe Generic Fallback" in res["verdict"].reason
     assert res["draft"].text == SAFE_FALLBACK_HINT
+
+def test_skip_problem_selects_new_problem():
+    """Verify that updating state with user_action='skip' selects an alternative problem."""
+    graph = create_coach_graph()
+    config = {"configurable": {"thread_id": "test_thread_skip"}}
+    
+    initial_state = {
+        "handle": "test_skip_user",
+        "diagnosis": None,
+        "problem": None,
+        "problem_statement": "",
+        "hint_level": 1,
+        "draft": None,
+        "verdict": None,
+        "revisions": 0,
+        "history": [],
+        "user_action": None,
+    }
+    
+    graph.invoke(initial_state, config=config)
+    state1 = graph.get_state(config)
+    prob1 = state1.values["problem"]
+    assert prob1 is not None
+
+    graph.update_state(config, {"user_action": "skip"}, as_node="wait_for_user")
+    graph.invoke(None, config=config)
+    state2 = graph.get_state(config)
+    prob2 = state2.values["problem"]
+    assert prob2 is not None
+    assert (prob1.contest_id, prob1.index) != (prob2.contest_id, prob2.index)
+
