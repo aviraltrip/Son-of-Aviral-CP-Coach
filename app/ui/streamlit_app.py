@@ -172,20 +172,7 @@ def render_sidebar() -> str:
             unsafe_allow_html=True
         )
 
-        st.markdown("---")
-        tracing_on = is_langsmith_enabled()
-        status_color = "#10b981" if tracing_on else "#94a3b8"
-        project_name = os.getenv("LANGCHAIN_PROJECT", "cp-coach")
-        status_text = f"LangSmith: Active ({project_name})" if tracing_on else "LangSmith: Off"
-        st.markdown(
-            f"""
-            <div style="font-size: 0.78rem; color: {status_color}; font-weight: 500; display: flex; align-items: center; gap: 8px; margin-top: 0.5rem;">
-                <span style="height: 8px; width: 8px; background-color: {status_color}; border-radius: 50%; display: inline-block;"></span>
-                {status_text}
-            </div>
-            """,
-            unsafe_allow_html=True
-        )
+
         
         return st.session_state.handle
 
