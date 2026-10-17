@@ -41,9 +41,9 @@ class AppConfig(BaseSettings):
     anthropic_api_key: str = Field(default="", description="Anthropic API Key")
     google_api_key: str = Field(default="", description="Google Gemini API Key")
 
-    tutor_model_name: str = Field(default="anthropic/claude-3.5-sonnet")
-    keeper_model_name: str = Field(default="openai/gpt-4o-mini")
-    analyst_model_name: str = Field(default="openai/gpt-4o-mini")
+    tutor_model_name: str = Field(default="openrouter/free")
+    keeper_model_name: str = Field(default="openrouter/free")
+    analyst_model_name: str = Field(default="openrouter/free")
 
     # LangSmith Observability & Distributed Tracing
     langchain_tracing_v2: bool = Field(default=False, description="Enable LangSmith distributed tracing")
