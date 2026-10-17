@@ -126,13 +126,30 @@ def select_next_problem(
     attempted_keys: set[tuple[int, str]] | None = None
 ) -> ProblemChoice:
     """Select next optimal practice problem matching top weak topics in user target rating window."""
-    attempted = attempted_keys or set()
+    attempted_norm: set[tuple[int, str]] = set()
+    if attempted_keys:
+        for item in attempted_keys:
+            if isinstance(item, (tuple, list)) and len(item) == 2:
+                try:
+                    attempted_norm.add((int(item[0]), str(item[1]).strip().upper()))
+                except (ValueError, TypeError):
+                    pass
+
+    def is_attempted(c: Any, i: Any) -> bool:
+        if not c or not i:
+            return False
+        try:
+            return (int(c), str(i).strip().upper()) in attempted_norm
+        except (ValueError, TypeError):
+            return False
+
     rating = user_rating or 1400
     target_min = rating + 100
     target_max = rating + 200
     
     top_tags = [t.tag for t in weak_topics[:3] if is_valid_algorithmic_tag(t.tag)] if weak_topics else ["dp", "greedy", "graphs"]
     
+    # 1. Matching top weak topics in target rating window
     for p in candidate_problems:
         cid = p.get("contest_id") or p.get("contestId")
         idx = p.get("idx") or p.get("index")
@@ -140,21 +157,22 @@ def select_next_problem(
         raw_tags = p.get("tags", [])
         tags = [t.strip() for t in raw_tags if is_valid_algorithmic_tag(t)]
         
-        if (cid, idx) in attempted:
+        if is_attempted(cid, idx):
             continue
             
         if prating and target_min <= prating <= target_max:
             matching = [t for t in top_tags if t in tags]
             if matching:
                 return ProblemChoice(
-                    contest_id=cid,
-                    index=idx,
+                    contest_id=int(cid),
+                    index=str(idx),
                     name=p.get("name", f"Problem {cid}{idx}"),
                     rating=prating,
                     tags=tags if tags else ["implementation"],
                     reason=f"Targeted {prating}-rated problem matching weak topic '{matching[0]}' (Rating target: {target_min}-{target_max})."
                 )
 
+    # 2. Matching top weak topics in any candidate problem
     for p in candidate_problems:
         cid = p.get("contest_id") or p.get("contestId")
         idx = p.get("idx") or p.get("index")
@@ -162,18 +180,56 @@ def select_next_problem(
         raw_tags = p.get("tags", [])
         tags = [t.strip() for t in raw_tags if is_valid_algorithmic_tag(t)]
         
-        if (cid, idx) in attempted:
+        if is_attempted(cid, idx):
             continue
             
         matching = [t for t in top_tags if t in tags]
         if matching:
             return ProblemChoice(
-                contest_id=cid,
-                index=idx,
+                contest_id=int(cid),
+                index=str(idx),
                 name=p.get("name", f"Problem {cid}{idx}"),
                 rating=prating,
                 tags=tags if tags else ["implementation"],
                 reason=f"Practice problem for weak topic '{matching[0]}'."
+            )
+
+    # 3. Any unattempted candidate problem from the pool
+    for p in candidate_problems:
+        cid = p.get("contest_id") or p.get("contestId")
+        idx = p.get("idx") or p.get("index")
+        if is_attempted(cid, idx):
+            continue
+            
+        prating = p.get("rating")
+        raw_tags = p.get("tags", [])
+        tags = [t.strip() for t in raw_tags if is_valid_algorithmic_tag(t)]
+        return ProblemChoice(
+            contest_id=int(cid),
+            index=str(idx),
+            name=p.get("name", f"Problem {cid}{idx}"),
+            rating=prating,
+            tags=tags if tags else ["implementation"],
+            reason="Practice problem selected from candidate pool."
+        )
+
+    # 4. Fallback pool of varied practice problems
+    fallback_pool = [
+        {"contest_id": 1900, "idx": "C", "name": "Anji's Binary Tree", "rating": 1500, "tags": ["dp", "trees"]},
+        {"contest_id": 1850, "idx": "E", "name": "Cardboard for Pictures", "rating": 1100, "tags": ["binary search", "math"]},
+        {"contest_id": 1840, "idx": "D", "name": "Wooden Toy Festival", "rating": 1400, "tags": ["binary search", "greedy", "sortings"]},
+        {"contest_id": 1833, "idx": "E", "name": "Round Dance", "rating": 1600, "tags": ["graphs", "dsu", "dfs and similar"]},
+        {"contest_id": 1800, "idx": "E2", "name": "Unforgivable Curse", "rating": 1400, "tags": ["dsu", "strings", "greedy"]},
+    ]
+    for p in fallback_pool:
+        if not is_attempted(p["contest_id"], p["idx"]):
+            return ProblemChoice(
+                contest_id=p["contest_id"],
+                index=p["idx"],
+                name=p["name"],
+                rating=p["rating"],
+                tags=p["tags"],
+                reason="Practice problem selected from standard curriculum pool."
             )
 
     return ProblemChoice(

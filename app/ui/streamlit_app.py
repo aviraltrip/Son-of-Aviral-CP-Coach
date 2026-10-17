@@ -388,6 +388,8 @@ def main() -> None:
             st.rerun()
 
         if ac_clicked:
+            st.session_state.fuzz_result = None
+            st.session_state.user_code = STARTER_TEMPLATES.get(st.session_state.code_lang, "")
             with st.spinner("Processing Accepted verdict & updating topic proficiencies..."):
                 st.session_state.graph.update_state(st.session_state.config, {
                     "user_action": "submitted",
@@ -409,11 +411,24 @@ def main() -> None:
             st.rerun()
 
         if skip_clicked:
+            cid = getattr(problem, "contest_id", None) if problem else None
+            idx = getattr(problem, "index", None) if problem else None
             with st.spinner("Skipping problem and selecting alternative recommendation..."):
-                st.session_state.graph.update_state(st.session_state.config, {
+                updates: dict[str, Any] = {
                     "user_action": "skip",
                     "last_submission_verdict": None
-                }, as_node="wait_for_user")
+                }
+                if cid and idx:
+                    updates["history"] = [{
+                        "role": "user",
+                        "type": "problem_skipped",
+                        "contest_id": cid,
+                        "index": idx,
+                        "content": f"User skipped problem {cid}{idx}"
+                    }]
+                st.session_state.fuzz_result = None
+                st.session_state.user_code = STARTER_TEMPLATES.get(st.session_state.code_lang, "")
+                st.session_state.graph.update_state(st.session_state.config, updates, as_node="wait_for_user")
                 st.session_state.graph.invoke(None, config=st.session_state.config)
             st.rerun()
 

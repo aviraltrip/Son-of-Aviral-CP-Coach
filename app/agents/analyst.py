@@ -60,6 +60,22 @@ def analyst_node(state: CoachState) -> dict[str, Any]:
         candidates = SAMPLE_PROBLEMS_FALLBACK
         
     attempted = get_attempted_problem_keys(handle, db_path=db_path)
+    
+    # Exclude all problems previously selected or skipped in the session history
+    for entry in state.get("history", []):
+        cid = entry.get("contest_id")
+        idx = entry.get("index")
+        if cid and idx:
+            try:
+                attempted.add((int(cid), str(idx).strip().upper()))
+            except (ValueError, TypeError):
+                pass
+
+    # Exclude the currently active problem
+    curr_problem = state.get("problem")
+    if curr_problem:
+        attempted.add((int(curr_problem.contest_id), str(curr_problem.index).strip().upper()))
+
     problem = select_next_problem(handle, user_rating, weak_topics, candidates, attempted_keys=attempted)
     
     summary = format_diagnostic_summary(handle, user_rating, weak_topics)
@@ -75,6 +91,23 @@ def analyst_node(state: CoachState) -> dict[str, Any]:
         f"You are tasked with finding an optimal algorithm matching time and memory constraints.\n"
         f"Target Topic: {problem.tags[0] if problem.tags else 'general algorithmic reasoning'}"
     )
+
+    new_history = list(state.get("history", []))
+    if curr_problem and state.get("user_action") in ("skip", "skip_problem"):
+        new_history.append({
+            "role": "user",
+            "type": "problem_skipped",
+            "contest_id": curr_problem.contest_id,
+            "index": curr_problem.index,
+            "content": f"User skipped problem {curr_problem.contest_id}{curr_problem.index} ({curr_problem.name})"
+        })
+    new_history.append({
+        "role": "system",
+        "type": "problem_selected",
+        "contest_id": problem.contest_id,
+        "index": problem.index,
+        "content": f"Selected practice problem {problem.contest_id}{problem.index}: {problem.name}"
+    })
     
     return {
         "diagnosis": diagnosis,
@@ -84,6 +117,9 @@ def analyst_node(state: CoachState) -> dict[str, Any]:
         "draft": None,
         "verdict": None,
         "revisions": 0,
+        "history": new_history,
         "user_action": None,
-        "last_submission_verdict": None
+        "last_submission_verdict": None,
+        "judge_verdict": None,
+        "submission_code": None
     }
