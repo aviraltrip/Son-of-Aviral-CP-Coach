@@ -82,8 +82,10 @@ def test_evaluate_hint_leakage_clean():
     assert res["leakage_score"] in (0, 1, 2)
     assert res["judge_latency"] >= 0.0
 
-def test_generate_multi_agent_hint(clean_eval_db):
+def test_generate_multi_agent_hint(clean_eval_db, monkeypatch):
     """Verify generate_multi_agent_hint runs the Tutor ⇄ Keeper verification loop."""
+    monkeypatch.setattr("app.agents.tutor.get_llm", lambda *a, **k: MockLLM())
+    monkeypatch.setattr("app.agents.keeper.get_llm", lambda *a, **k: MockLLM())
     problem = {
         "contest_id": 1900,
         "index": "C",
@@ -162,7 +164,7 @@ def test_format_markdown_report():
     assert "**0.0%**" in report
     assert "30.0%" in report
 
-def test_run_comparative_benchmark_mocked(tmp_path, clean_eval_db):
+def test_run_comparative_benchmark_mocked(tmp_path, clean_eval_db, monkeypatch):
     """Verify run_comparative_benchmark executes end-to-end and writes results JSON."""
     mini_dataset = [
         {
@@ -182,6 +184,10 @@ def test_run_comparative_benchmark_mocked(tmp_path, clean_eval_db):
 
     out_file = str(tmp_path / "bench_out.json")
     mock_llm = MockLLM()
+    monkeypatch.setattr("app.agents.tutor.get_llm", lambda *a, **k: mock_llm)
+    monkeypatch.setattr("app.agents.keeper.get_llm", lambda *a, **k: mock_llm)
+    monkeypatch.setattr("evals.baseline_single.get_llm", lambda *a, **k: mock_llm)
+    monkeypatch.setattr("evals.leakage_eval.get_llm", lambda *a, **k: mock_llm)
     
     results = run_comparative_benchmark(
         dataset_path=dataset_file,
