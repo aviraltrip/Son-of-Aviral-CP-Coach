@@ -52,12 +52,12 @@ def init_session_state() -> None:
         st.session_state.graph = create_coach_graph(persisted=True)
         
     if "handle" not in st.session_state:
-        st.session_state.handle = "tourist"
+        st.session_state.handle = ""
 
     if "config" not in st.session_state:
         st.session_state.config = get_langsmith_config(
             thread_id=st.session_state.thread_id,
-            handle=st.session_state.handle,
+            handle=st.session_state.handle or "anonymous",
             tags=["streamlit", "ui"]
         )
         
@@ -80,7 +80,12 @@ def render_sidebar() -> str:
     """Render sidebar with user handle settings, sync actions, and profile stats."""
     with st.sidebar:
         st.markdown("### User Profile")
-        handle_input = st.text_input("Codeforces Handle", value=st.session_state.handle, help="Enter your Codeforces username.")
+        handle_input = st.text_input(
+            "Codeforces Handle",
+            value=st.session_state.handle,
+            placeholder="e.g. your_handle",
+            help="Enter your Codeforces username."
+        )
         
         col_sync, col_reset = st.columns(2)
         sync_clicked = col_sync.button("Sync CF", use_container_width=True)
@@ -92,7 +97,7 @@ def render_sidebar() -> str:
             st.query_params["thread_id"] = new_thread
             st.session_state.config = get_langsmith_config(
                 thread_id=new_thread,
-                handle=st.session_state.handle,
+                handle=st.session_state.handle or "anonymous",
                 tags=["streamlit", "ui"]
             )
             st.session_state.initialized = False
@@ -100,43 +105,25 @@ def render_sidebar() -> str:
             st.rerun()
 
         if sync_clicked:
-            st.session_state.handle = handle_input.strip()
-            st.session_state.config = get_langsmith_config(
-                thread_id=st.session_state.thread_id,
-                handle=st.session_state.handle,
-                tags=["streamlit", "ui"]
-            )
-            with st.spinner(f"Syncing profile & submissions for '{st.session_state.handle}'..."):
-                try:
-                    uinfo, count = sync_user_data(st.session_state.handle, max_submissions=300, ttl_seconds=0)
-                    st.session_state.user_info = uinfo
-                    st.toast(f"Synced {count} submissions from Codeforces!")
-                except Exception as e:
-                    st.warning(f"Could not reach CF API ({e}). Using local database cache.")
-                    st.session_state.user_info = get_user(st.session_state.handle) or {"handle": st.session_state.handle, "current_rating": 1400}
+            clean_handle = handle_input.strip()
+            if not clean_handle:
+                st.warning("Please enter a Codeforces handle.")
+            else:
+                st.session_state.handle = clean_handle
+                st.session_state.config = get_langsmith_config(
+                    thread_id=st.session_state.thread_id,
+                    handle=st.session_state.handle,
+                    tags=["streamlit", "ui"]
+                )
+                with st.spinner(f"Syncing profile & submissions for '{st.session_state.handle}'..."):
+                    try:
+                        uinfo, count = sync_user_data(st.session_state.handle, max_submissions=300, ttl_seconds=0)
+                        st.session_state.user_info = uinfo
+                        st.toast(f"Synced {count} submissions from Codeforces!")
+                    except Exception as e:
+                        st.warning(f"Could not reach CF API ({e}). Using local database cache.")
+                        st.session_state.user_info = get_user(st.session_state.handle) or {"handle": st.session_state.handle, "current_rating": 1400}
 
-            st.session_state.graph.invoke({
-                "handle": st.session_state.handle,
-                "diagnosis": None,
-                "problem": None,
-                "problem_statement": "",
-                "hint_level": 1,
-                "draft": None,
-
-                "verdict": None,
-                "revisions": 0,
-                "history": [],
-                "user_action": None,
-                "last_submission_verdict": None,
-            }, config=st.session_state.config)
-            st.session_state.initialized = True
-            st.rerun()
-
-        elif not st.session_state.initialized:
-            st.session_state.handle = handle_input.strip()
-            cached_user = get_user(st.session_state.handle)
-            st.session_state.user_info = cached_user or {"handle": st.session_state.handle, "current_rating": 1400}
-            with st.spinner(f"Initializing coach profile for '{st.session_state.handle}'..."):
                 st.session_state.graph.invoke({
                     "handle": st.session_state.handle,
                     "diagnosis": None,
@@ -150,30 +137,52 @@ def render_sidebar() -> str:
                     "user_action": None,
                     "last_submission_verdict": None,
                 }, config=st.session_state.config)
-            st.session_state.initialized = True
-            st.rerun()
+                st.session_state.initialized = True
+                st.rerun()
 
-        user = st.session_state.user_info or get_user(st.session_state.handle) or {}
-        rating = user.get("rating") or user.get("current_rating") or 1400
-        max_rating = user.get("maxRating") or user.get("max_rating") or rating
-        rank_title, rank_color = get_rank_badge(rating)
+        elif not st.session_state.initialized:
+            clean_handle = handle_input.strip()
+            if clean_handle:
+                st.session_state.handle = clean_handle
+                cached_user = get_user(st.session_state.handle)
+                st.session_state.user_info = cached_user or {"handle": st.session_state.handle, "current_rating": 1400}
+                with st.spinner(f"Initializing coach profile for '{st.session_state.handle}'..."):
+                    st.session_state.graph.invoke({
+                        "handle": st.session_state.handle,
+                        "diagnosis": None,
+                        "problem": None,
+                        "problem_statement": "",
+                        "hint_level": 1,
+                        "draft": None,
+                        "verdict": None,
+                        "revisions": 0,
+                        "history": [],
+                        "user_action": None,
+                        "last_submission_verdict": None,
+                    }, config=st.session_state.config)
+                st.session_state.initialized = True
+                st.rerun()
 
-        st.markdown(
-            f"""
-            <div class="card" style="padding: 1rem; margin-top: 1rem;">
-                <div style="font-weight: 600; font-size: 1.1rem; color: #f8fafc;">{st.session_state.handle}</div>
-                <div style="font-size: 0.85rem; font-weight: 500; color: {rank_color}; margin-bottom: 0.5rem;">{rank_title}</div>
-                <div style="display: flex; justify-content: space-between; font-size: 0.85rem; color: #94a3b8;">
-                    <span>Rating: <strong style="color: #f8fafc;">{rating}</strong></span>
-                    <span>Max: <strong style="color: #f8fafc;">{max_rating}</strong></span>
+        if st.session_state.handle:
+            user = st.session_state.user_info or get_user(st.session_state.handle) or {}
+            rating = user.get("rating") or user.get("current_rating") or 1400
+            max_rating = user.get("maxRating") or user.get("max_rating") or rating
+            rank_title, rank_color = get_rank_badge(rating)
+
+            st.markdown(
+                f"""
+                <div class="card" style="padding: 1rem; margin-top: 1rem;">
+                    <div style="font-weight: 600; font-size: 1.1rem; color: #f8fafc;">{st.session_state.handle}</div>
+                    <div style="font-size: 0.85rem; font-weight: 500; color: {rank_color}; margin-bottom: 0.5rem;">{rank_title}</div>
+                    <div style="display: flex; justify-content: space-between; font-size: 0.85rem; color: #94a3b8;">
+                        <span>Rating: <strong style="color: #f8fafc;">{rating}</strong></span>
+                        <span>Max: <strong style="color: #f8fafc;">{max_rating}</strong></span>
+                    </div>
                 </div>
-            </div>
-            """,
-            unsafe_allow_html=True
-        )
+                """,
+                unsafe_allow_html=True
+            )
 
-
-        
         return st.session_state.handle
 
 
@@ -193,6 +202,10 @@ def main() -> None:
         '<div class="sub-header">Multi-Agent Competitive Programming Coach &bull; Solution-Blind Hints &bull; Data-Driven Diagnostics</div>',
         unsafe_allow_html=True
     )
+
+    if not handle:
+        st.info("👈 Enter your Codeforces handle in the sidebar and click **Sync CF** to get started!")
+        return
 
     state = st.session_state.graph.get_state(st.session_state.config)
     values = state.values
