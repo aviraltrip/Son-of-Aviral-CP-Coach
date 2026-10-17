@@ -1,8 +1,10 @@
-"""Centralized application settings and production configuration validator."""
 import os
 from typing import Literal
+from dotenv import load_dotenv
 from pydantic import Field
 from pydantic_settings import BaseSettings, SettingsConfigDict
+
+load_dotenv(override=True)
 
 class AppConfig(BaseSettings):
     """Strongly-typed application settings loaded from environment variables."""
