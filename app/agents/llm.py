@@ -76,6 +76,9 @@ class MockLLM:
 
 def get_llm(model_type: str = "tutor") -> Any:
     """Instantiate configured LLM provider or fallback to MockLLM."""
+    if os.getenv("USE_MOCK_LLM", "").lower() in ("true", "1") or os.getenv("PYTEST_CURRENT_TEST"):
+        return MockLLM(model_name=f"mock-{model_type}")
+
     load_dotenv(override=True)
     openrouter_key = os.getenv("OPENROUTER_API_KEY") or settings.openrouter_api_key
     google_key = os.getenv("GOOGLE_API_KEY") or settings.google_api_key
