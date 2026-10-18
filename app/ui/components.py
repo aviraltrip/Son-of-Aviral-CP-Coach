@@ -274,26 +274,22 @@ def render_problem_card(problem: Any, statement: str) -> None:
         else:
             st.markdown(f"Visit the [Codeforces Problem Page]({cf_url}) to read the full description and submit.")
 
-def render_hint_box(draft: Any, verdict: Any) -> None:
-    """Render the current approved hint and Keeper audit verification badge."""
+def render_hint_box(draft: Any, verdict: Any = None) -> None:
+    """Render the current approved hint without internal audit boilerplate."""
     if not draft:
         return
 
     level_names = {1: "Level 1: Nudge", 2: "Level 2: Approach", 3: "Level 3: Pseudocode"}
     lvl_str = level_names.get(draft.level, f"Level {draft.level}")
-    audit_text = verdict.reason if verdict else "Verified by Keeper Agent."
-    
+
     st.markdown(
         f"""
         <div class="hint-box">
             <div style="font-size: 0.85rem; font-weight: 600; text-transform: uppercase; letter-spacing: 0.05em; color: #3b82f6; margin-bottom: 0.4rem;">
                 Coach Hint ({lvl_str})
             </div>
-            <div style="font-size: 1rem; color: #f8fafc; line-height: 1.5; margin-bottom: 0.6rem;">
+            <div style="font-size: 1rem; color: #f8fafc; line-height: 1.6;">
                 {draft.text}
-            </div>
-            <div class="audit-box">
-                <strong>Keeper Safety Audit:</strong> {audit_text}
             </div>
         </div>
         """,
