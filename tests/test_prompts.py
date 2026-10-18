@@ -1,7 +1,6 @@
 """Unit tests for prompt formatting and rubric builders."""
-import pytest
-from app.prompts.tutor_prompt import build_tutor_prompt, TUTOR_SYSTEM_PROMPT
-from app.prompts.keeper_prompt import build_keeper_prompt, KEEPER_SYSTEM_PROMPT
+from app.prompts.tutor_prompt import build_tutor_prompt
+from app.prompts.keeper_prompt import build_keeper_prompt
 from app.prompts.targeted_hint_prompt import build_targeted_hint_prompt
 
 def test_tutor_prompt_levels():

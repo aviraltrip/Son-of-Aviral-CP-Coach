@@ -1,8 +1,7 @@
 """Unit and integration tests for Tutor and Keeper nodes."""
-import pytest
 from app.state import CoachState, HintDraft, ProblemChoice
 from app.agents.tutor import tutor_node
-from app.agents.keeper import keeper_node, parse_keeper_verdict, SAFE_FALLBACK_HINT
+from app.agents.keeper import keeper_node, parse_keeper_verdict
 
 def test_parse_keeper_verdict():
     raw_json = '{"approved": true, "reason": "Looks good", "leak_severity": "none"}'

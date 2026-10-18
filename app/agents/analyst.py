@@ -3,7 +3,7 @@ import os
 import logging
 from typing import Any
 
-from app.state import CoachState, Diagnosis, TopicStat, ProblemChoice
+from app.state import CoachState, Diagnosis, TopicStat
 from app.config import settings
 from app.data.db import (
     get_user,
@@ -12,7 +12,7 @@ from app.data.db import (
     get_attempted_problem_keys,
     save_topic_stats
 )
-from app.data.cf_client import sync_user_data, CFAPIError
+from app.data.cf_client import sync_user_data
 from app.data.stats import compute_weak_topics, select_next_problem, is_valid_algorithmic_tag
 
 logger = logging.getLogger(__name__)

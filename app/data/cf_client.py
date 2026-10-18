@@ -5,7 +5,7 @@ import logging
 from typing import Any
 import requests
 
-from app.data.db import upsert_user, upsert_problems, upsert_submissions
+from app.data.db import upsert_user, upsert_submissions
 
 logger = logging.getLogger(__name__)
 

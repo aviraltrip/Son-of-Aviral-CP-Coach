@@ -1,6 +1,5 @@
 """Unit tests for token-bucket rate limiter and authentication passkey verification."""
 import time
-import pytest
 from app.data.rate_limiter import ActionRateLimiter, RateLimiterBucket
 from app.data.auth import verify_or_register_handle, init_auth_table
 

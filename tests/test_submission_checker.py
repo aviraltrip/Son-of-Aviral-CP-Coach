@@ -4,7 +4,7 @@ from unittest.mock import patch
 
 from app.state import CoachState, ProblemChoice
 from app.data.cf_client import get_latest_problem_submission
-from app.data.db import init_db, get_user_submissions, get_user_topic_stats, upsert_user
+from app.data.db import init_db, get_user_submissions, upsert_user
 from app.graph import check_submission_node, route_submission
 
 @pytest.fixture

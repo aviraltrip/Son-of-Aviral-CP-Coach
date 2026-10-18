@@ -1,7 +1,6 @@
 """Unit tests for Tutor ⇄ Keeper verification loop, hint escalation and targeted diagnostics."""
-import pytest
-from app.state import HintDraft, HintVerdict, CoachState
-from app.agents.tutor import tutor_node, draft_targeted_hint
+from app.state import HintDraft, CoachState
+from app.agents.tutor import tutor_node
 from app.agents.keeper import keeper_node, SAFE_FALLBACK_HINT
 
 def test_progressive_hint_level_1():

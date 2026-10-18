@@ -1,5 +1,4 @@
 """Unit tests for Streamlit UI components, rank badges, and helper functions."""
-import pytest
 from app.ui.components import (
     get_rank_badge,
     render_tag_chips,

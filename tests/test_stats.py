@@ -1,5 +1,4 @@
 """Unit tests for deterministic scoring and decay formulas in app/data/stats.py."""
-import pytest
 import time
 from app.data.stats import (
     compute_recency_decay,

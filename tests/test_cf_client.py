@@ -1,5 +1,4 @@
 """Unit tests for Codeforces client and rate limiting."""
-import pytest
 from unittest.mock import patch
 from app.data.cf_client import (
     PoliteRateLimiter,

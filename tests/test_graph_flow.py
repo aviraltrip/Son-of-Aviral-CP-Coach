@@ -1,7 +1,6 @@
 import uuid
-import pytest
 from app.graph import create_coach_graph
-from app.state import HintDraft, HintVerdict
+from app.state import HintDraft
 from app.agents.keeper import keeper_node, SAFE_FALLBACK_HINT
 
 def test_graph_compilation():

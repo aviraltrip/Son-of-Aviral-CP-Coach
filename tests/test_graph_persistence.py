@@ -1,6 +1,5 @@
 """Integration tests for LangGraph state machine recovery with persistent SqliteSaver."""
 import os
-import pytest
 from app.graph import create_coach_graph, get_checkpointer
 
 def test_graph_session_state_survives_restart(tmp_path):

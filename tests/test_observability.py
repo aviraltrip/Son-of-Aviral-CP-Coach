@@ -1,9 +1,8 @@
 """Unit tests for LangSmith observability and distributed tracing integration."""
 import os
-import pytest
 from unittest.mock import patch, MagicMock
 
-from app.config import AppConfig, sync_langsmith_env
+from app.config import AppConfig
 from app.observability import (
     configure_langsmith,
     is_langsmith_enabled,

@@ -1,5 +1,4 @@
 """Integration tests for Analyst agent node with SQLite data layer."""
-import os
 import pytest
 from unittest.mock import patch
 from app.state import CoachState

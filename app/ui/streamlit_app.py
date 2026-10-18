@@ -35,7 +35,6 @@ from app.state import CodeSubmission
 from app.ui.components import (
     inject_custom_css,
     get_rank_badge,
-    render_tag_chips,
     render_weak_topics_summary,
     render_problem_card,
     render_hint_box,

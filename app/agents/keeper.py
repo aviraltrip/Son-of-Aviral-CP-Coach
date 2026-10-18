@@ -5,7 +5,7 @@ import logging
 from typing import Any
 
 from app.state import CoachState, HintVerdict
-from app.data.db import get_reference_solution, save_reference_solution, save_cached_hint
+from app.data.db import get_reference_solution, save_cached_hint
 from app.prompts.keeper_prompt import KEEPER_SYSTEM_PROMPT, build_keeper_prompt, build_heuristic_keeper_prompt
 from app.agents.llm import get_llm
 from app.config import settings

@@ -8,12 +8,11 @@ import random
 import string
 import tempfile
 from pathlib import Path
-from typing import Callable, Literal, Any
+from typing import Callable
 from pydantic import BaseModel, Field
 
 from app.judge.runner import (
     ExecutionConfig,
-    ExecutionResult,
     compile_code,
     run_isolated,
     normalize_output,

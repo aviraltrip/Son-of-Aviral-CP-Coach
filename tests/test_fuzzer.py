@@ -1,14 +1,11 @@
 """Unit tests for Differential Stress Fuzzer and Test Case Management (Phase 8.2)."""
-import pytest
 from app.judge.fuzzer import (
     InputGenerators,
     find_counterexample,
-    stress_test_problem_submission,
-    FuzzResult
+    stress_test_problem_submission
 )
 from app.judge.runner import ExecutionConfig
 from app.data.db import (
-    init_db,
     save_reference_solution,
     upsert_problems,
     seed_dataset_test_cases,

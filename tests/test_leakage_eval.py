@@ -1,10 +1,8 @@
 """Unit tests for independent LLM Judge and leakage benchmark evaluation suite."""
 import json
 import pytest
-from unittest.mock import MagicMock
 
 from evals.leakage_eval import (
-    JUDGE_SYSTEM_PROMPT,
     build_judge_prompt,
     parse_judge_verdict,
     evaluate_hint_leakage,

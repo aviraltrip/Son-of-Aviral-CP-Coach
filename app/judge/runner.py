@@ -12,7 +12,7 @@ import shutil
 import tempfile
 import subprocess
 from pathlib import Path
-from typing import Literal, Any
+from typing import Literal
 from pydantic import BaseModel, Field
 from app.config import settings
 

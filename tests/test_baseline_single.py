@@ -1,10 +1,8 @@
 """Unit tests for single-agent baseline hint generation and batch evaluation."""
 import json
-import pytest
 from unittest.mock import MagicMock
 
 from evals.baseline_single import (
-    BASELINE_SYSTEM_PROMPT,
     build_baseline_prompt,
     generate_baseline_hint,
     run_baseline_batch,

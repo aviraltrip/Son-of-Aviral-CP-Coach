@@ -2,9 +2,6 @@
 import pytest
 from app.judge.runner import (
     ExecutionConfig,
-    ExecutionResult,
-    compile_code,
-    run_isolated,
     evaluate_test_case,
     normalize_output
 )
@@ -160,7 +157,6 @@ def test_subclasses_introspection_blocked():
 
 def test_environment_sanitization_in_execution(monkeypatch):
     """Verify that execution subprocesses cannot read secrets from parent process environment."""
-    from app.judge.runner import evaluate_test_case
     monkeypatch.setenv("LEAK_TEST_SECRET_API_KEY", "top_secret_token_12345")
     
     code = """
