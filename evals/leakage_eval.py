@@ -135,7 +135,6 @@ def evaluate_hint_leakage(
         **verdict
     }
 
-
 def generate_multi_agent_hint(
     problem: dict[str, Any],
     hint_level: int,

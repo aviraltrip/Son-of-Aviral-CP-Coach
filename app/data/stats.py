@@ -149,7 +149,6 @@ def select_next_problem(
     
     top_tags = [t.tag for t in weak_topics[:3] if is_valid_algorithmic_tag(t.tag)] if weak_topics else ["dp", "greedy", "graphs"]
     
-    # 1. Matching top weak topics in target rating window
     for p in candidate_problems:
         cid = p.get("contest_id") or p.get("contestId")
         idx = p.get("idx") or p.get("index")
@@ -172,7 +171,6 @@ def select_next_problem(
                     reason=f"Targeted {prating}-rated problem matching weak topic '{matching[0]}' (Rating target: {target_min}-{target_max})."
                 )
 
-    # 2. Matching top weak topics in any candidate problem
     for p in candidate_problems:
         cid = p.get("contest_id") or p.get("contestId")
         idx = p.get("idx") or p.get("index")
@@ -194,7 +192,6 @@ def select_next_problem(
                 reason=f"Practice problem for weak topic '{matching[0]}'."
             )
 
-    # 3. Any unattempted candidate problem from the pool
     for p in candidate_problems:
         cid = p.get("contest_id") or p.get("contestId")
         idx = p.get("idx") or p.get("index")
@@ -213,7 +210,6 @@ def select_next_problem(
             reason="Practice problem selected from candidate pool."
         )
 
-    # 4. Fallback pool of varied practice problems
     fallback_pool = [
         {"contest_id": 1900, "idx": "C", "name": "Anji's Binary Tree", "rating": 1500, "tags": ["dp", "trees"]},
         {"contest_id": 1850, "idx": "E", "name": "Cardboard for Pictures", "rating": 1100, "tags": ["binary search", "math"]},

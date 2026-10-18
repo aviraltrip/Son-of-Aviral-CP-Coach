@@ -61,7 +61,6 @@ def analyst_node(state: CoachState) -> dict[str, Any]:
         
     attempted = get_attempted_problem_keys(handle, db_path=db_path)
     
-    # Exclude all problems previously selected or skipped in the session history
     for entry in state.get("history", []):
         cid = entry.get("contest_id")
         idx = entry.get("index")
@@ -71,7 +70,6 @@ def analyst_node(state: CoachState) -> dict[str, Any]:
             except (ValueError, TypeError):
                 pass
 
-    # Exclude the currently active problem
     curr_problem = state.get("problem")
     if curr_problem:
         attempted.add((int(curr_problem.contest_id), str(curr_problem.index).strip().upper()))

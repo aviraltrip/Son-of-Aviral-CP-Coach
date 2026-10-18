@@ -143,4 +143,3 @@ def test_database_indexes_created(temp_db):
     assert "idx_submissions_user_created" in indexes
     assert "idx_problems_rating" in indexes
 
-

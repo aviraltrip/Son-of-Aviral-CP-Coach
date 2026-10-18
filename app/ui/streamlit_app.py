@@ -19,7 +19,6 @@ load_dotenv(override=True)
 
 import streamlit as st
 
-# Sync Streamlit Cloud secrets into process environment for seamless cloud deployment
 try:
     for _key, _val in st.secrets.items():
         if isinstance(_val, (str, int, float, bool)):
@@ -196,7 +195,6 @@ def render_sidebar() -> str:
             )
 
         return st.session_state.handle
-
 
 def main() -> None:
     st.set_page_config(

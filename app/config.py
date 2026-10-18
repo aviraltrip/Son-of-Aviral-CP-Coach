@@ -45,7 +45,6 @@ class AppConfig(BaseSettings):
     keeper_model_name: str = Field(default="openrouter/free")
     analyst_model_name: str = Field(default="openrouter/free")
 
-    # LangSmith Observability & Distributed Tracing
     langchain_tracing_v2: bool = Field(default=False, description="Enable LangSmith distributed tracing")
     langchain_api_key: str = Field(default="", description="LangSmith API Key")
     langchain_project: str = Field(default="cp-coach", description="LangSmith project name")
@@ -99,5 +98,4 @@ sync_langsmith_env(settings)
 def get_settings() -> AppConfig:
     """Return singleton application settings instance."""
     return settings
-
 

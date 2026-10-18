@@ -191,7 +191,6 @@ def test_judge0_backend_routing_fallback(monkeypatch):
 def test_python_memory_limit_exceeded():
     """Verify that solutions exceeding memory limits trigger MLE."""
     from app.judge.runner import evaluate_test_case, ExecutionConfig
-    # Allocate beyond 32MB limit
     code = """
 import sys
 a = [0] * (50 * 1024 * 1024) # ~400MB in Python

@@ -20,7 +20,6 @@ def configure_langsmith(cfg: AppConfig | None = None) -> bool:
         or os.getenv("LANGCHAIN_TRACING_V2", "").lower() in ("true", "1", "yes")
     )
     
-    # Active if explicitly set to true or if an API key is provided and tracing isn't explicitly false
     is_explicit_false = os.getenv("LANGCHAIN_TRACING_V2", "").lower() in ("false", "0", "no")
     enabled = explicit_tracing or (bool(api_key) and not is_explicit_false)
 

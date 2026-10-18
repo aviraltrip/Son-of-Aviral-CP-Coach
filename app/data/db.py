@@ -651,5 +651,3 @@ def check_db_health(db_path: str = DEFAULT_DB_PATH) -> dict[str, Any]:
             "error": str(e),
             "path": os.path.abspath(db_path)
         }
-
-
