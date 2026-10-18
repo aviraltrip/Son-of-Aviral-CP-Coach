@@ -5,8 +5,6 @@
 [![Pydantic v2](https://img.shields.io/badge/Pydantic%20v2-green.svg)](https://docs.pydantic.dev/)
 [![Streamlit](https://img.shields.io/badge/Streamlit-1.35+-red.svg)](https://streamlit.io/)
 [![Docker](https://img.shields.io/badge/Docker-Production--Hardened-2496ED.svg)](https://www.docker.com/)
-[![Tests](https://img.shields.io/badge/Tests-107%20Passed-brightgreen.svg)](https://github.com/aviraltrip/Son-of-Aviral-CP-Coach)
-[![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](LICENSE)
 
 A multi-agent coaching system that connects to your **Codeforces** history, calculates your weak algorithmic topics using exponential decay and empirical Bayes shrinkage, picks a tailored practice problem, and coaches you with **graded, 3-tier hints that strictly never leak the solution**.
 
