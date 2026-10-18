@@ -19,6 +19,15 @@ load_dotenv(override=True)
 
 import streamlit as st
 
+# Sync Streamlit Cloud secrets into process environment for seamless cloud deployment
+try:
+    for _key, _val in st.secrets.items():
+        if isinstance(_val, (str, int, float, bool)):
+            os.environ.setdefault(str(_key).upper(), str(_val))
+            os.environ.setdefault(str(_key), str(_val))
+except Exception:
+    pass
+
 from app.logging_config import setup_logging
 setup_logging()
 
