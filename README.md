@@ -24,18 +24,13 @@ CP Coach solves this through **Multi-Agent Information Asymmetry**:
 
 ---
 
-## 2. Production Hardening Features
+## 2. Production Hardening
 
-This system includes enterprise-grade security and reliability enhancements:
-- **Sandbox Isolation & Environment Sanitization**: Subprocess execution environments are completely stripped of system credentials and LLM API keys. Dynamic Python introspection (`__subclasses__`, `__builtins__`) and C++ file system operations are blocked by multi-layer static guards.
-- **Unprivileged Container Execution**: Docker container runs as a dedicated non-root `appuser` (UID 1001) with dropped Linux capabilities (`cap_drop: [ALL]`) and `no-new-privileges: true`.
-- **Nginx Reverse Proxy**: Includes rate-limiting zones, WebSocket upgrade handling for Streamlit, and security headers (`X-Frame-Options`, `X-Content-Type-Options`, `X-XSS-Protection`).
-- **Database Concurrency & SQLite WAL Mode**: Eliminates database lock contention via `PRAGMA journal_mode = WAL;`, `synchronous = NORMAL;`, and a 5000ms busy timeout. Redundant DDL execution across query loops is eliminated with one-time execution caching.
-- **Persistent LangGraph Checkpointer**: Thread states and human-in-the-loop pauses persist across container restarts using `SqliteSaver`.
-- **Token-Bucket Rate Limiter**: User-tier limits protect against denial-of-service and LLM credit exhaustion.
-- **Fail-Fast Production LLM Guard**: Replaces silent mock fallbacks with explicit alerting in production mode.
-- **Health Checks & Telemetry**: Dual health monitoring script (`healthcheck.py`) testing HTTP web availability and SQLite schema integrity.
-- **LangSmith Distributed Tracing**: Native full-lifecycle execution tracing, latency/cost attribution, and human-in-the-loop feedback logging.
+- **Sandbox Security**: Stripped subprocess environment blocking Python introspection (`__subclasses__`, `__builtins__`) and C++ filesystem access.
+- **Container Hardening**: Unprivileged non-root user (`appuser` UID 1001) with dropped Linux capabilities (`cap_drop: [ALL]`) and `no-new-privileges`.
+- **Nginx Reverse Proxy**: Built-in rate limiting, security headers, and WebSocket upgrade support for Streamlit.
+- **SQLite WAL Mode & State Persistence**: High-concurrency `PRAGMA journal_mode = WAL` and persistent LangGraph checkpoints via `SqliteSaver`.
+- **Rate Limiting & Observability**: Token-bucket DoS protection, automated health checks (`healthcheck.py`), and LangSmith distributed tracing.
 
 ---
 
