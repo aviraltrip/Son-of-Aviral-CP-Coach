@@ -5,6 +5,8 @@
 [![Pydantic v2](https://img.shields.io/badge/Pydantic%20v2-green.svg)](https://docs.pydantic.dev/)
 [![Streamlit](https://img.shields.io/badge/Streamlit-1.35+-red.svg)](https://streamlit.io/)
 [![Docker](https://img.shields.io/badge/Docker-Production--Hardened-2496ED.svg)](https://www.docker.com/)
+[![Tests](https://img.shields.io/badge/Tests-107%20Passed-brightgreen.svg)](https://github.com/aviraltrip/Son-of-Aviral-CP-Coach)
+[![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](LICENSE)
 
 A multi-agent coaching system that connects to your **Codeforces** history, calculates your weak algorithmic topics using exponential decay and empirical Bayes shrinkage, picks a tailored practice problem, and coaches you with **graded, 3-tier hints that strictly never leak the solution**.
 
@@ -50,7 +52,11 @@ cp .env.example .env
 | Variable | Default | Description |
 | :--- | :--- | :--- |
 | `ENVIRONMENT` | `development` | Operational mode (`development`, `production`, `testing`) |
-| `OPENROUTER_API_KEY` | - | Primary LLM provider key |
+| `OPENROUTER_API_KEY` | - | Primary OpenRouter LLM API key |
+| `GOOGLE_API_KEY` | - | Optional free Google Gemini API key |
+| `TUTOR_MODEL_NAME` | `openrouter/free` | LLM model for the Tutor hint agent |
+| `KEEPER_MODEL_NAME` | `openrouter/free` | LLM model for the Keeper safety auditor agent |
+| `ANALYST_MODEL_NAME`| `openrouter/free` | LLM model for the Analyst diagnostics agent |
 | `DATABASE_PATH` | `cp_coach.db` | Primary SQLite database path |
 | `CHECKPOINTS_DB_PATH`| `checkpoints.db` | Persistent LangGraph checkpoints SQLite path |
 | `CHECKPOINTS_PERSIST`| `true` | Enable persistent SQLite checkpointer |
@@ -93,11 +99,30 @@ pytest tests/ -v
 streamlit run app/ui/streamlit_app.py
 ```
 
+### Option C: Free Cloud Deployment (Streamlit Community Cloud)
+
+1. Push or fork this repository to your GitHub account (set repository visibility to Public).
+2. Sign in to [share.streamlit.io](https://share.streamlit.io/) and click **New app**.
+3. Select your repository with:
+   - **Branch**: `main`
+   - **Main file path**: `app/ui/streamlit_app.py`
+4. Under **Advanced settings → Secrets**, paste your configuration in TOML format:
+   ```toml
+   OPENROUTER_API_KEY = "sk-or-v1-..."
+   TUTOR_MODEL_NAME = "openrouter/free"
+   KEEPER_MODEL_NAME = "openrouter/free"
+   ANALYST_MODEL_NAME = "openrouter/free"
+   DATABASE_PATH = "cp_coach.db"
+   CHECKPOINTS_DB_PATH = "checkpoints.db"
+   CHECKPOINTS_PERSIST = true
+   ```
+5. Click **Deploy**. *(The included `packages.txt` automatically provisions `g++`, `gcc`, and OpenJDK so the code judge can compile C++ and Java in the cloud).*
+
 ---
 
 ## 5. Automated Test Suite
 
-Run the full verification suite covering scoring, database concurrency, sandbox security, and multi-agent loops:
+Run the complete 107-test verification suite covering topic analysis, exponential decay rating, persistent checkpointing, judge sandbox isolation, and multi-agent safety loops. The test suite runs 100% deterministically offline without consuming any API quota:
 
 ```bash
 pytest tests/ -v
