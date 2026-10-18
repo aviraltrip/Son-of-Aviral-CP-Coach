@@ -39,89 +39,52 @@ This system includes enterprise-grade security and reliability enhancements:
 
 ---
 
-## 3. Configuration & Environment Variables
-
-Copy `.env.example` to `.env` and configure your credentials:
+## 3. Configuration
 
 ```bash
 cp .env.example .env
 ```
 
-| Variable | Default | Description |
+| Key | Default | Description |
 | :--- | :--- | :--- |
-| `ENVIRONMENT` | `development` | Operational mode (`development`, `production`, `testing`) |
-| `OPENROUTER_API_KEY` | - | Primary OpenRouter LLM API key |
-| `GOOGLE_API_KEY` | - | Optional free Google Gemini API key |
-| `TUTOR_MODEL_NAME` | `openrouter/free` | LLM model for the Tutor hint agent |
-| `KEEPER_MODEL_NAME` | `openrouter/free` | LLM model for the Keeper safety auditor agent |
-| `ANALYST_MODEL_NAME`| `openrouter/free` | LLM model for the Analyst diagnostics agent |
-| `DATABASE_PATH` | `cp_coach.db` | Primary SQLite database path |
-| `CHECKPOINTS_DB_PATH`| `checkpoints.db` | Persistent LangGraph checkpoints SQLite path |
-| `CHECKPOINTS_PERSIST`| `true` | Enable persistent SQLite checkpointer |
-| `JUDGE_BACKEND` | `isolated_subprocess`| Execution backend (`isolated_subprocess`, `judge0`, `disabled`) |
-| `JUDGE0_URL` | - | Optional external Judge0 CE endpoint |
-| `AUTH_MODE` | `optional` | Authentication policy (`disabled`, `optional`, `required`) |
-| `APP_PASSKEY` | - | Optional administrative passkey |
-| `LANGCHAIN_TRACING_V2`| `false` | Enable LangSmith distributed tracing |
-| `LANGCHAIN_API_KEY` | - | LangSmith API Key |
-| `LANGCHAIN_PROJECT` | `cp-coach` | LangSmith project name for traces & evals |
-| `LOG_FORMAT` | `text` | Log format (`text` or `json`) |
+| `OPENROUTER_API_KEY` | — | Primary LLM key (or `GOOGLE_API_KEY`) |
+| `TUTOR_MODEL_NAME` | `openrouter/free` | Hint generator model |
+| `KEEPER_MODEL_NAME` | `openrouter/free` | Safety auditor model |
+| `ANALYST_MODEL_NAME` | `openrouter/free` | Diagnostics model |
+| `JUDGE_BACKEND` | `isolated_subprocess` | Code execution engine |
+| `DATABASE_PATH` | `cp_coach.db` | SQLite storage path |
 
 ---
 
-## 4. Running the Application
+## 4. Running & Deployment
 
-### Option A: Production Multi-Container Deployment (with Nginx)
-
+### Local Setup
 ```bash
-# 1. Build and start containers in detached mode
-docker compose up --build -d
-
-# 2. Access via reverse proxy
-# Open http://localhost in your browser
-
-# 3. View live structured logs
-docker compose logs -f
-```
-
-### Option B: Local Python Development
-
-```bash
-# 1. Install dependencies
 pip install -r requirements.txt
-
-# 2. Run unit and integration tests
-pytest tests/ -v
-
-# 3. Launch Streamlit UI
 streamlit run app/ui/streamlit_app.py
 ```
 
-### Option C: Free Cloud Deployment (Streamlit Community Cloud)
+### Docker (Production + Nginx)
+```bash
+docker compose up --build -d
+# Accessible at http://localhost
+```
 
-1. Push or fork this repository to your GitHub account (set repository visibility to Public).
-2. Sign in to [share.streamlit.io](https://share.streamlit.io/) and click **New app**.
-3. Select your repository with:
-   - **Branch**: `main`
-   - **Main file path**: `app/ui/streamlit_app.py`
-4. Under **Advanced settings → Secrets**, paste your configuration in TOML format:
+### Streamlit Community Cloud (Free)
+1. Deploy from [share.streamlit.io](https://share.streamlit.io/) with file path `app/ui/streamlit_app.py`.
+2. In **Advanced settings → Secrets**, paste:
    ```toml
    OPENROUTER_API_KEY = "sk-or-v1-..."
    TUTOR_MODEL_NAME = "openrouter/free"
    KEEPER_MODEL_NAME = "openrouter/free"
    ANALYST_MODEL_NAME = "openrouter/free"
-   DATABASE_PATH = "cp_coach.db"
-   CHECKPOINTS_DB_PATH = "checkpoints.db"
-   CHECKPOINTS_PERSIST = true
    ```
-5. Click **Deploy**. *(The included `packages.txt` automatically provisions `g++`, `gcc`, and OpenJDK so the code judge can compile C++ and Java in the cloud).*
 
 ---
 
-## 5. Automated Test Suite
-
-Run the complete 107-test verification suite covering topic analysis, exponential decay rating, persistent checkpointing, judge sandbox isolation, and multi-agent safety loops. The test suite runs 100% deterministically offline without consuming any API quota:
+## 5. Automated Tests
 
 ```bash
 pytest tests/ -v
 ```
+Runs 107 deterministic offline tests covering multi-agent loops, sandbox security, and rating statistics with zero API quota usage.
