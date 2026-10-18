@@ -33,6 +33,8 @@ ENV/
 
 # SQLite Databases & Caches
 *.db
+*.db-wal
+*.db-shm
 *.sqlite
 *.sqlite3
 .cache/
