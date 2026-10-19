@@ -1,0 +1,224 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <title>Son of Aviral - Multi-Agent Architecture Graph</title>
+  <script src="https://unpkg.com/vis-network@9.1.6/standalone/umd/vis-network.min.js"></script>
+  <style>
+    :root {
+      --bg: #090d16;
+      --panel: #111827;
+      --border: #1f293d;
+      --text: #f3f4f6;
+      --text-muted: #9ca3af;
+      --accent: #6366f1;
+    }
+    * { box-sizing: border-box; margin: 0; padding: 0; }
+    body {
+      background: var(--bg);
+      color: var(--text);
+      font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+      display: flex;
+      height: 100vh;
+      overflow: hidden;
+    }
+    #graph { flex: 1; height: 100%; }
+    #sidebar {
+      width: 320px;
+      background: var(--panel);
+      border-left: 1px solid var(--border);
+      display: flex;
+      flex-direction: column;
+      padding: 20px;
+      gap: 16px;
+      box-shadow: -4px 0 24px rgba(0,0,0,0.4);
+      z-index: 10;
+    }
+    h1 { font-size: 1.15rem; font-weight: 700; color: #fff; display: flex; align-items: center; gap: 8px; }
+    .badge { font-size: 0.7rem; padding: 2px 8px; border-radius: 999px; background: rgba(99,102,241,0.2); color: #818cf8; border: 1px solid rgba(99,102,241,0.3); }
+    .subtitle { font-size: 0.8rem; color: var(--text-muted); line-height: 1.4; }
+    .legend-card {
+      background: rgba(255,255,255,0.02);
+      border: 1px solid var(--border);
+      border-radius: 8px;
+      padding: 12px;
+      display: flex;
+      flex-direction: column;
+      gap: 8px;
+    }
+    .legend-title { font-size: 0.75rem; text-transform: uppercase; font-weight: 600; color: var(--text-muted); letter-spacing: 0.05em; }
+    .legend-item { display: flex; align-items: center; gap: 10px; font-size: 0.82rem; }
+    .legend-dot { width: 12px; height: 12px; border-radius: 50%; flex-shrink: 0; box-shadow: 0 0 8px currentColor; }
+    #info-box {
+      flex: 1;
+      background: rgba(0,0,0,0.25);
+      border: 1px solid var(--border);
+      border-radius: 8px;
+      padding: 14px;
+      overflow-y: auto;
+      font-size: 0.85rem;
+    }
+    #info-box h3 { font-size: 1rem; color: #fff; margin-bottom: 6px; }
+    #info-box p { color: var(--text-muted); line-height: 1.5; font-size: 0.82rem; }
+    .hint { font-size: 0.75rem; color: #64748b; text-align: center; }
+  </style>
+</head>
+<body>
+  <div id="graph"></div>
+  <div id="sidebar">
+    <div>
+      <h1>Son of Aviral <span class="badge">Architecture</span></h1>
+      <p class="subtitle">Interactive Multi-Agent CP Mentorship & Sandboxed Execution DAG</p>
+    </div>
+
+    <div class="legend-card">
+      <div class="legend-title">System Subsystems</div>
+      <div class="legend-item"><div class="legend-dot" style="background:#a855f7; color:#a855f7"></div><span>State Graph & Orchestrator</span></div>
+      <div class="legend-item"><div class="legend-dot" style="background:#3b82f6; color:#3b82f6"></div><span>Tutor Agent (Gemini Flash)</span></div>
+      <div class="legend-item"><div class="legend-dot" style="background:#ef4444; color:#ef4444"></div><span>Keeper Agent (Safety Auditor)</span></div>
+      <div class="legend-item"><div class="legend-dot" style="background:#10b981; color:#10b981"></div><span>Analyst Agent (CF Diagnostics)</span></div>
+      <div class="legend-item"><div class="legend-dot" style="background:#f59e0b; color:#f59e0b"></div><span>Sandbox Subprocess Judge</span></div>
+      <div class="legend-item"><div class="legend-dot" style="background:#06b6d4; color:#06b6d4"></div><span>SQLite WAL & Checkpointer</span></div>
+    </div>
+
+    <div id="info-box">
+      <h3 id="info-title">System Overview</h3>
+      <p id="info-desc">Click any node in the graph to inspect its architectural responsibility, inputs, and security boundaries.</p>
+    </div>
+
+    <div class="hint">Click & drag nodes • Scroll to zoom</div>
+  </div>
+
+  <script>
+    const nodes = new vis.DataSet([
+      // Central State
+      { id: 'coach_state', label: 'CoachState\n(Pydantic Graph State)', color: { background: '#a855f7', border: '#c084fc' }, font: { color: '#fff', size: 14, bold: true }, size: 35, shape: 'dot' },
+      { id: 'langgraph', label: 'LangGraph Engine\n(StateGraph DAG)', color: { background: '#9333ea', border: '#a855f7' }, font: { color: '#fff', size: 13 }, size: 28, shape: 'dot' },
+
+      // Tutor Cluster
+      { id: 'tutor_node', label: 'Tutor Agent\n(tutor_node)', color: { background: '#3b82f6', border: '#60a5fa' }, font: { color: '#fff', size: 13, bold: true }, size: 28, shape: 'dot' },
+      { id: 'gemini_flash', label: 'Google Gemini 3.5 Flash\n(1-2s Low Latency LLM)', color: { background: '#2563eb', border: '#3b82f6' }, font: { color: '#fff', size: 12 }, size: 24, shape: 'dot' },
+      { id: 'hint_draft', label: 'HintDraft\n(Level 1/2/3 Tiers)', color: { background: '#60a5fa', border: '#93c5fd' }, font: { color: '#fff', size: 11 }, size: 20, shape: 'dot' },
+
+      // Keeper Cluster
+      { id: 'keeper_node', label: 'Keeper Agent\n(keeper_node)', color: { background: '#ef4444', border: '#f87171' }, font: { color: '#fff', size: 13, bold: true }, size: 28, shape: 'dot' },
+      { id: 'safety_auditor', label: 'Zero-Shot Rubric Audit\n(Anti-Leak Guard)', color: { background: '#dc2626', border: '#ef4444' }, font: { color: '#fff', size: 12 }, size: 22, shape: 'dot' },
+      { id: 'hint_verdict', label: 'HintVerdict\n(Approved / Rejected)', color: { background: '#f87171', border: '#fca5a5' }, font: { color: '#fff', size: 11 }, size: 20, shape: 'dot' },
+
+      // Analyst Cluster
+      { id: 'analyst_node', label: 'Analyst Agent\n(analyst_node)', color: { background: '#10b981', border: '#34d399' }, font: { color: '#fff', size: 13, bold: true }, size: 28, shape: 'dot' },
+      { id: 'cf_api', label: 'Codeforces REST API\n(Polite Rate Limiter)', color: { background: '#059669', border: '#10b981' }, font: { color: '#fff', size: 12 }, size: 22, shape: 'dot' },
+      { id: 'stats_engine', label: 'Bayesian Stats Engine\n(Weak Topic Ranking)', color: { background: '#34d399', border: '#6ee7b7' }, font: { color: '#fff', size: 11 }, size: 20, shape: 'dot' },
+      { id: 'problem_choice', label: 'ProblemChoice\n(Targeted Selection)', color: { background: '#10b981', border: '#34d399' }, font: { color: '#fff', size: 11 }, size: 20, shape: 'dot' },
+
+      // Judge & Sandbox Cluster
+      { id: 'judge_node', label: 'Judge Runner\n(Isolated Subprocess)', color: { background: '#f59e0b', border: '#fbbf24' }, font: { color: '#fff', size: 13, bold: true }, size: 28, shape: 'dot' },
+      { id: 'security_sanitizer', label: 'Sanitized Env Guard\n(Key & Subprocess Jail)', color: { background: '#d97706', border: '#f59e0b' }, font: { color: '#fff', size: 12 }, size: 22, shape: 'dot' },
+      { id: 'fuzzer', label: 'Differential Fuzzer\n(Automated Stress Tests)', color: { background: '#fbbf24', border: '#fde68a' }, font: { color: '#fff', size: 11 }, size: 20, shape: 'dot' },
+
+      // Storage & Persistence
+      { id: 'sqlite_db', label: 'SQLite DB\n(WAL Journal Mode)', color: { background: '#06b6d4', border: '#22d3ee' }, font: { color: '#fff', size: 12, bold: true }, size: 25, shape: 'dot' },
+      { id: 'checkpointer', label: 'Async Checkpointer\n(Thread Resume)', color: { background: '#0891b2', border: '#06b6d4' }, font: { color: '#fff', size: 11 }, size: 20, shape: 'dot' },
+
+      // UI
+      { id: 'streamlit_ui', label: 'Streamlit Web UI\n(Components & Code Editor)', color: { background: '#ec4899', border: '#f472b6' }, font: { color: '#fff', size: 13, bold: true }, size: 28, shape: 'dot' }
+    ]);
+
+    const edges = new vis.DataSet([
+      // LangGraph & CoachState
+      { from: 'langgraph', to: 'coach_state', label: 'mutates state', color: { color: '#a855f7' }, arrows: 'to', width: 2.5 },
+      { from: 'langgraph', to: 'tutor_node', color: { color: '#a855f7' }, arrows: 'to', width: 2 },
+      { from: 'langgraph', to: 'keeper_node', color: { color: '#a855f7' }, arrows: 'to', width: 2 },
+      { from: 'langgraph', to: 'analyst_node', color: { color: '#a855f7' }, arrows: 'to', width: 2 },
+      { from: 'langgraph', to: 'judge_node', color: { color: '#a855f7' }, arrows: 'to', width: 2 },
+
+      // Tutor flow
+      { from: 'coach_state', to: 'tutor_node', label: 'reads problem', color: { color: '#3b82f6' }, arrows: 'to', width: 2 },
+      { from: 'tutor_node', to: 'gemini_flash', label: 'invokes LLM', color: { color: '#3b82f6' }, arrows: 'to', width: 2 },
+      { from: 'tutor_node', to: 'hint_draft', label: 'outputs draft', color: { color: '#3b82f6' }, arrows: 'to', width: 2 },
+      { from: 'hint_draft', to: 'keeper_node', label: 'audited by', color: { color: '#ef4444' }, arrows: 'to', width: 2.5 },
+
+      // Keeper flow
+      { from: 'keeper_node', to: 'safety_auditor', label: 'checks rubric', color: { color: '#ef4444' }, arrows: 'to', width: 2 },
+      { from: 'keeper_node', to: 'hint_verdict', label: 'emits verdict', color: { color: '#ef4444' }, arrows: 'to', width: 2 },
+      { from: 'hint_verdict', to: 'tutor_node', label: 'rejection feedback', color: { color: '#f87171' }, dashes: true, arrows: 'to', width: 2 },
+      { from: 'hint_verdict', to: 'coach_state', label: 'approved hint', color: { color: '#10b981' }, arrows: 'to', width: 2.5 },
+
+      // Analyst flow
+      { from: 'analyst_node', to: 'cf_api', label: 'syncs handle', color: { color: '#10b981' }, arrows: 'to', width: 2 },
+      { from: 'cf_api', to: 'stats_engine', label: 'submission log', color: { color: '#10b981' }, arrows: 'to', width: 2 },
+      { from: 'stats_engine', to: 'problem_choice', label: 'ranks weak topics', color: { color: '#10b981' }, arrows: 'to', width: 2 },
+      { from: 'problem_choice', to: 'coach_state', label: 'sets active problem', color: { color: '#10b981' }, arrows: 'to', width: 2.5 },
+
+      // Judge flow
+      { from: 'judge_node', to: 'security_sanitizer', label: 'strips env & secrets', color: { color: '#f59e0b' }, arrows: 'to', width: 2 },
+      { from: 'judge_node', to: 'fuzzer', label: 'generates tests', color: { color: '#f59e0b' }, arrows: 'to', width: 2 },
+      { from: 'judge_node', to: 'coach_state', label: 'records verdict', color: { color: '#f59e0b' }, arrows: 'to', width: 2 },
+
+      // Persistence
+      { id: 'e_chk', from: 'langgraph', to: 'checkpointer', color: { color: '#06b6d4' }, arrows: 'to', width: 2 },
+      { id: 'e_sql', from: 'checkpointer', to: 'sqlite_db', label: 'persists threads', color: { color: '#06b6d4' }, arrows: 'to', width: 2 },
+      { id: 'e_cache', from: 'keeper_node', to: 'sqlite_db', label: 'caches approved hint', color: { color: '#06b6d4' }, arrows: 'to', width: 1.5, dashes: true },
+
+      // UI
+      { from: 'streamlit_ui', to: 'langgraph', label: 'dispatches events', color: { color: '#ec4899' }, arrows: 'to', width: 2.5 },
+      { from: 'coach_state', to: 'streamlit_ui', label: 'renders hint & problem', color: { color: '#ec4899' }, arrows: 'to', width: 2.5 }
+    ]);
+
+    const container = document.getElementById('graph');
+    const data = { nodes, edges };
+    const options = {
+      physics: {
+        solver: 'forceAtlas2Based',
+        forceAtlas2Based: {
+          gravitationalConstant: -180,
+          centralGravity: 0.008,
+          springLength: 170,
+          springConstant: 0.04,
+          damping: 0.95
+        },
+        stabilization: { iterations: 180 }
+      },
+      interaction: {
+        hover: true,
+        tooltipDelay: 100,
+        zoomView: true
+      }
+    };
+
+    const network = new vis.Network(container, data, options);
+
+    const descriptions = {
+      coach_state: { title: "CoachState (Core State)", desc: "Central strongly-typed state schema tracking the active user handle, CF rating, problem statement, current hint tier (1 to 3), hint draft, Keeper safety verdict, and revision history." },
+      langgraph: { title: "LangGraph Orchestrator", desc: "Cyclic state graph controlling multi-agent message passing, conditional branching between Tutor and Keeper, submission routing, and interrupts." },
+      tutor_node: { title: "Tutor Agent Node", desc: "Solution-blind hint authoring agent. Drafts nudges without accessing full reference code or editorials, strictly guided by the requested hint tier." },
+      gemini_flash: { title: "Google Gemini 3.5 Flash", desc: "Ultra-fast LLM provider delivering ~1.2s to 2.5s time-to-first-token, replacing slow queued models." },
+      hint_draft: { title: "HintDraft Model", desc: "Contains the text and requested level (1: Nudge, 2: Approach, 3: Pseudocode). Never outputs runnable code." },
+      keeper_node: { title: "Keeper Agent Node", desc: "Audits every tutor draft against private reference solutions and heuristic rubrics to prevent spoiler leakage before the user sees it." },
+      safety_auditor: { title: "Safety Audit Logic", desc: "Strictly enforces rules: Level 1 cannot name specific algorithms; Level 2 cannot show code; Level 3 only allows structured pseudocode." },
+      hint_verdict: { title: "HintVerdict", desc: "Boolean approval + severity and reason. If rejected, sends feedback back to Tutor for immediate revision (max 3 cycles)." },
+      analyst_node: { title: "Analyst Agent Node", desc: "Analyzes user profile upon connection. Syncs past 300 Codeforces submissions and calculates topic success ratios." },
+      cf_api: { title: "Codeforces REST Client", desc: "Polite rate-limited client fetching user rating, attempted problems, and tags with disk-backed JSON cache." },
+      stats_engine: { title: "Bayesian Statistics Engine", desc: "Computes difficulty-weighted failure scores and recency decay to pinpoint the user's top algorithmic weaknesses." },
+      problem_choice: { title: "Problem Selector", desc: "Picks optimal practice problems tailored to the user's rating window and weakest tags without repeat attempts." },
+      judge_node: { title: "Judge Execution Engine", desc: "Subprocess-based sandbox compiling and running user C++, Python, or Java code with CPU timeouts and memory bounds." },
+      security_sanitizer: { title: "Environment Sanitizer", desc: "Security barrier stripping all API keys, tokens, and system variables from the subprocess environment." },
+      fuzzer: { title: "Differential Fuzzer", desc: "Stress-tests edge cases against reference implementations to discover counterexamples and boundary bugs." },
+      sqlite_db: { title: "SQLite WAL Database", desc: "High-concurrency database configured with PRAGMA journal_mode = WAL for zero lock contention and persistent hint caching." },
+      checkpointer: { title: "Async Checkpointer", desc: "Persists thread states to disk so coaching sessions survive page reloads and browser disconnects." },
+      streamlit_ui: { title: "Streamlit Interface", desc: "Modern glassmorphism frontend providing problem cards, graded hint buttons, code editor, and live diagnostics." }
+    };
+
+    network.on("click", function(params) {
+      if (params.nodes.length > 0) {
+        const nodeId = params.nodes[0];
+        const info = descriptions[nodeId];
+        if (info) {
+          document.getElementById('info-title').innerText = info.title;
+          document.getElementById('info-desc').innerText = info.desc;
+        }
+      }
+    });
+  </script>
+</body>
+</html>
