@@ -119,9 +119,17 @@ def keeper_node(state: CoachState) -> dict[str, Any]:
         updates["verdict"] = verdict
 
     if verdict.approved and draft and draft.text:
-        try:
-            save_cached_hint(cid, idx, level, draft.text, db_path=db_path)
-        except Exception as e:
-            logger.debug(f"Could not cache approved hint: {e}")
+        is_fallback = (
+            draft.text == SAFE_FALLBACK_HINT
+            or "what each state represents" in draft.text
+            or "small test cases on paper" in draft.text
+            or "Break down the subproblems" in draft.text
+            or "Maintain a recursive state" in draft.text
+        )
+        if not is_fallback:
+            try:
+                save_cached_hint(cid, idx, level, draft.text, db_path=db_path)
+            except Exception as e:
+                logger.debug(f"Could not cache approved hint: {e}")
         
     return updates

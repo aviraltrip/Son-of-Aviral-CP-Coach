@@ -88,7 +88,15 @@ def tutor_node(state: CoachState) -> dict[str, Any]:
     if revisions == 0 and not (last_sub and last_sub not in ("OK", "AC") and user_action in ("submitted", "submit_code", "judge")):
         if problem:
             cached_text = get_cached_hint(problem.contest_id, problem.index, level, db_path=db_path)
-            if cached_text:
+            is_stale_fallback = bool(cached_text and any(
+                phrase in cached_text for phrase in (
+                    "what each state represents",
+                    "small test cases on paper",
+                    "Break down the subproblems",
+                    "Safe Guidance:"
+                )
+            ))
+            if cached_text and not is_stale_fallback:
                 logger.info(f"[Tutor] Serving approved hint from SQLite cache for Problem {problem.contest_id}{problem.index} Level {level}")
                 draft = HintDraft(level=level, text=cached_text)
                 new_history = list(history)
@@ -114,7 +122,7 @@ def tutor_node(state: CoachState) -> dict[str, Any]:
             resp = llm.invoke([{"role": "system", "content": TUTOR_SYSTEM_PROMPT}, {"role": "user", "content": prompt}])
             text = extract_text(resp)
     except Exception as e:
-        logger.warning(f"Tutor LLM invocation failed: {e}. Utilizing fallback rubric.")
+        logger.error(f"Tutor LLM invocation failed: {e}. Utilizing fallback rubric.", exc_info=True)
         if last_sub and last_sub not in ("OK", "AC"):
             text = draft_targeted_hint(last_sub).text
         else:

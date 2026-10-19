@@ -20,10 +20,13 @@ load_dotenv(override=True)
 import streamlit as st
 
 try:
-    for _key, _val in st.secrets.items():
-        if isinstance(_val, (str, int, float, bool)):
-            os.environ.setdefault(str(_key).upper(), str(_val))
-            os.environ.setdefault(str(_key), str(_val))
+    if hasattr(st, "secrets"):
+        for _key, _val in st.secrets.items():
+            if isinstance(_val, (str, int, float, bool)):
+                _val_str = str(_val).strip()
+                if _val_str:
+                    os.environ[str(_key).upper()] = _val_str
+                    os.environ[str(_key)] = _val_str
 except Exception:
     pass
 
@@ -89,6 +92,14 @@ def init_session_state() -> None:
 def render_sidebar() -> str:
     """Render sidebar with user handle settings, sync actions, and profile stats."""
     with st.sidebar:
+        has_llm_key = bool(
+            os.getenv("GOOGLE_API_KEY")
+            or os.getenv("GEMINI_API_KEY")
+            or os.getenv("OPENROUTER_API_KEY")
+            or (hasattr(st, "secrets") and any(k in st.secrets for k in ("GOOGLE_API_KEY", "GEMINI_API_KEY", "google_api_key", "gemini_api_key", "OPENROUTER_API_KEY")))
+        )
+        if not has_llm_key:
+            st.warning("No Gemini API key detected. Add GOOGLE_API_KEY in Streamlit Cloud Settings → Secrets to generate live tailored hints.")
         st.markdown("### User Profile")
         handle_input = st.text_input(
             "Codeforces Handle",

@@ -150,6 +150,7 @@ def init_db(db_path: str = DEFAULT_DB_PATH, force: bool = False) -> None:
         conn.execute("CREATE INDEX IF NOT EXISTS idx_submissions_problem ON submissions(contest_id, idx);")
         conn.execute("CREATE INDEX IF NOT EXISTS idx_submissions_user_created ON submissions(user_handle, creation_time_seconds DESC);")
         conn.execute("CREATE INDEX IF NOT EXISTS idx_problems_rating ON problems(rating);")
+        conn.execute("DELETE FROM cached_hints WHERE hint_text LIKE '%what each state represents%' OR hint_text LIKE '%small test cases on paper%' OR hint_text LIKE '%Safe Guidance:%';")
         conn.commit()
     except Exception:
         conn.rollback()
