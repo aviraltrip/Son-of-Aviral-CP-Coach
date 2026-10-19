@@ -27,10 +27,20 @@ int main() {
 }
 """
 
-def parse_keeper_verdict(raw_content: str, level: int) -> HintVerdict:
+def extract_text(resp: Any) -> str:
+    if hasattr(resp, "content"):
+        c = resp.content
+        if isinstance(c, list):
+            return "".join(p.get("text", "") if isinstance(p, dict) else str(p) for p in c).strip()
+        return str(c).strip()
+    if isinstance(resp, list):
+        return "".join(p.get("text", "") if isinstance(p, dict) else str(p) for p in resp).strip()
+    return str(resp).strip()
+
+def parse_keeper_verdict(raw_content: Any, level: int) -> HintVerdict:
     """Parse JSON verdict from Keeper LLM response with graceful fallback."""
     try:
-        text = raw_content.strip()
+        text = extract_text(raw_content)
         if "```json" in text:
             text = text.split("```json")[1].split("```")[0].strip()
         elif "```" in text:
@@ -86,7 +96,7 @@ def keeper_node(state: CoachState) -> dict[str, Any]:
             {"role": "system", "content": KEEPER_SYSTEM_PROMPT},
             {"role": "user", "content": prompt}
         ])
-        raw_text = resp.content if hasattr(resp, "content") else str(resp)
+        raw_text = extract_text(resp)
         verdict = parse_keeper_verdict(raw_text, level)
     except Exception as e:
         logger.warning(f"Keeper audit LLM call failed: {e}. Applying rule-based check.")

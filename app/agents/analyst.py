@@ -84,10 +84,11 @@ def analyst_node(state: CoachState) -> dict[str, Any]:
     )
     
     problem_statement = (
-        f"Problem {problem.contest_id}{problem.index}: {problem.name} (Rating: {problem.rating or 'Unrated'})\n"
-        f"Tags: {', '.join(problem.tags)}\n\n"
-        f"You are tasked with finding an optimal algorithm matching time and memory constraints.\n"
-        f"Target Topic: {problem.tags[0] if problem.tags else 'general algorithmic reasoning'}"
+        f"Problem: Codeforces {problem.contest_id}{problem.index} - {problem.name}\n"
+        f"Difficulty Rating: {problem.rating or 'Unrated'}\n"
+        f"Algorithmic Tags: {', '.join(problem.tags)}\n\n"
+        f"This is the official Codeforces problem {problem.contest_id}{problem.index} titled '{problem.name}'. "
+        f"Guide the student specifically on this problem's structure, constraints, and algorithmic observations."
     )
 
     new_history = list(state.get("history", []))

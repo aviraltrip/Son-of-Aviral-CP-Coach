@@ -65,6 +65,14 @@ def draft_targeted_hint(verdict: str, state: CoachState | None = None) -> HintDr
     )
     return HintDraft(level=1, text=text)
 
+def extract_text(resp: Any) -> str:
+    if hasattr(resp, "content"):
+        c = resp.content
+        if isinstance(c, list):
+            return "".join(p.get("text", "") if isinstance(p, dict) else str(p) for p in c).strip()
+        return str(c).strip()
+    return str(resp).strip()
+
 def tutor_node(state: CoachState) -> dict[str, Any]:
     """Draft a hint according to requested level, feedback, or submission errors."""
     level = state.get("hint_level", 1)
@@ -99,12 +107,12 @@ def tutor_node(state: CoachState) -> dict[str, Any]:
         if last_sub and last_sub not in ("OK", "AC") and user_action in ("submitted", "submit_code", "judge"):
             prompt = build_targeted_hint_prompt(problem_stmt, last_sub, history)
             resp = llm.invoke([{"role": "system", "content": TARGETED_HINT_SYSTEM_PROMPT}, {"role": "user", "content": prompt}])
-            text = resp.content.strip() if hasattr(resp, "content") else str(resp)
+            text = extract_text(resp)
         else:
             keeper_feedback = verdict.reason if (verdict and not verdict.approved) else None
             prompt = build_tutor_prompt(problem_stmt, level, history, keeper_feedback=keeper_feedback)
             resp = llm.invoke([{"role": "system", "content": TUTOR_SYSTEM_PROMPT}, {"role": "user", "content": prompt}])
-            text = resp.content.strip() if hasattr(resp, "content") else str(resp)
+            text = extract_text(resp)
     except Exception as e:
         logger.warning(f"Tutor LLM invocation failed: {e}. Utilizing fallback rubric.")
         if last_sub and last_sub not in ("OK", "AC"):
