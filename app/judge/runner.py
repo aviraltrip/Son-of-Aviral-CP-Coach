@@ -238,7 +238,8 @@ def compile_code(
         source_path.write_text(source_code, encoding="utf-8")
 
         javac_bin = shutil.which("javac")
-        java_bin = shutil.which("java")
+        companion_java = (Path(javac_bin).parent / ("java.exe" if os.name == "nt" else "java")) if javac_bin else None
+        java_bin = str(companion_java) if companion_java and companion_java.exists() else shutil.which("java")
         if not javac_bin or not java_bin:
             return False, [], "Java SDK (javac/java) not found in system PATH."
 
