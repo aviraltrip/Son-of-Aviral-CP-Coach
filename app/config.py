@@ -41,9 +41,9 @@ class AppConfig(BaseSettings):
     openai_api_key: str = Field(default="", description="OpenAI API Key")
     anthropic_api_key: str = Field(default="", description="Anthropic API Key")
 
-    tutor_model_name: str = Field(default="gemini-1.5-flash")
-    keeper_model_name: str = Field(default="gemini-1.5-flash")
-    analyst_model_name: str = Field(default="gemini-1.5-flash")
+    tutor_model_name: str = Field(default="gemini-3.5-flash")
+    keeper_model_name: str = Field(default="gemini-3.5-flash")
+    analyst_model_name: str = Field(default="gemini-3.5-flash")
 
     langchain_tracing_v2: bool = Field(default=False, description="Enable LangSmith distributed tracing")
     langchain_api_key: str = Field(default="", description="LangSmith API Key")

@@ -44,9 +44,9 @@ cp .env.example .env
 | :--- | :--- | :--- |
 | `GOOGLE_API_KEY` | — | Google Gemini API key (recommended free) |
 | `OPENROUTER_API_KEY` | — | Optional OpenRouter API key |
-| `TUTOR_MODEL_NAME` | `gemini-1.5-flash` | Hint generator model |
-| `KEEPER_MODEL_NAME` | `gemini-1.5-flash` | Safety auditor model |
-| `ANALYST_MODEL_NAME` | `gemini-1.5-flash` | Diagnostics model |
+| `TUTOR_MODEL_NAME` | `gemini-3.5-flash` | Hint generator model |
+| `KEEPER_MODEL_NAME` | `gemini-3.5-flash` | Safety auditor model |
+| `ANALYST_MODEL_NAME` | `gemini-3.5-flash` | Diagnostics model |
 | `JUDGE_BACKEND` | `isolated_subprocess` | Code execution engine |
 | `DATABASE_PATH` | `cp_coach.db` | SQLite storage path |
 
@@ -71,9 +71,9 @@ docker compose up --build -d
 2. In **Advanced settings → Secrets**, paste:
    ```toml
    GOOGLE_API_KEY = "AIzaSy..."
-   TUTOR_MODEL_NAME = "gemini-1.5-flash"
-   KEEPER_MODEL_NAME = "gemini-1.5-flash"
-   ANALYST_MODEL_NAME = "gemini-1.5-flash"
+   TUTOR_MODEL_NAME = "gemini-3.5-flash"
+   KEEPER_MODEL_NAME = "gemini-3.5-flash"
+   ANALYST_MODEL_NAME = "gemini-3.5-flash"
    ```
 
 ---

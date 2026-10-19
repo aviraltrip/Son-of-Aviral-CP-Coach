@@ -74,6 +74,22 @@ class MockLLM:
                 self.content = text
         return MockResponse(content)
 
+class GeminiWrapper:
+    def __init__(self, raw_llm: Any):
+        self._llm = raw_llm
+
+    def invoke(self, *args: Any, **kwargs: Any) -> Any:
+        res = self._llm.invoke(*args, **kwargs)
+        if hasattr(res, "content") and isinstance(res.content, list):
+            res.content = "".join(
+                item.get("text", "") if isinstance(item, dict) else str(item)
+                for item in res.content
+            )
+        return res
+
+    def __getattr__(self, name: str) -> Any:
+        return getattr(self._llm, name)
+
 def get_llm(model_type: str = "tutor") -> Any:
     """Instantiate configured LLM provider or fallback to MockLLM."""
     if os.getenv("USE_MOCK_LLM", "").lower() in ("true", "1") or os.getenv("PYTEST_CURRENT_TEST"):
@@ -90,13 +106,14 @@ def get_llm(model_type: str = "tutor") -> Any:
             genai_mod = importlib.import_module("langchain_google_genai")
             ChatGoogleGenerativeAI = getattr(genai_mod, "ChatGoogleGenerativeAI")
             if model_type == "tutor":
-                raw_model = os.getenv("TUTOR_MODEL_NAME") or settings.tutor_model_name or "gemini-1.5-flash"
+                raw_model = os.getenv("TUTOR_MODEL_NAME") or settings.tutor_model_name or "gemini-3.5-flash"
             elif model_type == "analyst":
-                raw_model = os.getenv("ANALYST_MODEL_NAME") or settings.analyst_model_name or "gemini-1.5-flash"
+                raw_model = os.getenv("ANALYST_MODEL_NAME") or settings.analyst_model_name or "gemini-3.5-flash"
             else:
-                raw_model = os.getenv("KEEPER_MODEL_NAME") or settings.keeper_model_name or "gemini-1.5-flash"
-            model_name = "gemini-1.5-flash" if "openrouter" in raw_model.lower() else raw_model
-            return ChatGoogleGenerativeAI(model=model_name, google_api_key=google_key, temperature=0.2)
+                raw_model = os.getenv("KEEPER_MODEL_NAME") or settings.keeper_model_name or "gemini-3.5-flash"
+            model_name = "gemini-3.5-flash" if any(x in raw_model.lower() for x in ("openrouter", "1.5-flash", "2.5-flash")) else raw_model
+            raw_llm = ChatGoogleGenerativeAI(model=model_name, google_api_key=google_key, temperature=0.2)
+            return GeminiWrapper(raw_llm)
         except (ImportError, AttributeError):
             pass
 
