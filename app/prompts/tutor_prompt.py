@@ -22,9 +22,9 @@ def build_tutor_prompt(
 ) -> str:
     """Construct the user prompt for the Tutor agent."""
     level_descriptions = {
-        1: "Level 1 (Nudge): Give a high-level observation or leading question. No formulas, no specific algorithm names.",
-        2: "Level 2 (Approach): Explain the algorithmic strategy and data structures in English. No code snippets.",
-        3: "Level 3 (Pseudocode): Provide language-agnostic structured pseudocode and edge cases. No runnable code."
+        1: "Level 1 (Nudge): Give a high-level observation or leading question in 1-3 sentences. No formulas, no specific algorithm names.",
+        2: "Level 2 (Approach): Explain the algorithmic strategy and data structures in English concisely (1-2 paragraphs). No code snippets.",
+        3: "Level 3 (Pseudocode): Provide language-agnostic structured pseudocode and edge cases concisely. No runnable code."
     }
     
     prompt = f"### Problem Statement:\n{problem_statement}\n\n"

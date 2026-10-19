@@ -75,11 +75,19 @@ class MockLLM:
         return MockResponse(content)
 
 class GeminiWrapper:
-    def __init__(self, raw_llm: Any):
+    def __init__(self, raw_llm: Any, fallback_llm: Any = None):
         self._llm = raw_llm
+        self._fallback = fallback_llm
 
     def invoke(self, *args: Any, **kwargs: Any) -> Any:
-        res = self._llm.invoke(*args, **kwargs)
+        try:
+            res = self._llm.invoke(*args, **kwargs)
+        except Exception as e:
+            if self._fallback:
+                logger.warning(f"Primary LLM failed ({e}), falling back to secondary provider")
+                res = self._fallback.invoke(*args, **kwargs)
+            else:
+                raise e
         if hasattr(res, "content") and isinstance(res.content, list):
             res.content = "".join(
                 item.get("text", "") if isinstance(item, dict) else str(item)
@@ -113,6 +121,13 @@ def get_llm(model_type: str = "tutor") -> Any:
     openrouter_key = (os.getenv("OPENROUTER_API_KEY") or settings.openrouter_api_key or "").strip()
     openai_key = (os.getenv("OPENAI_API_KEY") or settings.openai_api_key or "").strip()
     anthropic_key = (os.getenv("ANTHROPIC_API_KEY") or settings.anthropic_api_key or "").strip()
+
+    max_tokens_map = {
+        "tutor": 350,
+        "keeper": 150,
+        "analyst": 400
+    }
+    max_tokens = max_tokens_map.get(model_type, 300)
     
     if google_key:
         try:
@@ -125,8 +140,33 @@ def get_llm(model_type: str = "tutor") -> Any:
             else:
                 raw_model = os.getenv("KEEPER_MODEL_NAME") or settings.keeper_model_name or "gemini-3.5-flash"
             model_name = "gemini-3.5-flash" if any(x in raw_model.lower() for x in ("openrouter", "1.5-flash", "2.5-flash")) else raw_model
-            raw_llm = ChatGoogleGenerativeAI(model=model_name, google_api_key=google_key, temperature=0.2)
-            return GeminiWrapper(raw_llm)
+
+            fallback_llm = None
+            if openrouter_key:
+                try:
+                    openai_mod = importlib.import_module("langchain_openai")
+                    ChatOpenAI = getattr(openai_mod, "ChatOpenAI")
+                    fallback_llm = ChatOpenAI(
+                        model="google/gemini-flash-1.5",
+                        api_key=openrouter_key,
+                        base_url=os.getenv("OPENROUTER_BASE_URL", "https://openrouter.ai/api/v1"),
+                        temperature=0.2,
+                        max_tokens=max_tokens,
+                        timeout=12,
+                        max_retries=1
+                    )
+                except Exception:
+                    pass
+
+            raw_llm = ChatGoogleGenerativeAI(
+                model=model_name,
+                google_api_key=google_key,
+                temperature=0.2,
+                max_output_tokens=max_tokens,
+                max_retries=1,
+                timeout=12
+            )
+            return GeminiWrapper(raw_llm, fallback_llm=fallback_llm)
         except Exception as e:
             logger.error(f"Failed to initialize ChatGoogleGenerativeAI: {e}")
 
@@ -146,7 +186,10 @@ def get_llm(model_type: str = "tutor") -> Any:
                 model=model_name,
                 api_key=openrouter_key,
                 base_url=os.getenv("OPENROUTER_BASE_URL", "https://openrouter.ai/api/v1"),
-                temperature=0.2
+                temperature=0.2,
+                max_tokens=max_tokens,
+                timeout=12,
+                max_retries=1
             )
         except (ImportError, AttributeError):
             pass

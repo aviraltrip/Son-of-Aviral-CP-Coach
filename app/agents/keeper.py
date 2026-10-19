@@ -5,7 +5,7 @@ import logging
 from typing import Any
 
 from app.state import CoachState, HintVerdict
-from app.data.db import get_reference_solution, save_cached_hint
+from app.data.db import get_reference_solution, save_cached_hint, get_cached_hint
 from app.prompts.keeper_prompt import KEEPER_SYSTEM_PROMPT, build_keeper_prompt, build_heuristic_keeper_prompt
 from app.agents.llm import get_llm
 from app.config import settings
@@ -77,6 +77,35 @@ def keeper_node(state: CoachState) -> dict[str, Any]:
         
     cid = problem.contest_id if problem else 1900
     idx = problem.index if problem else "C"
+
+    cached_text = get_cached_hint(cid, idx, level, db_path=db_path)
+    if cached_text and cached_text == draft.text:
+        return {
+            "verdict": HintVerdict(approved=True, reason=f"Level {level} hint verified from approved cache.", leak_severity="none"),
+            "revisions": revisions
+        }
+
+    if level == 1:
+        forbidden = ["dp[", "memo[", "dist[", "for (", "while (", "#include", "vector<", "namespace", "class ", "def ", "cout", "cin", "printf", "return ", "malloc", "scanf"]
+        if not any(kw in draft.text for kw in forbidden):
+            verdict = HintVerdict(approved=True, reason="Level 1 nudge verified safe by heuristic guard.", leak_severity="none")
+            updates: dict[str, Any] = {
+                "verdict": verdict,
+                "revisions": revisions
+            }
+            is_fallback = (
+                draft.text == SAFE_FALLBACK_HINT
+                or "what each state represents" in draft.text
+                or "small test cases on paper" in draft.text
+                or "Break down the subproblems" in draft.text
+                or "Maintain a recursive state" in draft.text
+            )
+            if not is_fallback:
+                try:
+                    save_cached_hint(cid, idx, level, draft.text, db_path=db_path)
+                except Exception as e:
+                    logger.debug(f"Could not cache approved hint: {e}")
+            return updates
     
     ref = get_reference_solution(cid, idx, db_path=db_path)
     has_ref = bool(ref and ref.get("solution_code") and ref["solution_code"].strip() != DEFAULT_REFERENCE_SOLUTION.strip())
