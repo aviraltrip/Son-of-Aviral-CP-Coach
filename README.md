@@ -24,15 +24,15 @@ CP Coach solves this through **Multi-Agent Information Asymmetry**:
 
 ```mermaid
 flowchart TD
-    CF[("Codeforces API")] -->|Submissions History| Analyst["📊 Analyst Agent"]
-    Analyst -->|Identifies Weak Tags & Selects Problem| User["👤 User Practice Session"]
+    CF[("Codeforces API")] -->|Submissions History| Analyst["Analyst Agent"]
+    Analyst -->|Identifies Weak Tags & Selects Problem| User["User Practice Session"]
 
-    User -->|"Requests Hint (L1 / L2 / L3)"| Tutor["🧑‍🏫 Tutor Agent<br/>(Blind to Solution)"]
-    Tutor -->|Drafts Pedagogical Hint| Keeper{"🛡️ Keeper Agent<br/>(Audits Solution)"}
+    User -->|"Requests Hint (L1 / L2 / L3)"| Tutor["Tutor Agent<br/>(Blind to Solution)"]
+    Tutor -->|Drafts Pedagogical Hint| Keeper{"Keeper Agent<br/>(Audits Solution)"}
     Keeper -->|Approved| User
     Keeper -->|Rejects / Leaks Detected| Tutor
 
-    User -->|"Submits Code (C++, Python, Java)"| Judge{"⚖️ Judge Agent<br/>(Isolated Sandbox)"}
+    User -->|"Submits Code (C++, Python, Java)"| Judge{"Judge Agent<br/>(Isolated Sandbox)"}
     Judge -->|"AC (Accepted)"| Analyst
     Judge -->|"WA / TLE / RE"| Tutor
 ```
