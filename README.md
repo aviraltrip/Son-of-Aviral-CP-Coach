@@ -42,10 +42,11 @@ cp .env.example .env
 
 | Key | Default | Description |
 | :--- | :--- | :--- |
-| `OPENROUTER_API_KEY` | — | Primary LLM key (or `GOOGLE_API_KEY`) |
-| `TUTOR_MODEL_NAME` | `openrouter/free` | Hint generator model |
-| `KEEPER_MODEL_NAME` | `openrouter/free` | Safety auditor model |
-| `ANALYST_MODEL_NAME` | `openrouter/free` | Diagnostics model |
+| `GOOGLE_API_KEY` | — | Google Gemini API key (recommended free) |
+| `OPENROUTER_API_KEY` | — | Optional OpenRouter API key |
+| `TUTOR_MODEL_NAME` | `gemini-1.5-flash` | Hint generator model |
+| `KEEPER_MODEL_NAME` | `gemini-1.5-flash` | Safety auditor model |
+| `ANALYST_MODEL_NAME` | `gemini-1.5-flash` | Diagnostics model |
 | `JUDGE_BACKEND` | `isolated_subprocess` | Code execution engine |
 | `DATABASE_PATH` | `cp_coach.db` | SQLite storage path |
 
@@ -69,10 +70,10 @@ docker compose up --build -d
 1. Deploy from [share.streamlit.io](https://share.streamlit.io/) with file path `app/ui/streamlit_app.py`.
 2. In **Advanced settings → Secrets**, paste:
    ```toml
-   OPENROUTER_API_KEY = "sk-or-v1-..."
-   TUTOR_MODEL_NAME = "openrouter/free"
-   KEEPER_MODEL_NAME = "openrouter/free"
-   ANALYST_MODEL_NAME = "openrouter/free"
+   GOOGLE_API_KEY = "AIzaSy..."
+   TUTOR_MODEL_NAME = "gemini-1.5-flash"
+   KEEPER_MODEL_NAME = "gemini-1.5-flash"
+   ANALYST_MODEL_NAME = "gemini-1.5-flash"
    ```
 
 ---

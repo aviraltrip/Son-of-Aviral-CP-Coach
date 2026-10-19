@@ -80,21 +80,37 @@ def get_llm(model_type: str = "tutor") -> Any:
         return MockLLM(model_name=f"mock-{model_type}")
 
     load_dotenv(override=True)
+    google_key = os.getenv("GOOGLE_API_KEY") or os.getenv("GEMINI_API_KEY") or settings.google_api_key
     openrouter_key = os.getenv("OPENROUTER_API_KEY") or settings.openrouter_api_key
-    google_key = os.getenv("GOOGLE_API_KEY") or settings.google_api_key
     openai_key = os.getenv("OPENAI_API_KEY") or settings.openai_api_key
     anthropic_key = os.getenv("ANTHROPIC_API_KEY") or settings.anthropic_api_key
     
+    if google_key:
+        try:
+            genai_mod = importlib.import_module("langchain_google_genai")
+            ChatGoogleGenerativeAI = getattr(genai_mod, "ChatGoogleGenerativeAI")
+            if model_type == "tutor":
+                raw_model = os.getenv("TUTOR_MODEL_NAME") or settings.tutor_model_name or "gemini-1.5-flash"
+            elif model_type == "analyst":
+                raw_model = os.getenv("ANALYST_MODEL_NAME") or settings.analyst_model_name or "gemini-1.5-flash"
+            else:
+                raw_model = os.getenv("KEEPER_MODEL_NAME") or settings.keeper_model_name or "gemini-1.5-flash"
+            model_name = "gemini-1.5-flash" if "openrouter" in raw_model.lower() else raw_model
+            return ChatGoogleGenerativeAI(model=model_name, google_api_key=google_key, temperature=0.2)
+        except (ImportError, AttributeError):
+            pass
+
     if openrouter_key:
         try:
             openai_mod = importlib.import_module("langchain_openai")
             ChatOpenAI = getattr(openai_mod, "ChatOpenAI")
             if model_type == "tutor":
-                model_name = os.getenv("TUTOR_MODEL_NAME") or settings.tutor_model_name or "openrouter/free"
+                raw_model = os.getenv("TUTOR_MODEL_NAME") or settings.tutor_model_name or "gemini-1.5-flash"
             elif model_type == "analyst":
-                model_name = os.getenv("ANALYST_MODEL_NAME") or settings.analyst_model_name or "openrouter/free"
+                raw_model = os.getenv("ANALYST_MODEL_NAME") or settings.analyst_model_name or "gemini-1.5-flash"
             else:
-                model_name = os.getenv("KEEPER_MODEL_NAME") or settings.keeper_model_name or "openrouter/free"
+                raw_model = os.getenv("KEEPER_MODEL_NAME") or settings.keeper_model_name or "gemini-1.5-flash"
+            model_name = "google/gemini-flash-1.5" if "gemini" in raw_model.lower() and "/" not in raw_model else raw_model
 
             return ChatOpenAI(
                 model=model_name,
@@ -102,20 +118,6 @@ def get_llm(model_type: str = "tutor") -> Any:
                 base_url=os.getenv("OPENROUTER_BASE_URL", "https://openrouter.ai/api/v1"),
                 temperature=0.2
             )
-        except (ImportError, AttributeError):
-            pass
-
-    if google_key:
-        try:
-            genai_mod = importlib.import_module("langchain_google_genai")
-            ChatGoogleGenerativeAI = getattr(genai_mod, "ChatGoogleGenerativeAI")
-            if model_type == "tutor":
-                model_name = os.getenv("TUTOR_MODEL_NAME", "gemini-1.5-flash")
-            elif model_type == "analyst":
-                model_name = os.getenv("ANALYST_MODEL_NAME", "gemini-1.5-flash")
-            else:
-                model_name = os.getenv("KEEPER_MODEL_NAME", "gemini-1.5-flash")
-            return ChatGoogleGenerativeAI(model=model_name, google_api_key=google_key, temperature=0.2)
         except (ImportError, AttributeError):
             pass
 
@@ -148,7 +150,7 @@ def get_llm(model_type: str = "tutor") -> Any:
     if env == "production" or strict_llm:
         err_msg = (
             f"Production LLM failure: No valid LLM provider could be instantiated for '{model_type}'. "
-            f"Ensure OPENROUTER_API_KEY, OPENAI_API_KEY, ANTHROPIC_API_KEY, or GOOGLE_API_KEY is set."
+            f"Ensure GOOGLE_API_KEY, OPENROUTER_API_KEY, OPENAI_API_KEY, or ANTHROPIC_API_KEY is set."
         )
         logger.error(err_msg)
         raise RuntimeError(err_msg)

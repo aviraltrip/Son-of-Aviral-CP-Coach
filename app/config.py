@@ -36,14 +36,14 @@ class AppConfig(BaseSettings):
     )
     app_passkey: str = Field(default="", description="Master passkey for privileged access")
 
+    google_api_key: str = Field(default="", description="Google Gemini API Key")
     openrouter_api_key: str = Field(default="", description="OpenRouter API Key")
     openai_api_key: str = Field(default="", description="OpenAI API Key")
     anthropic_api_key: str = Field(default="", description="Anthropic API Key")
-    google_api_key: str = Field(default="", description="Google Gemini API Key")
 
-    tutor_model_name: str = Field(default="openrouter/free")
-    keeper_model_name: str = Field(default="openrouter/free")
-    analyst_model_name: str = Field(default="openrouter/free")
+    tutor_model_name: str = Field(default="gemini-1.5-flash")
+    keeper_model_name: str = Field(default="gemini-1.5-flash")
+    analyst_model_name: str = Field(default="gemini-1.5-flash")
 
     langchain_tracing_v2: bool = Field(default=False, description="Enable LangSmith distributed tracing")
     langchain_api_key: str = Field(default="", description="LangSmith API Key")
@@ -53,10 +53,11 @@ class AppConfig(BaseSettings):
     def has_any_llm_key(self) -> bool:
         """Check if at least one valid LLM provider API key is configured."""
         return bool(
-            self.openrouter_api_key
+            self.google_api_key
+            or os.getenv("GEMINI_API_KEY")
+            or self.openrouter_api_key
             or self.openai_api_key
             or self.anthropic_api_key
-            or self.google_api_key
         )
 
     def validate_production_readiness(self) -> list[str]:
