@@ -57,6 +57,5 @@ Thumbs.db
 evals/results/
 evals/reports/
 
-graphify-out/cache/
-graphify-out/*.tmp
+graphify-out/
 .graphify*
