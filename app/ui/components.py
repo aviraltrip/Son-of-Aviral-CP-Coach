@@ -178,6 +178,25 @@ button[data-testid="baseButton-primary"]:focus:not(:active) {
         line-height: 1.4 !important;
         margin-bottom: 1rem !important;
     }
+
+    .card {
+        padding: 0.9rem 1rem !important;
+        border-radius: 10px !important;
+        margin-bottom: 1rem !important;
+    }
+
+    .hint-box {
+        padding: 0.85rem 1rem !important;
+        margin-top: 0.75rem !important;
+        margin-bottom: 0.75rem !important;
+    }
+
+    .audit-box,
+    .agent-bubble-tutor,
+    .agent-bubble-keeper,
+    .agent-bubble-keeper-rejected {
+        padding: 0.65rem 0.85rem !important;
+    }
 }
 </style>
 """
