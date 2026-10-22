@@ -308,11 +308,11 @@ def render_problem_card(problem: Any, statement: str) -> None:
     st.markdown(
         f"""
         <div class="card">
-            <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 0.5rem;">
-                <div style="font-size: 1.3rem; font-weight: 700; color: #f8fafc;">
+            <div style="display: flex; justify-content: space-between; align-items: flex-start; flex-wrap: wrap; gap: 0.5rem; margin-bottom: 0.5rem;">
+                <div style="font-size: 1.25rem; font-weight: 700; color: #f8fafc; min-width: 0; word-break: break-word;">
                     {cid}{idx} &bull; {name}
                 </div>
-                <div>{rating_html}</div>
+                <div style="flex-shrink: 0;">{rating_html}</div>
             </div>
             <div style="margin-bottom: 0.75rem;">{tags_html}</div>
             <div style="font-size: 0.85rem; color: #94a3b8; margin-bottom: 0.5rem;">
