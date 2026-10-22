@@ -466,18 +466,18 @@ def render_judge_verdict_banner(judge_verdict: Any) -> None:
     st.markdown(
         f"""
         <div style="background: {bg_color}; border: 1px solid {border_color}; border-radius: 10px; padding: 1rem 1.25rem; margin-top: 1rem; margin-bottom: 1rem;">
-            <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 0.5rem;">
-                <div style="font-size: 1.15rem; font-weight: 700; color: {border_color};">
+            <div style="display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 0.6rem; margin-bottom: 0.5rem;">
+                <div style="font-size: 1.15rem; font-weight: 700; color: {border_color}; word-break: break-word;">
                     {title_text} {fail_detail}
                 </div>
-                <div style="font-size: 0.85rem; color: #cbd5e1;">
-                    <span style="background: rgba(255,255,255,0.08); padding: 0.2rem 0.6rem; border-radius: 6px; margin-right: 0.4rem;">
+                <div style="display: flex; flex-wrap: wrap; gap: 0.35rem; align-items: center;">
+                    <span style="background: rgba(255,255,255,0.08); padding: 0.2rem 0.55rem; border-radius: 6px; font-size: 0.8rem; white-space: nowrap;">
                         {time_ms:.1f} ms
                     </span>
-                    <span style="background: rgba(255,255,255,0.08); padding: 0.2rem 0.6rem; border-radius: 6px; margin-right: 0.4rem;">
+                    <span style="background: rgba(255,255,255,0.08); padding: 0.2rem 0.55rem; border-radius: 6px; font-size: 0.8rem; white-space: nowrap;">
                         {mem_kb} KB
                     </span>
-                    <span style="background: rgba(255,255,255,0.08); padding: 0.2rem 0.6rem; border-radius: 6px;">
+                    <span style="background: rgba(255,255,255,0.08); padding: 0.2rem 0.55rem; border-radius: 6px; font-size: 0.8rem; white-space: nowrap;">
                         Passed: {passed}/{total}
                     </span>
                 </div>
