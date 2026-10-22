@@ -279,7 +279,7 @@ def main() -> None:
         if draft and verdict and verdict.approved:
             render_hint_box(draft, verdict)
             if is_langsmith_enabled():
-                col_fb_help, col_fb_spoil, col_fb_space = st.columns([1.2, 1.2, 3.6])
+                col_fb_help, col_fb_spoil = st.columns(2)
                 hint_rev = values.get("revisions", 0)
                 btn_key_pos = f"btn_fb_help_lvl{draft.level}_rev{hint_rev}"
                 btn_key_neg = f"btn_fb_spoil_lvl{draft.level}_rev{hint_rev}"
@@ -307,7 +307,7 @@ def main() -> None:
         st.markdown("### Solution Code Editor & Sandbox Judge")
         st.markdown("Write and test your solution with CPU timeouts, memory constraints, and differential fuzzing.")
 
-        col_lang, col_space = st.columns([1, 3])
+        col_lang, col_space = st.columns([1.5, 2.5])
         with col_lang:
             selected_lang = st.selectbox(
                 "Language",
