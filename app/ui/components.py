@@ -279,16 +279,36 @@ def render_weak_topics_summary(weak_topics: list[Any]) -> None:
     st.bar_chart(chart_df, color="#3b82f6")
     
     st.dataframe(
-        df,
+        df_sorted,
         width="stretch",
         hide_index=True,
         column_config={
+            "Topic": st.column_config.TextColumn(
+                "Topic",
+                width="medium"
+            ),
             "Failure Score": st.column_config.ProgressColumn(
-                "Failure Score (Decay + Bayes)",
+                "Failure Score",
                 help="Higher score indicates high failure rate weighted by difficulty and recency.",
                 format="%.3f",
                 min_value=0.0,
                 max_value=1.0,
+                width="medium"
+            ),
+            "Solve Ratio": st.column_config.TextColumn(
+                "Solve %",
+                help="Solved submissions ratio across all attempts",
+                width="small"
+            ),
+            "Attempts": st.column_config.NumberColumn(
+                "Tries",
+                help="Total problem attempts in this topic",
+                width="small"
+            ),
+            "Avg Solved Rating": st.column_config.TextColumn(
+                "Avg Rating",
+                help="Average Codeforces rating of solved problems",
+                width="small"
             ),
         }
     )
