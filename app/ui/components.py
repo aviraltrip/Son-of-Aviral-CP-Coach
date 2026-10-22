@@ -513,11 +513,16 @@ def render_fuzz_result_banner(fuzz_result: Any) -> None:
     if fuzz_result.counterexample_found:
         st.markdown(
             f"""
-            <div style="background: rgba(239, 68, 68, 0.12); border: 1px solid #ef4444; border-radius: 10px; padding: 1rem 1.25rem; margin-top: 1rem;">
-                <div style="font-size: 1.1rem; font-weight: 700; color: #ef4444; margin-bottom: 0.4rem;">
-                    Counterexample Discovered (Trial {fuzz_result.trials_run})
+            <div style="background: rgba(239, 68, 68, 0.12); border: 1px solid #ef4444; border-radius: 10px; padding: 1rem 1.25rem; margin-top: 1rem; word-break: break-word;">
+                <div style="display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 0.5rem; margin-bottom: 0.4rem;">
+                    <div style="font-size: 1.1rem; font-weight: 700; color: #ef4444;">
+                        Counterexample Discovered
+                    </div>
+                    <span style="background: rgba(239, 68, 68, 0.2); color: #fca5a5; font-size: 0.8rem; font-weight: 600; padding: 0.2rem 0.55rem; border-radius: 6px; white-space: nowrap;">
+                        Trial {fuzz_result.trials_run}
+                    </span>
                 </div>
-                <div style="font-size: 0.9rem; color: #cbd5e1; margin-bottom: 0.6rem;">
+                <div style="font-size: 0.9rem; color: #cbd5e1; margin-bottom: 0.6rem; line-height: 1.4;">
                     The differential fuzzer caught a mismatch against the reference solution!
                 </div>
             </div>
