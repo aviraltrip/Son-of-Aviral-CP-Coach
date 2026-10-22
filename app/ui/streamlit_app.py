@@ -210,7 +210,7 @@ def main() -> None:
     st.set_page_config(
         page_title="Son of Aviral | Multi-Agent CP Mentorship",
         layout="wide",
-        initial_sidebar_state="expanded"
+        initial_sidebar_state="auto"
     )
     
     inject_custom_css()
