@@ -157,6 +157,28 @@ button[data-testid="baseButton-primary"]:focus:not(:active) {
     border-color: #93c5fd !important;
     box-shadow: 0 0 0 0.2rem rgba(59, 130, 246, 0.4) !important;
 }
+
+/* Mobile Responsive Overrides: Container & Typography */
+@media (max-width: 768px) {
+    .block-container {
+        padding-top: 1.75rem !important;
+        padding-bottom: 2.5rem !important;
+        padding-left: 0.75rem !important;
+        padding-right: 0.75rem !important;
+        max-width: 100% !important;
+    }
+
+    .main-header {
+        font-size: 1.6rem !important;
+        line-height: 1.25 !important;
+    }
+
+    .sub-header {
+        font-size: 0.85rem !important;
+        line-height: 1.4 !important;
+        margin-bottom: 1rem !important;
+    }
+}
 </style>
 """
 
