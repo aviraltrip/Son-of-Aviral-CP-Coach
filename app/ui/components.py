@@ -197,6 +197,23 @@ button[data-testid="baseButton-primary"]:focus:not(:active) {
     .agent-bubble-keeper-rejected {
         padding: 0.65rem 0.85rem !important;
     }
+
+    /* Prevent mobile Safari auto-zoom on inputs */
+    input[type="text"],
+    textarea,
+    div[data-testid="stTextInput"] input,
+    div[data-testid="stTextArea"] textarea,
+    div[data-testid="stSelectbox"] select {
+        font-size: 16px !important;
+    }
+
+    /* Mobile touch target accessibility */
+    button,
+    div[data-testid="stButton"] button,
+    .stButton > button {
+        min-height: 42px !important;
+        touch-action: manipulation;
+    }
 }
 </style>
 """
