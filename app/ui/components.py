@@ -269,8 +269,13 @@ def render_weak_topics_summary(weak_topics: list[Any]) -> None:
             "Avg Solved Rating": str(int(avg_r)) if avg_r and avg_r != "-" else "-"
         })
     df = pd.DataFrame(data)
+    df_sorted = df.sort_values(by="Failure Score", ascending=False)
     
-    chart_df = df.set_index("Topic")[["Failure Score"]]
+    # Focus chart on top 8 weaknesses so category labels remain legible on mobile
+    top_n = min(8, len(df_sorted))
+    chart_df = df_sorted.head(top_n).set_index("Topic")[["Failure Score"]]
+    if len(df) > top_n:
+        st.caption(f"Displaying Top {top_n} Algorithmic Weaknesses:")
     st.bar_chart(chart_df, color="#3b82f6")
     
     st.dataframe(
