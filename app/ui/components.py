@@ -53,8 +53,11 @@ code, pre {
 }
 
 /* Base Block Container Spacing */
-.block-container {
-    padding-top: 5rem !important;
+.block-container,
+div[data-testid="stMainBlockContainer"],
+.stMainBlockContainer,
+div[data-testid="block-container"] {
+    padding-top: 5.75rem !important;
     padding-bottom: 3rem !important;
     padding-left: 1.5rem !important;
     padding-right: 1.5rem !important;
