@@ -224,7 +224,7 @@ def main() -> None:
     )
 
     if not handle:
-        st.info("👈 Enter your Codeforces handle in the sidebar and click **Sync CF** to get started!")
+        st.info("👈 Open the sidebar (tap **&gt;&gt;** at the top-left) to enter your Codeforces handle and click **Sync CF** to get started!")
         return
 
     state = st.session_state.graph.get_state(st.session_state.config)

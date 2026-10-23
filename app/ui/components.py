@@ -8,12 +8,58 @@ CUSTOM_CSS = """
 /* Modern typography & base layout */
 @import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&family=JetBrains+Mono:wght@400;500;600&display=swap');
 
-html, body, [class*="css"] {
+html, body {
+    overflow-x: hidden !important;
+    max-width: 100% !important;
+    width: 100% !important;
+    position: relative;
     font-family: 'Inter', -apple-system, BlinkMacSystemFont, sans-serif;
+}
+
+[data-testid="stAppViewContainer"] {
+    overflow-x: hidden !important;
+    max-width: 100% !important;
+}
+
+.main {
+    overflow-x: hidden !important;
+    max-width: 100% !important;
+}
+
+/* Streamlit Header Glassmorphism & Fixed Bar Clearance */
+header[data-testid="stHeader"] {
+    background: rgba(15, 23, 42, 0.85) !important;
+    backdrop-filter: blur(8px) !important;
+    -webkit-backdrop-filter: blur(8px) !important;
+    border-bottom: 1px solid rgba(148, 163, 184, 0.08) !important;
+    z-index: 99999 !important;
+}
+
+/* Sidebar Toggle Button styling on Mobile & Desktop */
+div[data-testid="stSidebarCollapsedControl"] {
+    top: 0.5rem !important;
+    left: 0.5rem !important;
+}
+
+div[data-testid="stSidebarCollapsedControl"] button {
+    background: rgba(30, 41, 59, 0.7) !important;
+    border: 1px solid rgba(148, 163, 184, 0.2) !important;
+    border-radius: 8px !important;
+    color: #f8fafc !important;
 }
 
 code, pre {
     font-family: 'JetBrains Mono', monospace !important;
+}
+
+/* Base Block Container Spacing */
+.block-container {
+    padding-top: 5rem !important;
+    padding-bottom: 3rem !important;
+    padding-left: 1.5rem !important;
+    padding-right: 1.5rem !important;
+    max-width: 100% !important;
+    box-sizing: border-box !important;
 }
 
 /* Header & Card Containers */
@@ -21,13 +67,19 @@ code, pre {
     font-size: 2.1rem;
     font-weight: 700;
     letter-spacing: -0.02em;
-    margin-bottom: 0.2rem;
+    line-height: 1.25;
+    margin-top: 0.25rem;
+    margin-bottom: 0.25rem;
+    color: #f8fafc;
+    word-break: break-word;
 }
 
 .sub-header {
     color: #94a3b8;
     font-size: 0.95rem;
+    line-height: 1.45;
     margin-bottom: 1.5rem;
+    word-break: break-word;
 }
 
 .card {
@@ -37,6 +89,7 @@ code, pre {
     padding: 1.25rem 1.5rem;
     margin-bottom: 1.25rem;
     backdrop-filter: blur(8px);
+    box-sizing: border-box;
 }
 
 .card-title {
@@ -55,6 +108,7 @@ code, pre {
     padding: 0.2rem 0.6rem;
     border-radius: 9999px;
     display: inline-block;
+    white-space: nowrap;
 }
 
 .badge-tag {
@@ -65,7 +119,9 @@ code, pre {
     padding: 0.2rem 0.5rem;
     border-radius: 6px;
     margin-right: 0.4rem;
+    margin-bottom: 0.35rem;
     display: inline-block;
+    line-height: 1.3;
 }
 
 .hint-box {
@@ -75,6 +131,8 @@ code, pre {
     padding: 1rem 1.25rem;
     margin-top: 1rem;
     margin-bottom: 1rem;
+    word-break: break-word;
+    box-sizing: border-box;
 }
 
 .audit-box {
@@ -85,6 +143,8 @@ code, pre {
     font-size: 0.85rem;
     color: #94a3b8;
     margin-top: 0.5rem;
+    word-break: break-word;
+    box-sizing: border-box;
 }
 
 .agent-bubble-tutor {
@@ -93,6 +153,8 @@ code, pre {
     border-radius: 8px;
     padding: 0.75rem 1rem;
     margin-bottom: 0.5rem;
+    word-break: break-word;
+    box-sizing: border-box;
 }
 
 .agent-bubble-keeper {
@@ -101,6 +163,8 @@ code, pre {
     border-radius: 8px;
     padding: 0.75rem 1rem;
     margin-bottom: 0.5rem;
+    word-break: break-word;
+    box-sizing: border-box;
 }
 
 .agent-bubble-keeper-rejected {
@@ -109,6 +173,41 @@ code, pre {
     border-radius: 8px;
     padding: 0.75rem 1rem;
     margin-bottom: 0.5rem;
+    word-break: break-word;
+    box-sizing: border-box;
+}
+
+/* Streamlit Tabs Navigation */
+button[data-testid="stTab"] {
+    font-size: 0.92rem !important;
+    font-weight: 500 !important;
+    padding: 0.5rem 0.85rem !important;
+    color: #94a3b8 !important;
+    white-space: nowrap !important;
+}
+
+button[data-testid="stTab"][aria-selected="true"] {
+    color: #3b82f6 !important;
+    font-weight: 600 !important;
+}
+
+/* Buttons base & touch targets */
+div[data-testid="stButton"] button,
+.stButton > button {
+    min-height: 44px !important;
+    height: auto !important;
+    padding: 0.55rem 0.85rem !important;
+    white-space: normal !important;
+    word-break: break-word !important;
+    touch-action: manipulation;
+}
+
+div[data-testid="stButton"] button p,
+.stButton > button p {
+    white-space: normal !important;
+    word-break: break-word !important;
+    line-height: 1.3 !important;
+    margin: 0 !important;
 }
 
 /* Primary Action Buttons (Submit to Sandbox Judge) */
@@ -158,25 +257,62 @@ button[data-testid="baseButton-primary"]:focus:not(:active) {
     box-shadow: 0 0 0 0.2rem rgba(59, 130, 246, 0.4) !important;
 }
 
-/* Mobile Responsive Overrides: Container & Typography */
+/* Code Editor & Code Blocks */
+div[data-testid="stTextArea"] textarea {
+    font-family: 'JetBrains Mono', monospace !important;
+    tab-size: 4;
+}
+
+div[data-testid="stCodeBlock"] {
+    max-width: 100% !important;
+}
+
+div[data-testid="stCodeBlock"] pre {
+    max-width: 100% !important;
+    overflow-x: auto !important;
+    white-space: pre !important;
+    font-size: 0.85rem !important;
+}
+
+/* KaTeX formula overflow safety */
+.katex-display {
+    overflow-x: auto !important;
+    overflow-y: hidden !important;
+    max-width: 100% !important;
+    padding-bottom: 0.25rem !important;
+}
+
+/* Dataframe & Tables safety */
+div[data-testid="stDataFrame"] {
+    width: 100% !important;
+    max-width: 100% !important;
+    overflow-x: auto !important;
+}
+
+/* ========================================================= */
+/* Mobile Responsive Overrides: Tablets & Phones (max 768px) */
+/* ========================================================= */
 @media (max-width: 768px) {
+    /* Critical Fix: Ensure block container clears fixed header toolbar */
     .block-container {
-        padding-top: 1.75rem !important;
-        padding-bottom: 2.5rem !important;
-        padding-left: 0.75rem !important;
-        padding-right: 0.75rem !important;
+        padding-top: calc(5rem + env(safe-area-inset-top, 0px)) !important;
+        padding-bottom: calc(2.5rem + env(safe-area-inset-bottom, 0px)) !important;
+        padding-left: calc(0.85rem + env(safe-area-inset-left, 0px)) !important;
+        padding-right: calc(0.85rem + env(safe-area-inset-right, 0px)) !important;
         max-width: 100% !important;
     }
 
     .main-header {
-        font-size: 1.6rem !important;
+        font-size: 1.65rem !important;
         line-height: 1.25 !important;
+        margin-top: 0.35rem !important;
+        margin-bottom: 0.35rem !important;
     }
 
     .sub-header {
         font-size: 0.85rem !important;
-        line-height: 1.4 !important;
-        margin-bottom: 1rem !important;
+        line-height: 1.45 !important;
+        margin-bottom: 1.25rem !important;
     }
 
     .card {
@@ -198,7 +334,19 @@ button[data-testid="baseButton-primary"]:focus:not(:active) {
         padding: 0.65rem 0.85rem !important;
     }
 
-    /* Prevent mobile Safari auto-zoom on inputs */
+    /* Tabs adjustments on mobile */
+    button[data-testid="stTab"] {
+        font-size: 0.85rem !important;
+        padding: 0.45rem 0.65rem !important;
+    }
+
+    div[data-testid="stTabs"] [data-baseweb="tab-list"] {
+        gap: 0.35rem !important;
+        overflow-x: auto !important;
+        flex-wrap: nowrap !important;
+    }
+
+    /* Prevent mobile Safari & Android auto-zoom on inputs */
     input[type="text"],
     textarea,
     div[data-testid="stTextInput"] input,
@@ -207,12 +355,30 @@ button[data-testid="baseButton-primary"]:focus:not(:active) {
         font-size: 16px !important;
     }
 
-    /* Mobile touch target accessibility */
-    button,
-    div[data-testid="stButton"] button,
-    .stButton > button {
-        min-height: 42px !important;
-        touch-action: manipulation;
+    /* Alerts padding on mobile */
+    div[data-testid="stAlert"] {
+        padding: 0.75rem 0.9rem !important;
+    }
+}
+
+/* ========================================================= */
+/* Phone-Specific Responsive Stacking (max 640px)            */
+/* ========================================================= */
+@media (max-width: 640px) {
+    /* Stack multi-column button & input blocks gracefully */
+    div[data-testid="stHorizontalBlock"] {
+        flex-direction: column !important;
+        gap: 0.5rem !important;
+    }
+
+    div[data-testid="stHorizontalBlock"] > div[data-testid="column"] {
+        width: 100% !important;
+        min-width: 100% !important;
+        flex: 1 1 100% !important;
+    }
+
+    .main-header {
+        font-size: 1.5rem !important;
     }
 }
 </style>
@@ -490,7 +656,7 @@ def render_judge_verdict_banner(judge_verdict: Any) -> None:
 
     st.markdown(
         f"""
-        <div style="background: {bg_color}; border: 1px solid {border_color}; border-radius: 10px; padding: 1rem 1.25rem; margin-top: 1rem; margin-bottom: 1rem;">
+        <div class="card" style="background: {bg_color}; border: 1px solid {border_color}; margin-top: 1rem; margin-bottom: 1rem;">
             <div style="display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 0.6rem; margin-bottom: 0.5rem;">
                 <div style="font-size: 1.15rem; font-weight: 700; color: {border_color}; word-break: break-word;">
                     {title_text} {fail_detail}
@@ -538,7 +704,7 @@ def render_fuzz_result_banner(fuzz_result: Any) -> None:
     if fuzz_result.counterexample_found:
         st.markdown(
             f"""
-            <div style="background: rgba(239, 68, 68, 0.12); border: 1px solid #ef4444; border-radius: 10px; padding: 1rem 1.25rem; margin-top: 1rem; word-break: break-word;">
+            <div class="card" style="background: rgba(239, 68, 68, 0.12); border: 1px solid #ef4444; margin-top: 1rem; word-break: break-word;">
                 <div style="display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 0.5rem; margin-bottom: 0.4rem;">
                     <div style="font-size: 1.1rem; font-weight: 700; color: #ef4444;">
                         Counterexample Discovered

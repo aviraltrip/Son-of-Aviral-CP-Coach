@@ -90,3 +90,14 @@ def test_max_source_bytes_guard():
     assert len(valid_code.encode("utf-8")) <= MAX_SOURCE_BYTES
     assert len(oversized_code.encode("utf-8")) > MAX_SOURCE_BYTES
 
+def test_mobile_responsiveness_css():
+    """Verify CUSTOM_CSS contains rules for mobile viewport clearance, column stacking, and overflow protection."""
+    from app.ui.components import CUSTOM_CSS
+    assert "safe-area-inset-top" in CUSTOM_CSS
+    assert "stHeader" in CUSTOM_CSS
+    assert "stSidebarCollapsedControl" in CUSTOM_CSS
+    assert "stHorizontalBlock" in CUSTOM_CSS
+    assert "overflow-x: hidden" in CUSTOM_CSS
+    assert "font-size: 16px" in CUSTOM_CSS
+
+
