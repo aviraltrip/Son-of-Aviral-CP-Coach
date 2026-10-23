@@ -64,11 +64,8 @@ def init_session_state() -> None:
     if "graph" not in st.session_state:
         st.session_state.graph = create_coach_graph(persisted=True)
         
-    query_handle = st.query_params.get("handle")
     if "handle" not in st.session_state:
-        st.session_state.handle = query_handle.strip() if query_handle else ""
-    elif st.session_state.handle and not query_handle:
-        st.query_params["handle"] = st.session_state.handle
+        st.session_state.handle = ""
 
     if "config" not in st.session_state:
         st.session_state.config = get_langsmith_config(
@@ -91,123 +88,6 @@ def init_session_state() -> None:
 
     if "fuzz_result" not in st.session_state:
         st.session_state.fuzz_result = None
-
-def start_mentorship_for_handle(clean_handle: str, full_sync: bool = False) -> None:
-    """Initialize or update session state and LangGraph for a selected handle."""
-    clean_handle = clean_handle.strip()
-    if not clean_handle:
-        return
-    st.session_state.handle = clean_handle
-    st.query_params["handle"] = clean_handle
-    st.session_state.config = get_langsmith_config(
-        thread_id=st.session_state.thread_id,
-        handle=clean_handle,
-        tags=["streamlit", "ui"]
-    )
-    if full_sync:
-        with st.spinner(f"Syncing profile & submissions for '{clean_handle}'..."):
-            try:
-                uinfo, count = sync_user_data(clean_handle, max_submissions=300, ttl_seconds=0)
-                st.session_state.user_info = uinfo
-                st.toast(f"Synced {count} submissions from Codeforces!")
-            except Exception as e:
-                st.warning(f"Could not reach CF API ({e}). Using local database cache.")
-                st.session_state.user_info = get_user(clean_handle) or {"handle": clean_handle, "current_rating": 1400}
-    else:
-        cached_user = get_user(clean_handle)
-        st.session_state.user_info = cached_user or {"handle": clean_handle, "current_rating": 1400}
-
-    with st.spinner(f"Initializing coach profile for '{clean_handle}'..."):
-        st.session_state.graph.invoke({
-            "handle": clean_handle,
-            "diagnosis": None,
-            "problem": None,
-            "problem_statement": "",
-            "hint_level": 1,
-            "draft": None,
-            "verdict": None,
-            "revisions": 0,
-            "history": [],
-            "user_action": None,
-            "last_submission_verdict": None,
-        }, config=st.session_state.config)
-    st.session_state.initialized = True
-
-def render_welcome_screen() -> None:
-    """Render an engaging hero onboarding view when no handle is currently selected."""
-    st.markdown(
-        """
-        <div class="card" style="padding: 1.75rem 2rem; margin-top: 1rem; border: 1px solid rgba(59, 130, 246, 0.3); background: rgba(15, 23, 42, 0.65);">
-            <div style="font-size: 1.45rem; font-weight: 700; color: #f8fafc; margin-bottom: 0.5rem;">
-                Start Guided Mentorship
-            </div>
-            <div style="font-size: 0.95rem; color: #94a3b8; line-height: 1.5; margin-bottom: 1rem;">
-                Enter your Codeforces handle below to sync your submission history, or select an instant profile to explore the diagnostic dashboard and solution-blind hints.
-            </div>
-        </div>
-        """,
-        unsafe_allow_html=True
-    )
-
-    col_in, col_btn = st.columns([3, 1.2])
-    with col_in:
-        onboarding_handle = st.text_input(
-            "Codeforces Handle",
-            placeholder="e.g. aviraltrip, tourist",
-            label_visibility="collapsed",
-            key="main_onboarding_handle"
-        )
-    with col_btn:
-        start_clicked = st.button("Start Mentorship", type="primary", use_container_width=True)
-
-    if start_clicked and onboarding_handle.strip():
-        start_mentorship_for_handle(onboarding_handle.strip(), full_sync=True)
-        st.rerun()
-
-    st.markdown('<div style="font-size: 0.88rem; font-weight: 500; color: #cbd5e1; margin-top: 1rem; margin-bottom: 0.5rem;">Or select an instant demo profile:</div>', unsafe_allow_html=True)
-    quick_cols = st.columns(3)
-    sample_profiles = [
-        ("aviraltrip", "963 (Newbie)"),
-        ("tourist", "3382 (LGM)"),
-        ("shivanandh", "1293 (Pupil)")
-    ]
-    for i, (qhandle, qdesc) in enumerate(sample_profiles):
-        with quick_cols[i]:
-            if st.button(f"Load '{qhandle}' ({qdesc})", key=f"quick_{qhandle}", use_container_width=True):
-                start_mentorship_for_handle(qhandle, full_sync=False)
-                st.rerun()
-
-    st.markdown(
-        """
-        <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(260px, 1fr)); gap: 1rem; margin-top: 1.75rem;">
-            <div class="card" style="margin-bottom: 0;">
-                <div style="font-weight: 600; font-size: 1rem; color: #60a5fa; margin-bottom: 0.4rem;">
-                    Solution-Blind Graded Hints
-                </div>
-                <div style="font-size: 0.85rem; color: #94a3b8; line-height: 1.45;">
-                    Three-tier pedagogical assistance (Nudge, Approach, Pseudocode). Every hint is verified by an independent Keeper agent to prevent code leaks.
-                </div>
-            </div>
-            <div class="card" style="margin-bottom: 0;">
-                <div style="font-weight: 600; font-size: 1rem; color: #34d399; margin-bottom: 0.4rem;">
-                    Algorithmic Weakness Analysis
-                </div>
-                <div style="font-size: 0.85rem; color: #94a3b8; line-height: 1.45;">
-                    Automatic Bayesian diagnosis across 36 algorithmic tag hierarchies (DP, Greedy, Trees, Graphs, Math) based on your real Codeforces submission history.
-                </div>
-            </div>
-            <div class="card" style="margin-bottom: 0;">
-                <div style="font-weight: 600; font-size: 1rem; color: #f59e0b; margin-bottom: 0.4rem;">
-                    Sandbox Judge & Fuzzer
-                </div>
-                <div style="font-size: 0.85rem; color: #94a3b8; line-height: 1.45;">
-                    Built-in C++, Python, and Java execution sandbox with CPU time limits, memory tracking, and differential fuzzing against randomized stress tests.
-                </div>
-            </div>
-        </div>
-        """,
-        unsafe_allow_html=True
-    )
 
 def render_sidebar() -> str:
     """Render sidebar with user handle settings, sync actions, and profile stats."""
@@ -235,12 +115,10 @@ def render_sidebar() -> str:
         if reset_clicked:
             new_thread = str(uuid.uuid4())
             st.session_state.thread_id = new_thread
-            st.session_state.handle = ""
             st.query_params["thread_id"] = new_thread
-            st.query_params.pop("handle", None)
             st.session_state.config = get_langsmith_config(
                 thread_id=new_thread,
-                handle="anonymous",
+                handle=st.session_state.handle or "anonymous",
                 tags=["streamlit", "ui"]
             )
             st.session_state.initialized = False
@@ -252,12 +130,59 @@ def render_sidebar() -> str:
             if not clean_handle:
                 st.warning("Please enter a Codeforces handle.")
             else:
-                start_mentorship_for_handle(clean_handle, full_sync=True)
+                st.session_state.handle = clean_handle
+                st.session_state.config = get_langsmith_config(
+                    thread_id=st.session_state.thread_id,
+                    handle=st.session_state.handle,
+                    tags=["streamlit", "ui"]
+                )
+                with st.spinner(f"Syncing profile & submissions for '{st.session_state.handle}'..."):
+                    try:
+                        uinfo, count = sync_user_data(st.session_state.handle, max_submissions=300, ttl_seconds=0)
+                        st.session_state.user_info = uinfo
+                        st.toast(f"Synced {count} submissions from Codeforces!")
+                    except Exception as e:
+                        st.warning(f"Could not reach CF API ({e}). Using local database cache.")
+                        st.session_state.user_info = get_user(st.session_state.handle) or {"handle": st.session_state.handle, "current_rating": 1400}
+
+                st.session_state.graph.invoke({
+                    "handle": st.session_state.handle,
+                    "diagnosis": None,
+                    "problem": None,
+                    "problem_statement": "",
+                    "hint_level": 1,
+                    "draft": None,
+                    "verdict": None,
+                    "revisions": 0,
+                    "history": [],
+                    "user_action": None,
+                    "last_submission_verdict": None,
+                }, config=st.session_state.config)
+                st.session_state.initialized = True
                 st.rerun()
 
-        elif not st.session_state.initialized and st.session_state.handle:
-            start_mentorship_for_handle(st.session_state.handle, full_sync=False)
-            st.rerun()
+        elif not st.session_state.initialized:
+            clean_handle = handle_input.strip()
+            if clean_handle:
+                st.session_state.handle = clean_handle
+                cached_user = get_user(st.session_state.handle)
+                st.session_state.user_info = cached_user or {"handle": st.session_state.handle, "current_rating": 1400}
+                with st.spinner(f"Initializing coach profile for '{st.session_state.handle}'..."):
+                    st.session_state.graph.invoke({
+                        "handle": st.session_state.handle,
+                        "diagnosis": None,
+                        "problem": None,
+                        "problem_statement": "",
+                        "hint_level": 1,
+                        "draft": None,
+                        "verdict": None,
+                        "revisions": 0,
+                        "history": [],
+                        "user_action": None,
+                        "last_submission_verdict": None,
+                    }, config=st.session_state.config)
+                st.session_state.initialized = True
+                st.rerun()
 
         if st.session_state.handle:
             user = st.session_state.user_info or get_user(st.session_state.handle) or {}
@@ -299,7 +224,7 @@ def main() -> None:
     )
 
     if not handle:
-        render_welcome_screen()
+        st.info("👈 Open the sidebar (tap **&gt;&gt;** at the top-left) to enter your Codeforces handle and click **Sync CF** to get started!")
         return
 
     state = st.session_state.graph.get_state(st.session_state.config)
