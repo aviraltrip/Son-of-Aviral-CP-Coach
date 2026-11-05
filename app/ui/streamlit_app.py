@@ -167,7 +167,7 @@ def render_welcome_screen() -> None:
                 Start Guided Mentorship
             </div>
             <div style="font-size: 0.95rem; color: #94a3b8; line-height: 1.5; margin-bottom: 1rem;">
-                Enter your Codeforces handle below to sync your submission history, or select an instant profile to explore the diagnostic dashboard and solution-blind hints.
+                Enter your Codeforces handle below to sync your submission history and explore the diagnostic dashboard and solution-blind hints.
             </div>
         </div>
         """,
@@ -188,19 +188,6 @@ def render_welcome_screen() -> None:
     if start_clicked and onboarding_handle.strip():
         start_mentorship_for_handle(onboarding_handle.strip(), full_sync=True)
         st.rerun()
-
-    st.markdown('<div style="font-size: 0.88rem; font-weight: 500; color: #cbd5e1; margin-top: 1rem; margin-bottom: 0.5rem;">Or select an instant demo profile:</div>', unsafe_allow_html=True)
-    quick_cols = st.columns(3)
-    sample_profiles = [
-        ("aviraltrip", "963 (Newbie)"),
-        ("tourist", "3382 (LGM)"),
-        ("shivanandh", "1293 (Pupil)")
-    ]
-    for i, (qhandle, qdesc) in enumerate(sample_profiles):
-        with quick_cols[i]:
-            if st.button(f"Load '{qhandle}' ({qdesc})", key=f"quick_{qhandle}", use_container_width=True):
-                start_mentorship_for_handle(qhandle, full_sync=False)
-                st.rerun()
 
     st.markdown(
         """
