@@ -542,6 +542,60 @@ def get_problem_test_cases(
             """, (contest_id, idx.upper()))
         return [dict(row) for row in cursor.fetchall()]
 
+def seed_dataset_problems(
+    dataset_path: str | None = None,
+    db_path: str = DEFAULT_DB_PATH
+) -> int:
+    """Seed problems, reference solutions, and test cases from dataset.json into SQLite."""
+    if not dataset_path:
+        base_dir = os.path.dirname(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
+        dataset_path = os.path.join(base_dir, "evals", "dataset.json")
+
+    if not os.path.exists(dataset_path):
+        return 0
+
+    with open(dataset_path, "r", encoding="utf-8") as f:
+        data = json.load(f)
+
+    problems_list = []
+    test_case_list = []
+    for item in data:
+        cid = item.get("contest_id")
+        idx = item.get("index")
+        if not cid or not idx:
+            continue
+        problems_list.append({
+            "contestId": cid,
+            "index": idx,
+            "name": item.get("name", f"Problem {cid}{idx}"),
+            "rating": item.get("rating"),
+            "tags": item.get("tags", [])
+        })
+        sample_in = item.get("sample_input")
+        sample_out = item.get("sample_output")
+        if sample_in and sample_out:
+            test_case_list.append({
+                "contest_id": cid,
+                "idx": idx,
+                "test_index": 1,
+                "input_data": sample_in,
+                "expected_output": sample_out,
+                "is_sample": True
+            })
+
+    upsert_problems(problems_list, db_path=db_path)
+    if test_case_list:
+        upsert_test_cases_batch(test_case_list, db_path=db_path)
+
+    for item in data:
+        cid = item.get("contest_id")
+        idx = item.get("index")
+        ref_sol = item.get("reference_solution")
+        if cid and idx and ref_sol:
+            save_reference_solution(cid, idx, solution_code=ref_sol, db_path=db_path)
+
+    return len(problems_list)
+
 def seed_dataset_test_cases(
     dataset_path: str | None = None,
     db_path: str = DEFAULT_DB_PATH
@@ -617,10 +671,18 @@ def save_user_auth(handle: str, salt: str, hashed_passkey: str, db_path: str = D
         )
 
 def ensure_db_initialized(db_path: str = DEFAULT_DB_PATH) -> None:
-    """Explicitly verify that database schema is initialized."""
+    """Explicitly verify that database schema is initialized and auto-seed if empty."""
     abs_path = os.path.abspath(db_path)
     if abs_path not in _INITIALIZED_DBS:
         init_db(db_path)
+        try:
+            with get_db_connection(db_path) as conn:
+                cursor = conn.execute("SELECT COUNT(*) as cnt FROM problems;")
+                row = cursor.fetchone()
+                if row and row["cnt"] == 0:
+                    seed_dataset_problems(db_path=db_path)
+        except Exception as e:
+            logger.warning(f"Could not auto-seed problems on db init: {e}")
 
 def check_db_health(db_path: str = DEFAULT_DB_PATH) -> dict[str, Any]:
     """Verify database connection, WAL journal mode, and schema integrity."""
