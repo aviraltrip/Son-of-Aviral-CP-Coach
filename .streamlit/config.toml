@@ -1,11 +1,22 @@
 [theme]
-primaryColor = "#2563eb"
 base = "dark"
+primaryColor = "#2563eb"
+backgroundColor = "#0f172a"
+secondaryBackgroundColor = "#1e293b"
+textColor = "#f8fafc"
+font = "sans serif"
 
 [server]
-enableXsrfProtection = true
+headless = true
+address = "0.0.0.0"
+port = 8501
 enableCORS = false
+enableXsrfProtection = false
 maxUploadSize = 2
+enableWebsocketCompression = false
 
 [browser]
 gatherUsageStats = false
+
+[client]
+showErrorDetails = true
