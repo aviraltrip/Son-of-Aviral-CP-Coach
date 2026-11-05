@@ -53,8 +53,11 @@ code, pre {
 }
 
 /* Base Block Container Spacing */
-.block-container {
-    padding-top: 5rem !important;
+.block-container,
+div[data-testid="stMainBlockContainer"],
+.stMainBlockContainer,
+div[data-testid="block-container"] {
+    padding-top: 5.75rem !important;
     padding-bottom: 3rem !important;
     padding-left: 1.5rem !important;
     padding-right: 1.5rem !important;
@@ -294,8 +297,11 @@ div[data-testid="stDataFrame"] {
 /* ========================================================= */
 @media (max-width: 768px) {
     /* Critical Fix: Ensure block container clears fixed header toolbar */
-    .block-container {
-        padding-top: calc(5rem + env(safe-area-inset-top, 0px)) !important;
+    .block-container,
+    div[data-testid="stMainBlockContainer"],
+    .stMainBlockContainer,
+    div[data-testid="block-container"] {
+        padding-top: calc(5.5rem + env(safe-area-inset-top, 0px)) !important;
         padding-bottom: calc(2.5rem + env(safe-area-inset-bottom, 0px)) !important;
         padding-left: calc(0.85rem + env(safe-area-inset-left, 0px)) !important;
         padding-right: calc(0.85rem + env(safe-area-inset-right, 0px)) !important;

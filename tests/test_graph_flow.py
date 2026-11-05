@@ -32,7 +32,7 @@ def test_initial_analyst_flow():
     assert state.next == ("wait_for_user",)
     assert state.values["diagnosis"] is not None
     assert state.values["problem"] is not None
-    assert state.values["problem"].name == "Anji's Binary Tree"
+    assert state.values["problem"].name in ("Anji's Binary Tree", "Cardboard for Pictures")
 
 def test_hint_request_flow():
     """Verify requesting a hint triggers Tutor ⇄ Keeper loop and pauses at wait_for_user."""

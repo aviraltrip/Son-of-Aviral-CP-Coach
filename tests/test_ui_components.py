@@ -99,5 +99,45 @@ def test_mobile_responsiveness_css():
     assert "stHorizontalBlock" in CUSTOM_CSS
     assert "overflow-x: hidden" in CUSTOM_CSS
     assert "font-size: 16px" in CUSTOM_CSS
+    assert "stMainBlockContainer" in CUSTOM_CSS
+
+def test_safe_secrets_handling_no_crash(monkeypatch):
+    """Verify that checking secrets without secrets.toml does not raise StreamlitSecretNotFoundError."""
+    import os
+    from app.ui.streamlit_app import check_has_llm_key, sync_secrets_to_env
+    # Clear env vars
+    for k in ("GOOGLE_API_KEY", "GEMINI_API_KEY", "OPENROUTER_API_KEY", "OPENAI_API_KEY", "ANTHROPIC_API_KEY"):
+        monkeypatch.delenv(k, raising=False)
+
+    # Must execute safely and return False without raising StreamlitSecretNotFoundError
+    result = check_has_llm_key()
+    assert result is False
+
+    # sync_secrets_to_env should also execute without exception
+    sync_secrets_to_env()
+
+def test_streamlit_config_cors_and_headless():
+    """Verify that .streamlit/config.toml disables both CORS and XSRF to prevent black screen in deployment."""
+    from pathlib import Path
+    config_path = Path(__file__).resolve().parent.parent / ".streamlit" / "config.toml"
+    assert config_path.exists()
+    try:
+        import tomllib as toml_loader
+        with open(config_path, "rb") as f:
+            config = toml_loader.load(f)
+    except ImportError:
+        import toml as toml_loader
+        config = toml_loader.load(str(config_path))
+
+    server_cfg = config.get("server", {})
+    assert server_cfg.get("headless") is True
+    assert server_cfg.get("enableCORS") is False
+    assert server_cfg.get("enableXsrfProtection") is False
+    assert server_cfg.get("address") == "0.0.0.0"
+
+    theme_cfg = config.get("theme", {})
+    assert theme_cfg.get("base") == "dark"
+    assert theme_cfg.get("backgroundColor") == "#0f172a"
+
 
 
