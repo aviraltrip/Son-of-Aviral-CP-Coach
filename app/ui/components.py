@@ -9,20 +9,22 @@ CUSTOM_CSS = """
 @import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&family=JetBrains+Mono:wght@400;500;600&display=swap');
 
 html, body {
-    overflow-x: hidden !important;
+    height: 100% !important;
+    min-height: 100% !important;
     max-width: 100% !important;
     width: 100% !important;
-    position: relative;
+    overflow-x: hidden !important;
     font-family: 'Inter', -apple-system, BlinkMacSystemFont, sans-serif;
 }
 
+.stApp,
 [data-testid="stAppViewContainer"] {
-    overflow-x: hidden !important;
+    height: 100% !important;
+    min-height: 100vh !important;
     max-width: 100% !important;
 }
 
 .main {
-    overflow-x: hidden !important;
     max-width: 100% !important;
 }
 
