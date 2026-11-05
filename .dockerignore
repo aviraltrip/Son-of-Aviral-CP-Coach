@@ -21,6 +21,8 @@ coverage.xml
 .git/
 .gitignore
 .env
-*.db
+checkpoints.db*
+*.db-shm
+*.db-wal
 *.sqlite3
 .agents/
