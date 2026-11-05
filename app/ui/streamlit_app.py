@@ -80,19 +80,16 @@ MAX_SOURCE_BYTES: int = 64 * 1024
 def init_session_state() -> None:
     """Initialize LangGraph state machine, SQLite database, and UI session values."""
     ensure_db_initialized()
-    query_thread = st.query_params.get("thread_id")
     if "thread_id" not in st.session_state:
+        query_thread = st.query_params.get("thread_id")
         st.session_state.thread_id = query_thread if query_thread else str(uuid.uuid4())
-        st.query_params["thread_id"] = st.session_state.thread_id
         
     if "graph" not in st.session_state:
         st.session_state.graph = create_coach_graph(persisted=True)
         
-    query_handle = st.query_params.get("handle")
     if "handle" not in st.session_state:
+        query_handle = st.query_params.get("handle")
         st.session_state.handle = query_handle.strip() if query_handle else ""
-    elif st.session_state.handle and not query_handle:
-        st.query_params["handle"] = st.session_state.handle
 
     if "config" not in st.session_state:
         st.session_state.config = get_langsmith_config(

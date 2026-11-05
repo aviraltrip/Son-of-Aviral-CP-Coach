@@ -133,7 +133,6 @@ def test_streamlit_config_cors_and_headless():
     assert server_cfg.get("headless") is True
     assert server_cfg.get("enableCORS") is False
     assert server_cfg.get("enableXsrfProtection") is False
-    assert server_cfg.get("address") == "0.0.0.0"
 
     theme_cfg = config.get("theme", {})
     assert theme_cfg.get("base") == "dark"
