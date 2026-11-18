@@ -1,4 +1,3 @@
-# Python
 __pycache__/
 *.py[cod]
 *$py.class
@@ -21,17 +20,14 @@ wheels/
 .installed.cfg
 *.egg
 
-# Virtual Environments
 venv/
 .venv/
 ENV/
 
-# Environment Variables & Secrets
 .env
 .env.local
 .env.*.local
 
-# SQLite Databases & Caches
 *.db
 *.db-wal
 *.db-shm
@@ -42,10 +38,8 @@ ENV/
 .mypy_cache/
 .ruff_cache/
 
-# Streamlit
 .streamlit/secrets.toml
 !.streamlit/config.toml
-# IDEs & System
 .vscode/
 .idea/
 *.swp
@@ -53,7 +47,6 @@ ENV/
 .DS_Store
 Thumbs.db
 
-# Evaluation & Benchmark Outputs
 evals/results/
 evals/reports/
 

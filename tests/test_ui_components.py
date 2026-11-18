@@ -105,15 +105,12 @@ def test_safe_secrets_handling_no_crash(monkeypatch):
     """Verify that checking secrets without secrets.toml does not raise StreamlitSecretNotFoundError."""
     import os
     from app.ui.streamlit_app import check_has_llm_key, sync_secrets_to_env
-    # Clear env vars
     for k in ("GOOGLE_API_KEY", "GEMINI_API_KEY", "OPENROUTER_API_KEY", "OPENAI_API_KEY", "ANTHROPIC_API_KEY"):
         monkeypatch.delenv(k, raising=False)
 
-    # Must execute safely and return False without raising StreamlitSecretNotFoundError
     result = check_has_llm_key()
     assert result is False
 
-    # sync_secrets_to_env should also execute without exception
     sync_secrets_to_env()
 
 def test_streamlit_config_cors_and_headless():

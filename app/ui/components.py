@@ -5,7 +5,6 @@ from app.data.stats import is_valid_algorithmic_tag
 
 CUSTOM_CSS = """
 <style>
-/* Modern typography & base layout */
 @import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&family=JetBrains+Mono:wght@400;500;600&display=swap');
 
 html, body {
@@ -27,8 +26,6 @@ html, body {
 .main {
     max-width: 100% !important;
 }
-
-/* Streamlit Header Glassmorphism & Fixed Bar Clearance */
 header[data-testid="stHeader"] {
     background: rgba(15, 23, 42, 0.85) !important;
     backdrop-filter: blur(8px) !important;
@@ -36,8 +33,6 @@ header[data-testid="stHeader"] {
     border-bottom: 1px solid rgba(148, 163, 184, 0.08) !important;
     z-index: 99999 !important;
 }
-
-/* Sidebar Toggle Button styling on Mobile & Desktop */
 div[data-testid="stSidebarCollapsedControl"] {
     top: 0.5rem !important;
     left: 0.5rem !important;
@@ -53,8 +48,6 @@ div[data-testid="stSidebarCollapsedControl"] button {
 code, pre {
     font-family: 'JetBrains Mono', monospace !important;
 }
-
-/* Base Block Container Spacing */
 .block-container,
 div[data-testid="stMainBlockContainer"],
 .stMainBlockContainer,
@@ -66,8 +59,6 @@ div[data-testid="block-container"] {
     max-width: 100% !important;
     box-sizing: border-box !important;
 }
-
-/* Header & Card Containers */
 .main-header {
     font-size: 2.1rem;
     font-weight: 700;
@@ -103,8 +94,6 @@ div[data-testid="block-container"] {
     margin-bottom: 0.75rem;
     color: #f8fafc;
 }
-
-/* Badges & Chips */
 .badge-rating {
     background: #3b82f6;
     color: #ffffff;
@@ -181,8 +170,6 @@ div[data-testid="block-container"] {
     word-break: break-word;
     box-sizing: border-box;
 }
-
-/* Streamlit Tabs Navigation */
 button[data-testid="stTab"] {
     font-size: 0.92rem !important;
     font-weight: 500 !important;
@@ -195,8 +182,6 @@ button[data-testid="stTab"][aria-selected="true"] {
     color: #3b82f6 !important;
     font-weight: 600 !important;
 }
-
-/* Buttons base & touch targets */
 div[data-testid="stButton"] button,
 .stButton > button {
     min-height: 44px !important;
@@ -214,8 +199,6 @@ div[data-testid="stButton"] button p,
     line-height: 1.3 !important;
     margin: 0 !important;
 }
-
-/* Primary Action Buttons (Submit to Sandbox Judge) */
 button[kind="primary"],
 button[data-testid="stBaseButton-primary"],
 button[data-testid="baseButton-primary"],
@@ -261,8 +244,6 @@ button[data-testid="baseButton-primary"]:focus:not(:active) {
     border-color: #93c5fd !important;
     box-shadow: 0 0 0 0.2rem rgba(59, 130, 246, 0.4) !important;
 }
-
-/* Code Editor & Code Blocks */
 div[data-testid="stTextArea"] textarea {
     font-family: 'JetBrains Mono', monospace !important;
     tab-size: 4;
@@ -278,27 +259,18 @@ div[data-testid="stCodeBlock"] pre {
     white-space: pre !important;
     font-size: 0.85rem !important;
 }
-
-/* KaTeX formula overflow safety */
 .katex-display {
     overflow-x: auto !important;
     overflow-y: hidden !important;
     max-width: 100% !important;
     padding-bottom: 0.25rem !important;
 }
-
-/* Dataframe & Tables safety */
 div[data-testid="stDataFrame"] {
     width: 100% !important;
     max-width: 100% !important;
     overflow-x: auto !important;
 }
-
-/* ========================================================= */
-/* Mobile Responsive Overrides: Tablets & Phones (max 768px) */
-/* ========================================================= */
 @media (max-width: 768px) {
-    /* Critical Fix: Ensure block container clears fixed header toolbar */
     .block-container,
     div[data-testid="stMainBlockContainer"],
     .stMainBlockContainer,
@@ -341,8 +313,6 @@ div[data-testid="stDataFrame"] {
     .agent-bubble-keeper-rejected {
         padding: 0.65rem 0.85rem !important;
     }
-
-    /* Tabs adjustments on mobile */
     button[data-testid="stTab"] {
         font-size: 0.85rem !important;
         padding: 0.45rem 0.65rem !important;
@@ -353,8 +323,6 @@ div[data-testid="stDataFrame"] {
         overflow-x: auto !important;
         flex-wrap: nowrap !important;
     }
-
-    /* Prevent mobile Safari & Android auto-zoom on inputs */
     input[type="text"],
     textarea,
     div[data-testid="stTextInput"] input,
@@ -362,18 +330,11 @@ div[data-testid="stDataFrame"] {
     div[data-testid="stSelectbox"] select {
         font-size: 16px !important;
     }
-
-    /* Alerts padding on mobile */
     div[data-testid="stAlert"] {
         padding: 0.75rem 0.9rem !important;
     }
 }
-
-/* ========================================================= */
-/* Phone-Specific Responsive Stacking (max 640px)            */
-/* ========================================================= */
 @media (max-width: 640px) {
-    /* Stack multi-column button & input blocks gracefully */
     div[data-testid="stHorizontalBlock"] {
         flex-direction: column !important;
         gap: 0.5rem !important;
@@ -444,8 +405,7 @@ def render_weak_topics_summary(weak_topics: list[Any]) -> None:
         })
     df = pd.DataFrame(data)
     df_sorted = df.sort_values(by="Failure Score", ascending=False)
-    
-    # Focus chart on top 8 weaknesses so category labels remain legible on mobile
+
     top_n = min(8, len(df_sorted))
     chart_df = df_sorted.head(top_n).set_index("Topic")[["Failure Score"]]
     if len(df) > top_n:

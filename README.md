@@ -63,7 +63,6 @@ streamlit run app/ui/streamlit_app.py
 ### Docker (Production + Nginx)
 ```bash
 docker compose up --build -d
-# Accessible at http://localhost
 ```
 
 ### Streamlit Community Cloud (Free)
